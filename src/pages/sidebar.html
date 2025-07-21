@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>LLM with Context Sidebar</title>
+    <link rel="stylesheet" href="../styles/sidebar.css" />
+    <script src="../scripts/vendor/marked/marked.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div id="api-key-container">
+        <input
+          type="password"
+          id="api-key-input"
+          placeholder="Enter your Gemini API Key"
+        />
+        <button id="save-api-key-button">Save</button>
+      </div>
+      <div id="pinned-tabs-container">
+        <div id="current-tab"></div>
+        <div id="pinned-tabs"></div>
+      </div>
+      <div id="messages"></div>
+      <div id="controls-container">
+        <select id="model-select">
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+          <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+        </select>
+        <button id="new-chat-button">New Chat</button>
+        <button id="edit-api-key-button">Key</button>
+      </div>
+      <form id="prompt-form">
+        <textarea
+          id="prompt-input"
+          placeholder="Type your prompt here"
+          rows="1"
+        ></textarea>
+        <button type="submit" id="send-button">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="feather feather-send"
+          >
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </form>
+    </div>
+    <script type="module" src="../scripts/sidebar.js"></script>
+  </body>
+</html>

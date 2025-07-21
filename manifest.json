@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "LLM Sidebar with Context",
+  "version": "1.0",
+  "description": "A Chrome extension that allows users to chat with an LLM in a sidebar, with the ability to pin open tabs as context.",
+  "permissions": ["activeTab", "scripting", "storage", "tabs", "sidePanel"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/scripts/background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "src/pages/sidebar.html"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
