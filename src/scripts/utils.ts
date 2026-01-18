@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { RestrictedURLs } from "./constants.js";
+import { RestrictedURLs } from "./constants";
 
 /**
  * Checks if a URL is restricted.
- * @param {string} url - The URL to check.
- * @returns {boolean} - True if the URL is restricted, false otherwise.
+ * @param url - The URL to check.
+ * @returns True if the URL is restricted, false otherwise.
  */
-export function isRestrictedURL(url) {
+export function isRestrictedURL(url: string): boolean {
   return RestrictedURLs.some((prefix) => url.startsWith(prefix));
 }

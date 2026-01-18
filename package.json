@@ -1,0 +1,33 @@
+{
+  "name": "llm-sidebar-with-context",
+  "version": "1.0.0",
+  "description": "This chrome extension allows you to interact with LLMs in a sidebar and use multiple tabs as context when doing so",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node build-scripts/build.js",
+    "type-check": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/google/llm-sidebar-with-context.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/google/llm-sidebar-with-context/issues"
+  },
+  "homepage": "https://github.com/google/llm-sidebar-with-context#readme",
+  "dependencies": {
+    "marked": "^17.0.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.33",
+    "@types/marked": "^5.0.2",
+    "esbuild": "^0.27.2",
+    "fs-extra": "^11.3.3",
+    "typescript": "^5.9.3"
+  }
+}

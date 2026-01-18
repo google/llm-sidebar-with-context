@@ -16,19 +16,25 @@
 
 // src/scripts/background.js
 
-import { MessageTypes, StorageKeys } from "./constants.js";
-import { callGeminiApi } from "./geminiApiService.js";
-import { getTabContent } from "./tabManager.js";
-import { isRestrictedURL } from "./utils.js";
+import { MessageTypes, StorageKeys } from "./constants";
+import { callGeminiApi } from "./geminiApiService";
+import { getTabContent } from "./tabManager";
+import { isRestrictedURL } from "./utils";
 
-let geminiApiKey = null;
+interface PinnedContext {
+  url: string;
+  title: string;
+  isClosed?: boolean;
+}
+
+let geminiApiKey: string | null = null;
 let currentContext = "";
-let pinnedContexts = []; // Stores { url, title } of pinned tabs
+let pinnedContexts: PinnedContext[] = []; // Stores { url, title } of pinned tabs
 
 // Load API key from sync storage on startup
 chrome.storage.sync.get([StorageKeys.API_KEY], (result) => {
   if (result.geminiApiKey) {
-    geminiApiKey = result.geminiApiKey;
+    geminiApiKey = result.geminiApiKey as string;
     console.log("Background: Gemini API Key loaded.");
   }
 });
@@ -36,7 +42,7 @@ chrome.storage.sync.get([StorageKeys.API_KEY], (result) => {
 // Load pinned contexts from local storage on startup
 chrome.storage.local.get([StorageKeys.PINNED_CONTEXTS], (result) => {
   if (result.pinnedContexts) {
-    pinnedContexts = result.pinnedContexts;
+    pinnedContexts = result.pinnedContexts as PinnedContext[];
     console.log("Background: Pinned contexts loaded.", pinnedContexts);
   }
 });
@@ -49,9 +55,9 @@ function savePinnedContexts() {
 }
 
 // Listen for messages from the sidebar
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request: any, sender, sendResponse) => {
   (async () => {
-    let response = {};
+    let response: any = {};
     try {
       switch (request.type) {
         case MessageTypes.CHAT_MESSAGE:
@@ -88,7 +94,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true; // Keep the message channel open for async response
 });
 
-async function handleChatMessage(message, model) {
+async function handleChatMessage(message: string, model: string) {
   if (!geminiApiKey) {
     return {
       error: "Gemini API Key not set. Please set it in the sidebar.",
@@ -115,7 +121,7 @@ async function handleGetContext() {
   };
 }
 
-async function handleSaveApiKey(apiKey) {
+async function handleSaveApiKey(apiKey: string) {
   geminiApiKey = apiKey;
   await chrome.storage.sync.set({ [StorageKeys.API_KEY]: apiKey });
   return { success: true };
@@ -144,7 +150,7 @@ async function handlePinTab() {
   return { success: false, message: "No active tab found." };
 }
 
-async function handleUnpinTab(url) {
+async function handleUnpinTab(url: string) {
   const initialLength = pinnedContexts.length;
   pinnedContexts = pinnedContexts.filter((context) => context.url !== url);
   if (pinnedContexts.length < initialLength) {
@@ -167,7 +173,7 @@ async function handleCheckPinnedTabs() {
   return { success: true, pinnedContexts: checkedContexts };
 }
 
-async function handleReopenTab(url) {
+async function handleReopenTab(url: string) {
   const newTab = await chrome.tabs.create({ url: url });
   const tabId = newTab.id;
 
@@ -178,7 +184,7 @@ async function handleReopenTab(url) {
       resolve({ success: true });
     }, 5000); // 5 seconds timeout
 
-    const listener = (updatedTabId, changeInfo, tab) => {
+    const listener = (updatedTabId: number, changeInfo: any, tab: chrome.tabs.Tab) => {
       if (updatedTabId === tabId && changeInfo.status === "complete") {
         chrome.tabs.onUpdated.removeListener(listener);
         clearTimeout(timeout);

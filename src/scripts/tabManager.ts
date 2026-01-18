@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-import { MAX_CONTEXT_LENGTH } from "./constants.js";
-import { isRestrictedURL } from "./utils.js";
+import { MAX_CONTEXT_LENGTH } from "./constants";
+import { isRestrictedURL } from "./utils";
 
 /**
  * Gets the content of a tab.
- * @param {string} contextTabUrl - The URL of the tab to get content from.
- * @param {number | null} [contextTabId=null] - The optional ID of the tab. If not provided, it will be queried.
- * @returns {Promise<string>} - The content of the tab.
+ * @param contextTabUrl - The URL of the tab to get content from.
+ * @param contextTabId - The optional ID of the tab. If not provided, it will be queried.
+ * @returns The content of the tab.
  */
-export async function getTabContent(contextTabUrl, contextTabId = null) {
+export async function getTabContent(
+  contextTabUrl: string,
+  contextTabId: number | null = null
+): Promise<string> {
   if (isRestrictedURL(contextTabUrl)) {
     console.warn(
       `Cannot extract content from restricted URL: ${contextTabUrl}`
@@ -44,16 +47,21 @@ export async function getTabContent(contextTabUrl, contextTabId = null) {
       return `(Tab not found or accessible: ${contextTabUrl})`;
     }
 
-    tabId = tabs[0].id;
+    tabId = tabs[0].id ?? null;
+  }
+
+  if (tabId === null) {
+    console.warn(`Tab ID not found for: ${contextTabUrl}`);
+    return `(Tab ID not found for: ${contextTabUrl})`;
   }
 
   try {
     const [result] = await chrome.scripting.executeScript({
       target: { tabId: tabId },
-      function: () => document.body.innerText,
+      func: () => document.body.innerText,
     });
     return result.result ? result.result.substring(0, MAX_CONTEXT_LENGTH) : "";
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Failed to execute script for tab ${contextTabUrl}:`, error);
     return `(Could not extract content from ${contextTabUrl}: ${error.message})`;
   }

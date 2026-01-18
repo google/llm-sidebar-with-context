@@ -14,29 +14,31 @@
  * limitations under the License.
  */
 
-import { MessageTypes, StorageKeys } from "./constants.js";
+import { marked } from "marked";
+import { MessageTypes, StorageKeys } from "./constants";
 
 document.addEventListener("DOMContentLoaded", () => {
-  const promptForm = document.getElementById("prompt-form");
-  const promptInput = document.getElementById("prompt-input");
-  const messagesDiv = document.getElementById("messages");
-  const apiKeyInput = document.getElementById("api-key-input");
-  const saveApiKeyButton = document.getElementById("save-api-key-button");
-  const apiKeyContainer = document.getElementById("api-key-container");
-  const pinnedTabsDiv = document.getElementById("pinned-tabs");
-  const currentTabDiv = document.getElementById("current-tab");
-  const modelSelect = document.getElementById("model-select");
-  const editApiKeyButton = document.getElementById("edit-api-key-button");
-  const newChatButton = document.getElementById("new-chat-button");
+  const promptForm = document.getElementById("prompt-form") as HTMLFormElement;
+  const promptInput = document.getElementById("prompt-input") as HTMLInputElement;
+  const messagesDiv = document.getElementById("messages") as HTMLDivElement;
+  const apiKeyInput = document.getElementById("api-key-input") as HTMLInputElement;
+  const saveApiKeyButton = document.getElementById("save-api-key-button") as HTMLButtonElement;
+  const apiKeyContainer = document.getElementById("api-key-container") as HTMLDivElement;
+  const pinnedTabsDiv = document.getElementById("pinned-tabs") as HTMLDivElement;
+  const currentTabDiv = document.getElementById("current-tab") as HTMLDivElement;
+  const modelSelect = document.getElementById("model-select") as HTMLSelectElement;
+  const editApiKeyButton = document.getElementById("edit-api-key-button") as HTMLButtonElement;
+  const newChatButton = document.getElementById("new-chat-button") as HTMLButtonElement;
 
   // Use event delegation for dynamically created buttons
   document.body.addEventListener("click", (e) => {
-    if (e.target.id === "pin-tab-button") {
+    const target = e.target as HTMLElement;
+    if (target.id === "pin-tab-button") {
       pinCurrentTab();
-    } else if (e.target.classList.contains("unpin-button")) {
-      unpinTab(e.target.dataset.url);
-    } else if (e.target.classList.contains("reopen-button")) {
-      reopenTab(e.target.dataset.url);
+    } else if (target.classList.contains("unpin-button")) {
+      unpinTab(target.dataset.url!);
+    } else if (target.classList.contains("reopen-button")) {
+      reopenTab(target.dataset.url!);
     }
   });
 
@@ -79,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         apiKeyContainer.style.display = "flex";
       }
       if (result.selectedModel) {
-        modelSelect.value = result.selectedModel;
+        modelSelect.value = result.selectedModel as string;
       }
     }
   );
@@ -137,11 +139,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return thinkingMessageElement;
   }
 
-  function appendMessage(sender, text) {
+  async function appendMessage(sender: string, text: string) {
     const messageElement = document.createElement("div");
     messageElement.classList.add("message", sender);
     if (sender === "gemini") {
-      messageElement.innerHTML = marked.parse(text);
+      messageElement.innerHTML = await marked.parse(text);
     } else {
       messageElement.textContent = text;
     }
@@ -157,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function unpinTab(url) {
+  function unpinTab(url: string) {
     chrome.runtime.sendMessage(
       { type: MessageTypes.UNPIN_TAB, url: url },
       (response) => {
@@ -168,13 +170,13 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  function reopenTab(url) {
+  function reopenTab(url: string) {
     chrome.runtime.sendMessage({ type: MessageTypes.REOPEN_TAB, url: url }, () => {
       checkPinnedTabs(); // Refresh pinned tabs after reopening
     });
   }
 
-  function displayPinnedTabs(pinnedContexts) {
+  function displayPinnedTabs(pinnedContexts: any[]) {
     pinnedTabsDiv.innerHTML = "";
     if (!pinnedContexts || pinnedContexts.length === 0) {
       return;
@@ -204,7 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((request: any, sender, sendResponse) => {
     if (request.type === MessageTypes.CURRENT_TAB_INFO) {
       updateCurrentTabInfo(request.tab);
     }
@@ -213,7 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  function updateCurrentTabInfo(tab) {
+  function updateCurrentTabInfo(tab: any) {
     if (tab) {
       currentTabDiv.innerHTML = `<span>Current: ${tab.title}</span><button id="pin-tab-button">+</button>`;
     } else {

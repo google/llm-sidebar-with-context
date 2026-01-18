@@ -14,14 +14,38 @@
  * limitations under the License.
  */
 
+interface GeminiResponse {
+  reply?: string;
+  error?: string;
+}
+
+interface GeminiApiResponse {
+  candidates?: Array<{
+    content: {
+      parts: Array<{
+        text: string;
+      }>;
+    };
+  }>;
+  error?: {
+    message: string;
+  };
+}
+
 /**
  * Calls the Gemini API with the given context and message.
- * @param {string} apiKey - The Gemini API key.
- * @param {string} context - The context to send to the API.
- * @param {string} message - The user's message.
- * @returns {Promise<object>} - The API response.
+ * @param apiKey - The Gemini API key.
+ * @param context - The context to send to the API.
+ * @param message - The user's message.
+ * @param model - The model to use.
+ * @returns The API response.
  */
-export async function callGeminiApi(apiKey, context, message, model = 'gemini-2.5-flash') {
+export async function callGeminiApi(
+  apiKey: string,
+  context: string,
+  message: string,
+  model: string = "gemini-2.5-flash"
+): Promise<GeminiResponse> {
   try {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`,
@@ -45,7 +69,7 @@ export async function callGeminiApi(apiKey, context, message, model = 'gemini-2.
       }
     );
 
-    const data = await response.json();
+    const data: GeminiApiResponse = await response.json();
 
     if (data.candidates && data.candidates.length > 0) {
       return { reply: data.candidates[0].content.parts[0].text };
@@ -54,7 +78,7 @@ export async function callGeminiApi(apiKey, context, message, model = 'gemini-2.
     } else {
       return { error: "Unknown error from Gemini API." };
     }
-  } catch (error) {
+  } catch (error: any) {
     return { error: error.message };
   }
 }
