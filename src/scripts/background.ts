@@ -28,7 +28,6 @@ interface PinnedContext {
 }
 
 let geminiApiKey: string | null = null;
-let currentContext = "";
 let pinnedContexts: PinnedContext[] = []; // Stores { url, title } of pinned tabs
 
 // Load API key from sync storage on startup
@@ -100,9 +99,20 @@ async function handleChatMessage(message: string, model: string) {
       error: "Gemini API Key not set. Please set it in the sidebar.",
     };
   }
-  await updateContextFromActiveTab();
-  let fullContext = currentContext;
 
+  let fullContext = "";
+
+  // Get context from Current Tab
+  const [activeTab] = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+  if (activeTab && activeTab.url) {
+    const content = await getTabContent(activeTab.url, activeTab.id);
+    fullContext = `Current tab URL: ${activeTab.url}\nContent: ${content}`;
+  }
+
+  // Get context from Pinned Tabs
   const pinnedContents = await Promise.all(
     pinnedContexts.map(async (context) => {
       const content = await getTabContent(context.url);
@@ -121,7 +131,6 @@ async function handleGetContext() {
     currentWindow: true,
   });
   return {
-    currentContext: currentContext,
     pinnedContexts: pinnedContexts,
     tab: tab ? { title: tab.title, url: tab.url } : null,
   };
@@ -204,14 +213,13 @@ async function handleReopenTab(url: string) {
 
 async function handleClearChat() {
   pinnedContexts = [];
-  currentContext = "";
   savePinnedContexts();
   return { success: true };
 }
 
 // Function to update context from active tab
-async function updateContextFromActiveTab() {
-  console.log("Background: Updating context from active tab.");
+async function broadcastCurrentTabInfo() {
+  console.log("Background: Broadcasting current tab info.");
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab && tab.url) {
     chrome.runtime
@@ -227,17 +235,14 @@ async function updateContextFromActiveTab() {
           console.error("Error sending current tab info:", error);
         }
       });
-
-    const content = await getTabContent(tab.url, tab.id);
-    currentContext = `Current tab URL: ${tab.url}\nContent: ${content}`;
   }
 }
 
 // Update context when active tab changes
-chrome.tabs.onActivated.addListener(updateContextFromActiveTab);
+chrome.tabs.onActivated.addListener(broadcastCurrentTabInfo);
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.url && tab.active) {
-    updateContextFromActiveTab();
+    broadcastCurrentTabInfo();
   }
 });
 
@@ -246,7 +251,7 @@ chrome.tabs.onRemoved.addListener(() => {
 });
 
 // Initial context update on startup
-updateContextFromActiveTab();
+broadcastCurrentTabInfo();
 
 // Open the side panel when the extension icon is clicked
 chrome.action.onClicked.addListener(async (tab) => {
