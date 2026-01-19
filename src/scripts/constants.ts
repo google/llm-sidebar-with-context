@@ -32,6 +32,7 @@ export const StorageKeys = {
   API_KEY: "geminiApiKey",
   PINNED_CONTEXTS: "pinnedContexts",
   SELECTED_MODEL: "selectedModel",
+  CHAT_HISTORY: "chatHistory",
 };
 
 export const RestrictedURLs = ["chrome://", "about:", "chrome-extension://"];

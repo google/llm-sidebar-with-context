@@ -44,8 +44,8 @@ async function build() {
 
   // 3. Bundle scripts
   const entryPoints = [
-    path.join(srcDir, 'scripts/background.js'),
-    path.join(srcDir, 'scripts/sidebar.js'),
+    path.join(srcDir, 'scripts/background.ts'),
+    path.join(srcDir, 'scripts/sidebar.ts'),
   ];
 
   await esbuild.build({
