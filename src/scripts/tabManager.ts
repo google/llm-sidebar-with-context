@@ -43,7 +43,7 @@ export async function getTabContent(
     });
 
     if (tabs.length === 0) {
-      console.warn(`Tab not found or accessible: ${contextTabUrl}`);
+      console.error(`Tab not found or accessible: ${contextTabUrl}`);
       return `(Tab not found or accessible: ${contextTabUrl})`;
     }
 
@@ -51,7 +51,7 @@ export async function getTabContent(
   }
 
   if (tabId === null) {
-    console.warn(`Tab ID not found for: ${contextTabUrl}`);
+    console.error(`Tab ID not found for: ${contextTabUrl}`);
     return `(Tab ID not found for: ${contextTabUrl})`;
   }
 

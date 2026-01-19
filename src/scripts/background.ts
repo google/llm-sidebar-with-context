@@ -102,10 +102,16 @@ async function handleChatMessage(message: string, model: string) {
   }
   await updateContextFromActiveTab();
   let fullContext = currentContext;
-  for (const context of pinnedContexts) {
-    const content = await getTabContent(context.url);
-    fullContext += `\n\n--- Pinned Tab: ${context.title} (${context.url}) ---\n${content}`;
-  }
+
+  const pinnedContents = await Promise.all(
+    pinnedContexts.map(async (context) => {
+      const content = await getTabContent(context.url);
+      return `\n\n--- Pinned Tab: ${context.title} (${context.url}) ---\n${content}`;
+    })
+  );
+
+  fullContext += pinnedContents.join("");
+
   return await callGeminiApi(geminiApiKey, fullContext, message, model);
 }
 
