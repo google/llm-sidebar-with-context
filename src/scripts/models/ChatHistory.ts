@@ -17,7 +17,7 @@
 import { StorageKeys } from "../constants";
 
 export interface ChatMessage {
-  role: "user" | "gemini";
+  role: "user" | "model";
   text: string;
 }
 

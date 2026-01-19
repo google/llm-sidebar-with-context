@@ -80,17 +80,16 @@ export class BackgroundController {
     const fullContext = activeContext + pinnedContent;
 
     // 3. Send to Gemini
-    // TODO: Refactor geminiApiService to accept ChatHistory object instead of string construction
-    const historyText = this.chatHistory.getMessages()
-      .map(m => `${m.role === 'user' ? 'User' : 'Model'}: ${m.text}`)
-      .join('\n');
-    
-    // Note: We're keeping the procedural callGeminiApi for now as per plan
-    const response = await callGeminiApi(apiKey, fullContext, message, model);
+    const response = await callGeminiApi(
+      apiKey,
+      fullContext,
+      this.chatHistory.getMessages(),
+      model
+    );
 
     // 4. Add Model Response to History
     if (response.reply) {
-      await this.chatHistory.addMessage({ role: "gemini", text: response.reply });
+      await this.chatHistory.addMessage({ role: "model", text: response.reply });
     }
 
     return response;

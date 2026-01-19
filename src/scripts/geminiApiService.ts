@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { ChatMessage } from "./models/ChatHistory";
+
 interface GeminiResponse {
   reply?: string;
   error?: string;
@@ -33,20 +35,34 @@ interface GeminiApiResponse {
 }
 
 /**
- * Calls the Gemini API with the given context and message.
+ * Calls the Gemini API with the given context and message history.
  * @param apiKey - The Gemini API key.
  * @param context - The context to send to the API.
- * @param message - The user's message.
+ * @param history - The conversation history, including the latest user message.
  * @param model - The model to use.
  * @returns The API response.
  */
 export async function callGeminiApi(
   apiKey: string,
   context: string,
-  message: string,
+  history: ChatMessage[],
   model: string = "gemini-2.5-flash"
 ): Promise<GeminiResponse> {
   try {
+    // Map history to Gemini API format
+    const contents = history.map((msg) => ({
+      role: msg.role,
+      parts: [{ text: msg.text }],
+    }));
+
+    // Inject context as the first part of the last user message
+    if (contents.length > 0) {
+      const lastMessage = contents[contents.length - 1];
+      if (lastMessage.role === "user") {
+        lastMessage.parts.unshift({ text: "Context: " + context });
+      }
+    }
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`,
       {
@@ -56,15 +72,7 @@ export async function callGeminiApi(
           "x-goog-api-key": apiKey,
         },
         body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                { text: "Context: " + context },
-                { text: "User: " + message },
-              ],
-            },
-          ],
+          contents: contents,
         }),
       }
     );
