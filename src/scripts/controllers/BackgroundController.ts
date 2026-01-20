@@ -54,6 +54,8 @@ export class BackgroundController {
           return await this.handleReopenTab(request.url);
         case MessageTypes.CLEAR_CHAT:
           return await this.handleClearChat();
+        case MessageTypes.GET_HISTORY:
+          return await this.handleGetHistory();
         default:
           return { error: `Unknown message type: ${request.type}` };
       }
@@ -61,6 +63,13 @@ export class BackgroundController {
       console.error("BackgroundController error:", error);
       return { success: false, error: error.message };
     }
+  }
+
+  private async handleGetHistory() {
+    return {
+      success: true,
+      history: this.chatHistory.getMessages(),
+    };
   }
 
   private async handleChatMessage(message: string, model: string) {

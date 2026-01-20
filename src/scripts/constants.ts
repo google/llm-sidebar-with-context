@@ -26,6 +26,7 @@ export const MessageTypes = {
   CHECK_PINNED_TABS: "checkPinnedTabs",
   REOPEN_TAB: "reopenTab",
   CLEAR_CHAT: "clearChat",
+  GET_HISTORY: "getHistory",
 };
 
 export const StorageKeys = {
