@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,17 @@ import { callGeminiApi } from "../geminiApiService";
 import { ChatHistory } from "../models/ChatHistory";
 import { ContextManager } from "../models/ContextManager";
 import { TabContext } from "../models/TabContext";
+import {
+  ExtensionMessage,
+  ExtensionResponse,
+  GetContextResponse,
+  SuccessResponse,
+  CheckPinnedTabsResponse,
+  GetHistoryResponse,
+  GeminiResponse,
+  PinnedContext,
+  TabInfo
+} from "../types";
 
 export class BackgroundController {
   private chatHistory: ChatHistory;
@@ -32,7 +43,7 @@ export class BackgroundController {
   /**
    * Main entry point for handling messages from the UI.
    */
-  async handleMessage(request: any): Promise<any> {
+  async handleMessage(request: ExtensionMessage): Promise<ExtensionResponse> {
     // Just-In-Time Loading to handle Service Worker restarts
     await Promise.all([this.chatHistory.load(), this.contextManager.load()]);
 
@@ -57,22 +68,23 @@ export class BackgroundController {
         case MessageTypes.GET_HISTORY:
           return await this.handleGetHistory();
         default:
-          return { error: `Unknown message type: ${request.type}` };
+          return { error: `Unknown message type: ${(request as { type: unknown }).type}` };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("BackgroundController error:", error);
-      return { success: false, error: error.message };
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return { success: false, error: errorMessage };
     }
   }
 
-  private async handleGetHistory() {
+  private async handleGetHistory(): Promise<GetHistoryResponse> {
     return {
       success: true,
       history: this.chatHistory.getMessages(),
     };
   }
 
-  private async handleChatMessage(message: string, model: string) {
+  private async handleChatMessage(message: string, model: string): Promise<GeminiResponse> {
     const apiKey = await this.getApiKey();
     if (!apiKey) {
       return {
@@ -104,23 +116,26 @@ export class BackgroundController {
     return response;
   }
 
-  private async handleGetContext() {
+  private async handleGetContext(): Promise<GetContextResponse> {
     const [tab] = await chrome.tabs.query({
       active: true,
       currentWindow: true,
     });
+
+    const pinnedWithStatus = await this.getPinnedTabsWithStatus();
+
     return {
-      pinnedContexts: this.contextManager.getPinnedTabs(),
-      tab: tab ? { title: tab.title, url: tab.url } : null,
+      pinnedContexts: pinnedWithStatus,
+      tab: tab && tab.url ? { title: tab.title || "Untitled", url: tab.url } : null,
     };
   }
 
-  private async handleSaveApiKey(apiKey: string) {
+  private async handleSaveApiKey(apiKey: string): Promise<SuccessResponse> {
     await chrome.storage.sync.set({ [StorageKeys.API_KEY]: apiKey });
     return { success: true };
   }
 
-  private async handlePinTab() {
+  private async handlePinTab(): Promise<SuccessResponse> {
     const [tab] = await chrome.tabs.query({
       active: true,
       currentWindow: true,
@@ -134,30 +149,34 @@ export class BackgroundController {
         const newContext = new TabContext(tab.url, tab.title || "Untitled");
         await this.contextManager.addTab(newContext);
         return { success: true };
-    } catch (e: any) {
-        return { success: false, message: e.message };
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        return { success: false, message: message };
     }
   }
 
-  private async handleUnpinTab(url: string) {
+  private async handleUnpinTab(url: string): Promise<SuccessResponse> {
     await this.contextManager.removeTab(url);
     return { success: true };
   }
 
-  private async handleCheckPinnedTabs() {
+  private async handleCheckPinnedTabs(): Promise<CheckPinnedTabsResponse> {
+    const checkedContexts = await this.getPinnedTabsWithStatus();
+    return { success: true, pinnedContexts: checkedContexts };
+  }
+
+  private async getPinnedTabsWithStatus(): Promise<PinnedContext[]> {
     const openTabs = await chrome.tabs.query({});
     const openTabUrls = new Set(openTabs.map((tab) => tab.url));
     
-    const checkedContexts = this.contextManager.getPinnedTabs().map((context) => ({
+    return this.contextManager.getPinnedTabs().map((context) => ({
       url: context.url,
       title: context.title,
       isClosed: !openTabUrls.has(context.url),
     }));
-
-    return { success: true, pinnedContexts: checkedContexts };
   }
 
-  private async handleReopenTab(url: string) {
+  private async handleReopenTab(url: string): Promise<SuccessResponse> {
     const newTab = await chrome.tabs.create({ url: url });
     const tabId = newTab.id;
 
@@ -167,7 +186,7 @@ export class BackgroundController {
         resolve({ success: true });
       }, 5000); 
 
-      const listener = (updatedTabId: number, changeInfo: any) => {
+      const listener = (updatedTabId: number, changeInfo: chrome.tabs.OnUpdatedInfo) => {
         if (updatedTabId === tabId && changeInfo.status === "complete") {
           chrome.tabs.onUpdated.removeListener(listener);
           clearTimeout(timeout);
@@ -178,7 +197,7 @@ export class BackgroundController {
     });
   }
 
-  private async handleClearChat() {
+  private async handleClearChat(): Promise<SuccessResponse> {
     await this.chatHistory.clear();
     await this.contextManager.clear();
     return { success: true };

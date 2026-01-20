@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ export const MessageTypes = {
   REOPEN_TAB: "reopenTab",
   CLEAR_CHAT: "clearChat",
   GET_HISTORY: "getHistory",
-};
+} as const;
 
 export const StorageKeys = {
   API_KEY: "geminiApiKey",

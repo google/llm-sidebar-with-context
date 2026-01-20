@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-import { ChatMessage } from "./models/ChatHistory";
-
-interface GeminiResponse {
-  reply?: string;
-  error?: string;
-}
+import { ChatMessage, GeminiResponse } from "./types";
 
 interface GeminiApiResponse {
   candidates?: Array<{
@@ -86,7 +81,8 @@ export async function callGeminiApi(
     } else {
       return { error: "Unknown error from Gemini API." };
     }
-  } catch (error: any) {
-    return { error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { error: message };
   }
 }

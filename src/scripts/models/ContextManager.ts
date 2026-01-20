@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 import { StorageKeys } from "../constants";
 import { TabContext } from "./TabContext";
 import { isRestrictedURL } from "../utils";
+import { TabInfo } from "../types";
 
 export class ContextManager {
   private pinnedTabs: TabContext[] = [];
@@ -92,7 +93,7 @@ export class ContextManager {
         if (Array.isArray(stored)) {
           // Since TabContext only has url and title, we can just map the plain objects
           this.pinnedTabs = stored.map(
-            (s: any) => new TabContext(s.url, s.title)
+            (s: TabInfo) => new TabContext(s.url, s.title)
           );
         }
         resolve();

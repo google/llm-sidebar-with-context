@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,16 @@
 
 import { marked } from "marked";
 import { MessageTypes, StorageKeys } from "../constants";
+import {
+  ExtensionMessage,
+  PinnedContext,
+  TabInfo,
+  GeminiResponse,
+  GetContextResponse,
+  SuccessResponse,
+  CheckPinnedTabsResponse,
+  GetHistoryResponse
+} from "../types";
 
 export class SidebarController {
   private promptForm: HTMLFormElement;
@@ -67,7 +77,7 @@ export class SidebarController {
 
     this.newChatButton.addEventListener("click", () => {
       this.messagesDiv.innerHTML = ""; // Clear messages in UI
-      chrome.runtime.sendMessage({ type: MessageTypes.CLEAR_CHAT }, (response) => {
+      chrome.runtime.sendMessage({ type: MessageTypes.CLEAR_CHAT }, (response: SuccessResponse) => {
         if (response && response.success) {
           this.displayPinnedTabs([]); // Clear pinned tabs in UI
         }
@@ -90,7 +100,7 @@ export class SidebarController {
       }
     });
 
-    chrome.runtime.onMessage.addListener((request: any) => {
+    chrome.runtime.onMessage.addListener((request: ExtensionMessage) => {
       if (request.type === MessageTypes.CURRENT_TAB_INFO) {
         this.updateCurrentTabInfo(request.tab);
       }
@@ -110,14 +120,14 @@ export class SidebarController {
         } else {
           this.apiKeyContainer.style.display = "flex";
         }
-        if (result.selectedModel) {
-          this.modelSelect.value = result.selectedModel as string;
+        if (result[StorageKeys.SELECTED_MODEL]) {
+          this.modelSelect.value = result[StorageKeys.SELECTED_MODEL] as string;
         }
       }
     );
 
     // Initial context update
-    chrome.runtime.sendMessage({ type: MessageTypes.GET_CONTEXT }, (response) => {
+    chrome.runtime.sendMessage({ type: MessageTypes.GET_CONTEXT }, (response: GetContextResponse) => {
       if (response) {
         if (response.pinnedContexts) {
           this.checkPinnedTabs();
@@ -133,7 +143,7 @@ export class SidebarController {
   }
 
   private async loadHistory() {
-    chrome.runtime.sendMessage({ type: MessageTypes.GET_HISTORY }, async (response) => {
+    chrome.runtime.sendMessage({ type: MessageTypes.GET_HISTORY }, async (response: GetHistoryResponse) => {
       if (response && response.success && response.history) {
         for (const msg of response.history) {
           await this.appendMessage(msg.role, msg.text);
@@ -150,7 +160,7 @@ export class SidebarController {
     }
     chrome.runtime.sendMessage(
       { type: MessageTypes.SAVE_API_KEY, apiKey: apiKey },
-      (response) => {
+      (response: SuccessResponse) => {
         if (response && response.success) {
           this.apiKeyContainer.style.display = "none";
         } else {
@@ -175,7 +185,7 @@ export class SidebarController {
         message: message,
         model: this.modelSelect.value,
       },
-      (response) => {
+      (response: GeminiResponse) => {
         thinkingMessageElement.remove();
         if (response && response.reply) {
           this.appendMessage("model", response.reply);
@@ -208,7 +218,7 @@ export class SidebarController {
   }
 
   private pinCurrentTab() {
-    chrome.runtime.sendMessage({ type: MessageTypes.PIN_TAB }, (response) => {
+    chrome.runtime.sendMessage({ type: MessageTypes.PIN_TAB }, (response: SuccessResponse) => {
       if (response && response.success) {
         this.checkPinnedTabs();
       }
@@ -218,7 +228,7 @@ export class SidebarController {
   private unpinTab(url: string) {
     chrome.runtime.sendMessage(
       { type: MessageTypes.UNPIN_TAB, url: url },
-      (response) => {
+      (response: SuccessResponse) => {
         if (response && response.success) {
           this.checkPinnedTabs();
         }
@@ -232,7 +242,7 @@ export class SidebarController {
     });
   }
 
-  private displayPinnedTabs(pinnedContexts: any[]) {
+  private displayPinnedTabs(pinnedContexts: PinnedContext[]) {
     this.pinnedTabsDiv.innerHTML = "";
     if (!pinnedContexts || pinnedContexts.length === 0) {
       return;
@@ -254,7 +264,7 @@ export class SidebarController {
   private checkPinnedTabs() {
     chrome.runtime.sendMessage(
       { type: MessageTypes.CHECK_PINNED_TABS },
-      (response) => {
+      (response: CheckPinnedTabsResponse) => {
         if (response && response.success) {
           this.displayPinnedTabs(response.pinnedContexts);
         }
@@ -262,7 +272,7 @@ export class SidebarController {
     );
   }
 
-  private updateCurrentTabInfo(tab: any) {
+  private updateCurrentTabInfo(tab: TabInfo) {
     if (tab) {
       this.currentTabDiv.innerHTML = `<span>Current: ${tab.title}</span><button id="pin-tab-button">+</button>`;
     } else {

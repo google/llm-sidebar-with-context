@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,8 +61,9 @@ export async function getTabContent(
       func: () => document.body.innerText,
     });
     return result.result ? result.result.substring(0, MAX_CONTEXT_LENGTH) : "";
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Failed to execute script for tab ${contextTabUrl}:`, error);
-    return `(Could not extract content from ${contextTabUrl}: ${error.message})`;
+    const message = error instanceof Error ? error.message : String(error);
+    return `(Could not extract content from ${contextTabUrl}: ${message})`;
   }
 }
