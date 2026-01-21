@@ -36,4 +36,4 @@ export const StorageKeys = {
   CHAT_HISTORY: "chatHistory",
 };
 
-export const RestrictedURLs = ["chrome://", "about:", "chrome-extension://"];
+export const RestrictedURLs = ["chrome://", "about:", "chrome-extension://", "file://"];
