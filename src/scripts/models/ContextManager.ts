@@ -30,11 +30,15 @@ export class ContextManager {
   ) {}
 
   async addTab(tab: TabContext): Promise<void> {
+    if (!tab.url) {
+      throw new Error("Cannot pin a tab with no URL.");
+    }
     if (isRestrictedURL(tab.url)) {
       throw new Error("Cannot pin restricted Chrome pages.");
     }
     if (this.isTabPinned(tab.url)) {
-      throw new Error("Tab already pinned.");
+      // Idempotent: If already pinned, do nothing.
+      return;
     }
     this.pinnedTabs.push(tab);
     await this.save();
