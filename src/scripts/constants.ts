@@ -37,3 +37,12 @@ export const StorageKeys = {
 };
 
 export const RestrictedURLs = ["chrome://", "about:", "chrome-extension://", "file://"];
+
+export const CONTEXT_MESSAGES = {
+  LOADING_WARNING: "(Page is still loading...)",
+  NO_CONTENT_WARNING: "(No text content found on this page)",
+  RESTRICTED_URL: "(Content not accessible for restricted URL)",
+  TAB_NOT_FOUND: "(Tab not found or accessible)",
+  TAB_ID_NOT_FOUND: "(Tab ID not found)",
+  ERROR_PREFIX: "(Could not extract content from",
+};

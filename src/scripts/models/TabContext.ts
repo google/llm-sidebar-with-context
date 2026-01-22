@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import { MAX_CONTEXT_LENGTH } from "../constants";
+import { MAX_CONTEXT_LENGTH, CONTEXT_MESSAGES } from "../constants";
 import { isRestrictedURL } from "../utils";
-import { ITabService } from "../services/tabService";
+import { ITabService, TimeoutError } from "../services/tabService";
 
 export class TabContext {
   constructor(
@@ -32,34 +32,63 @@ export class TabContext {
   async readContent(): Promise<string> {
     if (isRestrictedURL(this.url)) {
       console.warn(`Cannot extract content from restricted URL: ${this.url}`);
-      return `(Content not accessible for restricted URL: ${this.url})`;
+      return `${CONTEXT_MESSAGES.RESTRICTED_URL}: ${this.url}`;
     }
 
-    // Always query for the tab ID by URL to ensure freshness.
-    const tabs = await this.tabService.query({
+    // 1. Try to find a 'complete' tab first
+    let tabs = await this.tabService.query({
       url: this.url,
       status: "complete",
     });
 
+    // 2. If not found, look for ANY tab (including loading ones)
     if (tabs.length === 0) {
-      console.error(`Tab not found or accessible: ${this.url}`);
-      return `(Tab not found or accessible: ${this.url})`;
+      tabs = await this.tabService.query({ url: this.url });
     }
 
-    const id = tabs[0].id ?? null;
+    if (tabs.length === 0) {
+      console.error(`Tab not found or accessible: ${this.url}`);
+      return `${CONTEXT_MESSAGES.TAB_NOT_FOUND}: ${this.url}`;
+    }
+
+    const tab = tabs[0];
+    const id = tab.id ?? null;
 
     if (id === null) {
       console.error(`Tab ID not found for: ${this.url}`);
-      return `(Tab ID not found for: ${this.url})`;
+      return `${CONTEXT_MESSAGES.TAB_ID_NOT_FOUND}: ${this.url}`;
+    }
+
+    let warningPrefix = "";
+
+    // 3. Handle 'loading' state
+    if (tab.status === "loading") {
+      try {
+        await this.tabService.waitForTabComplete(id, 2000);
+      } catch (error) {
+        if (error instanceof TimeoutError) {
+           // Timeout occurred, proceed with best-effort extraction
+           warningPrefix = `${CONTEXT_MESSAGES.LOADING_WARNING} `;
+        } else {
+           // Re-throw other errors
+           throw error; 
+        }
+      }
     }
 
     try {
       const result = await this.tabService.executeScript(id, () => document.body.innerText);
-      return result ? result.substring(0, MAX_CONTEXT_LENGTH) : "";
+
+      if (!result || result.trim().length === 0) {
+        return CONTEXT_MESSAGES.NO_CONTENT_WARNING;
+      }
+
+      const truncated = result.substring(0, MAX_CONTEXT_LENGTH);
+      return warningPrefix ? `${warningPrefix}${truncated}` : truncated;
     } catch (error: unknown) {
       console.error(`Failed to execute script for tab ${this.url}:`, error);
       const errorMessage = error instanceof Error ? error.message : String(error);
-      return `(Could not extract content from ${this.url}: ${errorMessage})`;
+      return `${CONTEXT_MESSAGES.ERROR_PREFIX} ${this.url}: ${errorMessage})`;
     }
   }
 }

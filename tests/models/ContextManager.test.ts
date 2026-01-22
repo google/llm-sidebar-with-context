@@ -19,7 +19,7 @@ import { ContextManager } from "../../src/scripts/models/ContextManager";
 import { TabContext } from "../../src/scripts/models/TabContext";
 import { IStorageService } from "../../src/scripts/services/storageService";
 import { ITabService, ChromeTab } from "../../src/scripts/services/tabService";
-import { StorageKeys } from "../../src/scripts/constants";
+import { StorageKeys, CONTEXT_MESSAGES } from "../../src/scripts/constants";
 
 describe("ContextManager", () => {
   let contextManager: ContextManager;
@@ -37,8 +37,6 @@ describe("ContextManager", () => {
       executeScript: vi.fn(),
       create: vi.fn(),
       waitForTabComplete: vi.fn(),
-      onUpdatedAddListener: vi.fn(),
-      onUpdatedRemoveListener: vi.fn(),
     };
 
     contextManager = new ContextManager(mockStorageService, mockTabService);
@@ -133,20 +131,12 @@ describe("ContextManager", () => {
       const tab1 = new TabContext("https://a.com", "A", mockTabService);
       const tab2 = new TabContext("https://b.com", "B", mockTabService);
       
+      // Spy on readContent to decouple from TabContext implementation
+      vi.spyOn(tab1, 'readContent').mockResolvedValue("Content A");
+      vi.spyOn(tab2, 'readContent').mockResolvedValue("Content B");
+      
       await contextManager.addTab(tab1);
       await contextManager.addTab(tab2);
-
-      // Mock tab queries for reading content
-      // ContextManager calls readContent() on each tab.
-      // readContent() calls tabService.query({ url: ... }).
-      vi.mocked(mockTabService.query)
-        .mockResolvedValueOnce([{ id: 1, url: "https://a.com" } as ChromeTab])
-        .mockResolvedValueOnce([{ id: 2, url: "https://b.com" } as ChromeTab]);
-
-      // Mock script execution
-      vi.mocked(mockTabService.executeScript)
-        .mockResolvedValueOnce("Content A")
-        .mockResolvedValueOnce("Content B");
 
       const content = await contextManager.getAllContent();
 
@@ -154,41 +144,36 @@ describe("ContextManager", () => {
       expect(content).toContain("Content A");
       expect(content).toContain("--- Pinned Tab: B (https://b.com) ---");
       expect(content).toContain("Content B");
+      
+      // Verify readContent was called
+      expect(tab1.readContent).toHaveBeenCalled();
+      expect(tab2.readContent).toHaveBeenCalled();
     });
 
     it("should handle partial failure (one tab fails to read)", async () => {
         const tab1 = new TabContext("https://good.com", "Good", mockTabService);
         const tab2 = new TabContext("https://bad.com", "Bad", mockTabService);
         
+        vi.spyOn(tab1, 'readContent').mockResolvedValue("Good Content");
+        vi.spyOn(tab2, 'readContent').mockResolvedValue(CONTEXT_MESSAGES.TAB_NOT_FOUND);
+        
         await contextManager.addTab(tab1);
         await contextManager.addTab(tab2);
-  
-        // Tab 1 succeeds
-        vi.mocked(mockTabService.query)
-          .mockResolvedValueOnce([{ id: 1, url: "https://good.com" } as ChromeTab]);
-        vi.mocked(mockTabService.executeScript).mockResolvedValueOnce("Good Content");
-  
-        // Tab 2 fails (e.g., query returns empty, tab closed)
-        vi.mocked(mockTabService.query).mockResolvedValueOnce([]); 
   
         const content = await contextManager.getAllContent();
   
         expect(content).toContain("Good Content");
-        // Should contain the error message from TabContext
-        expect(content).toContain("(Tab not found or accessible: https://bad.com)");
+        expect(content).toContain(CONTEXT_MESSAGES.TAB_NOT_FOUND);
       });
   });
 
   describe("getActiveTabContent", () => {
     it("should fetch content for the active tab", async () => {
-      // 1. ContextManager calls tabService.query({ active: true })
-      // 2. TabContext.readContent calls tabService.query({ url: ... })
-      
-      const activeTab = { id: 99, url: "https://active.com", title: "Active" } as ChromeTab;
+      const activeTab = { id: 99, url: "https://active.com", title: "Active", status: "complete" } as ChromeTab;
 
       vi.mocked(mockTabService.query)
         .mockResolvedValueOnce([activeTab]) // For ContextManager finding the tab
-        .mockResolvedValueOnce([activeTab]); // For TabContext verifying the ID
+        .mockResolvedValueOnce([activeTab]); // For TabContext finding it (complete)
 
       vi.mocked(mockTabService.executeScript).mockResolvedValue("Active Content");
 
@@ -208,12 +193,11 @@ describe("ContextManager", () => {
         const restrictedTab = { id: 99, url: "chrome://settings", title: "Settings" } as ChromeTab;
         
         vi.mocked(mockTabService.query).mockResolvedValueOnce([restrictedTab]);
-        // TabContext.readContent checks isRestrictedURL immediately, so it won't call query/executeScript
         
         const content = await contextManager.getActiveTabContent();
         
         expect(content).toContain("Current tab URL: chrome://settings");
-        expect(content).toContain("(Content not accessible for restricted URL: chrome://settings)");
+        expect(content).toContain(CONTEXT_MESSAGES.RESTRICTED_URL);
     });
   });
 

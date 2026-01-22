@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-/**
- * Represents a browser tab, decoupled from the chrome namespace.
- */
-export interface ChromeTab {
-  id?: number;
-  url?: string;
-  title?: string;
-  status?: string;
-  active: boolean;
-  windowId: number;
+export class TimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TimeoutError";
+  }
 }
 
 /**
@@ -49,8 +44,21 @@ export interface ITabService {
    * Waits for a tab to reach the 'complete' status.
    * @param tabId The ID of the tab to wait for.
    * @param timeoutMs Optional timeout in milliseconds.
+   * @throws TimeoutError if the timeout is reached.
    */
   waitForTabComplete(tabId: number, timeoutMs?: number): Promise<void>;
+}
+
+/**
+ * Represents a browser tab, decoupled from the chrome namespace.
+ */
+export interface ChromeTab {
+  id?: number;
+  url?: string;
+  title?: string;
+  status?: string;
+  active: boolean;
+  windowId: number;
 }
 
 /**
@@ -79,7 +87,7 @@ export class ChromeTabService implements ITabService {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         cleanup();
-        reject(new Error(`Timed out waiting for tab ${tabId} to complete`));
+        reject(new TimeoutError(`Timed out waiting for tab ${tabId} to complete`));
       }, timeoutMs);
 
       const listener = (
