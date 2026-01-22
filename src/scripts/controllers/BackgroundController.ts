@@ -19,6 +19,8 @@ import { callGeminiApi } from "../geminiApiService";
 import { ChatHistory } from "../models/ChatHistory";
 import { ContextManager } from "../models/ContextManager";
 import { TabContext } from "../models/TabContext";
+import { IStorageService } from "../services/storageService";
+import { ITabService } from "../services/tabService";
 import {
   ExtensionMessage,
   ExtensionResponse,
@@ -35,9 +37,12 @@ export class BackgroundController {
   private chatHistory: ChatHistory;
   private contextManager: ContextManager;
 
-  constructor() {
-    this.chatHistory = new ChatHistory();
-    this.contextManager = new ContextManager();
+  constructor(
+    private storageService: IStorageService,
+    private tabService: ITabService
+  ) {
+    this.chatHistory = new ChatHistory(storageService);
+    this.contextManager = new ContextManager(storageService, tabService);
   }
 
   /**
@@ -117,7 +122,7 @@ export class BackgroundController {
   }
 
   private async handleGetContext(): Promise<GetContextResponse> {
-    const [tab] = await chrome.tabs.query({
+    const [tab] = await this.tabService.query({
       active: true,
       currentWindow: true,
     });
@@ -136,7 +141,7 @@ export class BackgroundController {
   }
 
   private async handlePinTab(): Promise<SuccessResponse> {
-    const [tab] = await chrome.tabs.query({
+    const [tab] = await this.tabService.query({
       active: true,
       currentWindow: true,
     });
@@ -146,7 +151,7 @@ export class BackgroundController {
     }
 
     try {
-        const newContext = new TabContext(tab.url, tab.title || "Untitled");
+        const newContext = new TabContext(tab.url, tab.title || "Untitled", this.tabService);
         await this.contextManager.addTab(newContext);
         return { success: true };
     } catch (e: unknown) {
@@ -166,7 +171,7 @@ export class BackgroundController {
   }
 
   private async getPinnedTabsWithStatus(): Promise<PinnedContext[]> {
-    const openTabs = await chrome.tabs.query({});
+    const openTabs = await this.tabService.query({});
     const openTabUrls = new Set(openTabs.map((tab) => tab.url));
     
     return this.contextManager.getPinnedTabs().map((context) => ({
@@ -177,24 +182,19 @@ export class BackgroundController {
   }
 
   private async handleReopenTab(url: string): Promise<SuccessResponse> {
-    const newTab = await chrome.tabs.create({ url: url });
+    const newTab = await this.tabService.create({ url: url });
     const tabId = newTab.id;
 
-    return new Promise((resolve) => {
-      const timeout = setTimeout(() => {
-        chrome.tabs.onUpdated.removeListener(listener);
-        resolve({ success: true });
-      }, 5000); 
+    if (tabId === undefined) {
+      return { success: false, message: "Failed to create tab" };
+    }
 
-      const listener = (updatedTabId: number, changeInfo: chrome.tabs.OnUpdatedInfo) => {
-        if (updatedTabId === tabId && changeInfo.status === "complete") {
-          chrome.tabs.onUpdated.removeListener(listener);
-          clearTimeout(timeout);
-          resolve({ success: true });
-        }
-      };
-      chrome.tabs.onUpdated.addListener(listener);
-    });
+    try {
+      await this.tabService.waitForTabComplete(tabId);
+      return { success: true };
+    } catch (e) {
+      return { success: false, message: (e as Error).message };
+    }
   }
 
   private async handleClearChat(): Promise<SuccessResponse> {

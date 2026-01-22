@@ -18,11 +18,16 @@ import { StorageKeys } from "../constants";
 import { TabContext } from "./TabContext";
 import { isRestrictedURL } from "../utils";
 import { TabInfo } from "../types";
+import { IStorageService } from "../services/storageService";
+import { ITabService } from "../services/tabService";
 
 export class ContextManager {
   private pinnedTabs: TabContext[] = [];
 
-  constructor() {}
+  constructor(
+    private storageService: IStorageService,
+    private tabService: ITabService
+  ) {}
 
   async addTab(tab: TabContext): Promise<void> {
     if (isRestrictedURL(tab.url)) {
@@ -73,13 +78,13 @@ export class ContextManager {
    * Fetches content of the currently active tab.
    */
   async getActiveTabContent(): Promise<string> {
-      const [activeTab] = await chrome.tabs.query({
+      const [activeTab] = await this.tabService.query({
           active: true,
           currentWindow: true,
       });
   
       if (activeTab && activeTab.url) {
-          const tempContext = new TabContext(activeTab.url, activeTab.title || "");
+          const tempContext = new TabContext(activeTab.url, activeTab.title || "", this.tabService);
           const content = await tempContext.readContent();
           return `Current tab URL: ${activeTab.url}\nContent: ${content}`;
       }
@@ -87,28 +92,15 @@ export class ContextManager {
   }
 
   async load(): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.local.get([StorageKeys.PINNED_CONTEXTS], (result) => {
-        const stored = result[StorageKeys.PINNED_CONTEXTS];
-        if (Array.isArray(stored)) {
-          // Since TabContext only has url and title, we can just map the plain objects
-          this.pinnedTabs = stored.map(
-            (s: TabInfo) => new TabContext(s.url, s.title)
-          );
-        }
-        resolve();
-      });
-    });
+    const stored = await this.storageService.get<TabInfo[]>(StorageKeys.PINNED_CONTEXTS);
+    if (Array.isArray(stored)) {
+      this.pinnedTabs = stored.map(
+        (s: TabInfo) => new TabContext(s.url, s.title, this.tabService)
+      );
+    }
   }
 
   private async save(): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.local.set(
-        { [StorageKeys.PINNED_CONTEXTS]: this.pinnedTabs },
-        () => {
-          resolve();
-        }
-      );
-    });
+    await this.storageService.set(StorageKeys.PINNED_CONTEXTS, this.pinnedTabs);
   }
 }

@@ -15,12 +15,13 @@
  */
 
 import { StorageKeys } from "../constants";
+import { IStorageService } from "../services/storageService";
 import { ChatMessage } from "../types";
 
 export class ChatHistory {
   private messages: ChatMessage[] = [];
 
-  constructor() {}
+  constructor(private storageService: IStorageService) {}
 
   /**
    * Adds a message to the history and saves it.
@@ -46,31 +47,21 @@ export class ChatHistory {
   }
 
   /**
-   * Loads the history from chrome.storage.local.
+   * Loads the history from storage.
    */
   async load(): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.local.get([StorageKeys.CHAT_HISTORY], (result) => {
-        const history = result[StorageKeys.CHAT_HISTORY];
-        if (Array.isArray(history)) {
-          this.messages = history as ChatMessage[];
-        }
-        resolve();
-      });
-    });
+    const history = await this.storageService.get<ChatMessage[]>(
+      StorageKeys.CHAT_HISTORY
+    );
+    if (Array.isArray(history)) {
+      this.messages = history;
+    }
   }
 
   /**
-   * Saves the history to chrome.storage.local.
+   * Saves the history to storage.
    */
   private async save(): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.local.set(
-        { [StorageKeys.CHAT_HISTORY]: this.messages },
-        () => {
-          resolve();
-        }
-      );
-    });
+    await this.storageService.set(StorageKeys.CHAT_HISTORY, this.messages);
   }
 }

@@ -16,11 +16,13 @@
 
 import { MAX_CONTEXT_LENGTH } from "../constants";
 import { isRestrictedURL } from "../utils";
+import { ITabService } from "../services/tabService";
 
 export class TabContext {
   constructor(
     public readonly url: string,
-    public readonly title: string
+    public readonly title: string,
+    private tabService: ITabService
   ) {}
 
   /**
@@ -34,7 +36,7 @@ export class TabContext {
     }
 
     // Always query for the tab ID by URL to ensure freshness.
-    const tabs = await chrome.tabs.query({
+    const tabs = await this.tabService.query({
       url: this.url,
       status: "complete",
     });
@@ -52,11 +54,8 @@ export class TabContext {
     }
 
     try {
-      const [result] = await chrome.scripting.executeScript({
-        target: { tabId: id },
-        func: () => document.body.innerText,
-      });
-      return result.result ? result.result.substring(0, MAX_CONTEXT_LENGTH) : "";
+      const result = await this.tabService.executeScript(id, () => document.body.innerText);
+      return result ? result.substring(0, MAX_CONTEXT_LENGTH) : "";
     } catch (error: unknown) {
       console.error(`Failed to execute script for tab ${this.url}:`, error);
       const errorMessage = error instanceof Error ? error.message : String(error);

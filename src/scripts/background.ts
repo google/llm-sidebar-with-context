@@ -16,8 +16,12 @@
 
 import { MessageTypes } from "./constants";
 import { BackgroundController } from "./controllers/BackgroundController";
+import { ChromeLocalStorageService } from "./services/storageService";
+import { ChromeTabService } from "./services/tabService";
 
-const controller = new BackgroundController();
+const storageService = new ChromeLocalStorageService();
+const tabService = new ChromeTabService();
+const controller = new BackgroundController(storageService, tabService);
 
 // Listen for messages from the sidebar
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
