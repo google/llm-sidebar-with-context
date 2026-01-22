@@ -15,10 +15,10 @@
  */
 
 import { MessageTypes, StorageKeys } from "../constants";
-import { callGeminiApi } from "../geminiApiService";
 import { ChatHistory } from "../models/ChatHistory";
 import { ContextManager } from "../models/ContextManager";
 import { TabContext } from "../models/TabContext";
+import { IGeminiService } from "../services/geminiService";
 import { IStorageService } from "../services/storageService";
 import { ITabService } from "../services/tabService";
 import {
@@ -39,7 +39,8 @@ export class BackgroundController {
 
   constructor(
     private storageService: IStorageService,
-    private tabService: ITabService
+    private tabService: ITabService,
+    private geminiService: IGeminiService
   ) {
     this.chatHistory = new ChatHistory(storageService);
     this.contextManager = new ContextManager(storageService, tabService);
@@ -106,7 +107,7 @@ export class BackgroundController {
     const fullContext = activeContext + pinnedContent;
 
     // 3. Send to Gemini
-    const response = await callGeminiApi(
+    const response = await this.geminiService.generateContent(
       apiKey,
       fullContext,
       this.chatHistory.getMessages(),
