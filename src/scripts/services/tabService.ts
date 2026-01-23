@@ -84,6 +84,11 @@ export class ChromeTabService implements ITabService {
   }
 
   async waitForTabComplete(tabId: number, timeoutMs = 10000): Promise<void> {
+    const tab = await chrome.tabs.get(tabId);
+    if (tab.status === "complete") {
+      return;
+    }
+
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         cleanup();
