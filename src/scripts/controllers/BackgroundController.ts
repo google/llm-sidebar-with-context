@@ -51,10 +51,10 @@ export class BackgroundController {
    * Main entry point for handling messages from the UI.
    */
   async handleMessage(request: ExtensionMessage): Promise<ExtensionResponse> {
-    // Just-In-Time Loading to handle Service Worker restarts
-    await Promise.all([this.chatHistory.load(), this.contextManager.load()]);
-
     try {
+      // Just-In-Time Loading to handle Service Worker restarts
+      await Promise.all([this.chatHistory.load(), this.contextManager.load()]);
+
       switch (request.type) {
         case MessageTypes.CHAT_MESSAGE:
           return await this.handleChatMessage(request.message, request.model);
