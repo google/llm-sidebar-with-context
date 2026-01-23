@@ -21,5 +21,6 @@ import { ChromeMessageService } from "./services/messageService";
 document.addEventListener("DOMContentLoaded", () => {
   const syncStorageService = new ChromeSyncStorageService();
   const messageService = new ChromeMessageService();
-  new SidebarController(syncStorageService, messageService);
+  const controller = new SidebarController(syncStorageService, messageService);
+  controller.start();
 });

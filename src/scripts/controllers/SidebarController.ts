@@ -59,7 +59,6 @@ export class SidebarController {
     this.newChatButton = document.getElementById("new-chat-button") as HTMLButtonElement;
 
     this.setupEventListeners();
-    this.initialize();
   }
 
   private setupEventListeners() {
@@ -77,7 +76,8 @@ export class SidebarController {
 
     this.saveApiKeyButton.addEventListener("click", () => this.saveApiKey());
     this.editApiKeyButton.addEventListener("click", () => {
-      this.apiKeyContainer.style.display = "flex";
+      const isHidden = this.apiKeyContainer.style.display === "none";
+      this.apiKeyContainer.style.display = isHidden ? "flex" : "none";
     });
 
     this.newChatButton.addEventListener("click", async () => {
@@ -114,7 +114,7 @@ export class SidebarController {
     });
   }
 
-  private async initialize() {
+  public async start() {
     // Load API Key and Selected Model
     const apiKey = await this.syncStorageService.get<string>(StorageKeys.API_KEY);
     const selectedModel = await this.syncStorageService.get<string>(StorageKeys.SELECTED_MODEL);
