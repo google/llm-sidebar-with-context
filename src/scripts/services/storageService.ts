@@ -40,17 +40,29 @@ export interface IStorageService {
  */
 export class ChromeLocalStorageService implements IStorageService {
   async get<T>(key: string): Promise<T | undefined> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.storage.local.get([key], (result) => {
-        resolve(result[key] as T | undefined);
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+          return;
+        }
+        try {
+          resolve(result ? (result[key] as T | undefined) : undefined);
+        } catch (error) {
+          reject(error);
+        }
       });
     });
   }
 
   async set<T>(key: string, value: T): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.storage.local.set({ [key]: value }, () => {
-        resolve();
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve();
+        }
       });
     });
   }
@@ -61,17 +73,29 @@ export class ChromeLocalStorageService implements IStorageService {
  */
 export class ChromeSyncStorageService implements IStorageService {
   async get<T>(key: string): Promise<T | undefined> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.storage.sync.get([key], (result) => {
-        resolve(result[key] as T | undefined);
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+          return;
+        }
+        try {
+          resolve(result ? (result[key] as T | undefined) : undefined);
+        } catch (error) {
+          reject(error);
+        }
       });
     });
   }
 
   async set<T>(key: string, value: T): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.storage.sync.set({ [key]: value }, () => {
-        resolve();
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve();
+        }
       });
     });
   }
