@@ -38,12 +38,13 @@ export class BackgroundController {
   private contextManager: ContextManager;
 
   constructor(
-    private storageService: IStorageService,
+    private localStorageService: IStorageService,
+    private syncStorageService: IStorageService,
     private tabService: ITabService,
     private geminiService: IGeminiService
   ) {
-    this.chatHistory = new ChatHistory(storageService);
-    this.contextManager = new ContextManager(storageService, tabService);
+    this.chatHistory = new ChatHistory(localStorageService);
+    this.contextManager = new ContextManager(localStorageService, tabService);
   }
 
   /**
@@ -137,7 +138,7 @@ export class BackgroundController {
   }
 
   private async handleSaveApiKey(apiKey: string): Promise<SuccessResponse> {
-    await chrome.storage.sync.set({ [StorageKeys.API_KEY]: apiKey });
+    await this.syncStorageService.set(StorageKeys.API_KEY, apiKey);
     return { success: true };
   }
 
@@ -205,11 +206,7 @@ export class BackgroundController {
   }
 
   private async getApiKey(): Promise<string | null> {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get([StorageKeys.API_KEY], (result) => {
-        const key = result[StorageKeys.API_KEY];
-        resolve(typeof key === "string" ? key : null);
-      });
-    });
+    const apiKey = await this.syncStorageService.get<string>(StorageKeys.API_KEY);
+    return apiKey || null;
   }
 }

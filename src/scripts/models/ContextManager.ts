@@ -25,7 +25,7 @@ export class ContextManager {
   private pinnedTabs: TabContext[] = [];
 
   constructor(
-    private storageService: IStorageService,
+    private localStorageService: IStorageService,
     private tabService: ITabService
   ) {}
 
@@ -96,7 +96,7 @@ export class ContextManager {
   }
 
   async load(): Promise<void> {
-    const stored = await this.storageService.get<TabInfo[]>(StorageKeys.PINNED_CONTEXTS);
+    const stored = await this.localStorageService.get<TabInfo[]>(StorageKeys.PINNED_CONTEXTS);
     if (Array.isArray(stored)) {
       this.pinnedTabs = stored.map(
         (s: TabInfo) => new TabContext(s.url, s.title, this.tabService)
@@ -105,6 +105,6 @@ export class ContextManager {
   }
 
   private async save(): Promise<void> {
-    await this.storageService.set(StorageKeys.PINNED_CONTEXTS, this.pinnedTabs);
+    await this.localStorageService.set(StorageKeys.PINNED_CONTEXTS, this.pinnedTabs);
   }
 }

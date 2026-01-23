@@ -22,15 +22,15 @@ import { ChatMessage } from "../../src/scripts/types";
 
 describe("ChatHistory", () => {
   let chatHistory: ChatHistory;
-  let mockStorageService: IStorageService;
+  let mockLocalStorageService: IStorageService;
 
   beforeEach(() => {
     // Create a mock storage service for each test
-    mockStorageService = {
+    mockLocalStorageService = {
       get: vi.fn(),
       set: vi.fn(),
     };
-    chatHistory = new ChatHistory(mockStorageService);
+    chatHistory = new ChatHistory(mockLocalStorageService);
   });
 
   it("should initialize with an empty history", () => {
@@ -44,8 +44,8 @@ describe("ChatHistory", () => {
     // 1. Add first message
     await chatHistory.addMessage(msg1);
     expect(chatHistory.getMessages()).toEqual([msg1]);
-    expect(mockStorageService.set).toHaveBeenCalledTimes(1);
-    expect(mockStorageService.set).toHaveBeenCalledWith(
+    expect(mockLocalStorageService.set).toHaveBeenCalledTimes(1);
+    expect(mockLocalStorageService.set).toHaveBeenCalledWith(
       StorageKeys.CHAT_HISTORY,
       [msg1]
     );
@@ -53,8 +53,8 @@ describe("ChatHistory", () => {
     // 2. Add second message
     await chatHistory.addMessage(msg2);
     expect(chatHistory.getMessages()).toEqual([msg1, msg2]);
-    expect(mockStorageService.set).toHaveBeenCalledTimes(2);
-    expect(mockStorageService.set).toHaveBeenLastCalledWith(
+    expect(mockLocalStorageService.set).toHaveBeenCalledTimes(2);
+    expect(mockLocalStorageService.set).toHaveBeenLastCalledWith(
       StorageKeys.CHAT_HISTORY,
       [msg1, msg2]
     );
@@ -67,17 +67,17 @@ describe("ChatHistory", () => {
     ];
     
     // Mock the storage.get return value
-    vi.mocked(mockStorageService.get).mockResolvedValue(storedMessages);
+    vi.mocked(mockLocalStorageService.get).mockResolvedValue(storedMessages);
 
     await chatHistory.load();
 
-    expect(mockStorageService.get).toHaveBeenCalledWith(StorageKeys.CHAT_HISTORY);
+    expect(mockLocalStorageService.get).toHaveBeenCalledWith(StorageKeys.CHAT_HISTORY);
     expect(chatHistory.getMessages()).toEqual(storedMessages);
   });
 
   it("should ignore invalid data in storage", async () => {
     // Mock storage returning a non-array (e.g., corrupted data)
-    vi.mocked(mockStorageService.get).mockResolvedValue({ some: "object" });
+    vi.mocked(mockLocalStorageService.get).mockResolvedValue({ some: "object" });
 
     await chatHistory.load();
 
@@ -86,7 +86,7 @@ describe("ChatHistory", () => {
   });
 
   it("should handle undefined/null in storage gracefully", async () => {
-    vi.mocked(mockStorageService.get).mockResolvedValue(undefined);
+    vi.mocked(mockLocalStorageService.get).mockResolvedValue(undefined);
 
     await chatHistory.load();
 
@@ -101,7 +101,7 @@ describe("ChatHistory", () => {
     await chatHistory.clear();
 
     expect(chatHistory.getMessages()).toEqual([]);
-    expect(mockStorageService.set).toHaveBeenCalledWith(
+    expect(mockLocalStorageService.set).toHaveBeenCalledWith(
       StorageKeys.CHAT_HISTORY,
       []
     );
@@ -119,7 +119,7 @@ describe("ChatHistory", () => {
 
   it("should propagate errors if storage save fails", async () => {
     const error = new Error("Storage quota exceeded");
-    vi.mocked(mockStorageService.set).mockRejectedValue(error);
+    vi.mocked(mockLocalStorageService.set).mockRejectedValue(error);
 
     const message: ChatMessage = { role: "user", text: "Fail me" };
 

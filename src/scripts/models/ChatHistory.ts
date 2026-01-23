@@ -21,7 +21,7 @@ import { ChatMessage } from "../types";
 export class ChatHistory {
   private messages: ChatMessage[] = [];
 
-  constructor(private storageService: IStorageService) {}
+  constructor(private localStorageService: IStorageService) {}
 
   /**
    * Adds a message to the history and saves it.
@@ -50,7 +50,7 @@ export class ChatHistory {
    * Loads the history from storage.
    */
   async load(): Promise<void> {
-    const history = await this.storageService.get<ChatMessage[]>(
+    const history = await this.localStorageService.get<ChatMessage[]>(
       StorageKeys.CHAT_HISTORY
     );
     if (Array.isArray(history)) {
@@ -62,6 +62,6 @@ export class ChatHistory {
    * Saves the history to storage.
    */
   private async save(): Promise<void> {
-    await this.storageService.set(StorageKeys.CHAT_HISTORY, this.messages);
+    await this.localStorageService.set(StorageKeys.CHAT_HISTORY, this.messages);
   }
 }

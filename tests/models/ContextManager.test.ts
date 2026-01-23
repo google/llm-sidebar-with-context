@@ -23,11 +23,11 @@ import { StorageKeys, CONTEXT_MESSAGES } from "../../src/scripts/constants";
 
 describe("ContextManager", () => {
   let contextManager: ContextManager;
-  let mockStorageService: IStorageService;
+  let mockLocalStorageService: IStorageService;
   let mockTabService: ITabService;
 
   beforeEach(() => {
-    mockStorageService = {
+    mockLocalStorageService = {
       get: vi.fn(),
       set: vi.fn(),
     };
@@ -39,7 +39,7 @@ describe("ContextManager", () => {
       waitForTabComplete: vi.fn(),
     };
 
-    contextManager = new ContextManager(mockStorageService, mockTabService);
+    contextManager = new ContextManager(mockLocalStorageService, mockTabService);
   });
 
   describe("addTab", () => {
@@ -50,7 +50,7 @@ describe("ContextManager", () => {
 
       expect(contextManager.getPinnedTabs()).toHaveLength(1);
       expect(contextManager.getPinnedTabs()[0].url).toBe("https://example.com");
-      expect(mockStorageService.set).toHaveBeenCalledWith(
+      expect(mockLocalStorageService.set).toHaveBeenCalledWith(
         StorageKeys.PINNED_CONTEXTS,
         [tab]
       );
@@ -63,7 +63,7 @@ describe("ContextManager", () => {
         "Cannot pin restricted Chrome pages."
       );
       expect(contextManager.getPinnedTabs()).toHaveLength(0);
-      expect(mockStorageService.set).not.toHaveBeenCalled();
+      expect(mockLocalStorageService.set).not.toHaveBeenCalled();
     });
 
     it("should be idempotent (ignore duplicates)", async () => {
@@ -73,7 +73,7 @@ describe("ContextManager", () => {
       await contextManager.addTab(tab); // Add again
 
       expect(contextManager.getPinnedTabs()).toHaveLength(1);
-      expect(mockStorageService.set).toHaveBeenCalledTimes(1); // Saved only once
+      expect(mockLocalStorageService.set).toHaveBeenCalledTimes(1); // Saved only once
     });
 
     it("should be idempotent based on URL (ignore same URL with different title)", async () => {
@@ -86,7 +86,7 @@ describe("ContextManager", () => {
       // Should still be length 1, and should keep the ORIGINAL one (tab1)
       expect(contextManager.getPinnedTabs()).toHaveLength(1);
       expect(contextManager.getPinnedTabs()[0].title).toBe("Title 1"); 
-      expect(mockStorageService.set).toHaveBeenCalledTimes(1);
+      expect(mockLocalStorageService.set).toHaveBeenCalledTimes(1);
     });
 
     it("should throw error when pinning a tab with an empty URL", async () => {
@@ -105,24 +105,24 @@ describe("ContextManager", () => {
       await contextManager.addTab(tab2);
       
       // Reset mock to clear previous calls
-      vi.mocked(mockStorageService.set).mockClear();
+      vi.mocked(mockLocalStorageService.set).mockClear();
 
       await contextManager.removeTab("https://a.com");
 
       expect(contextManager.getPinnedTabs()).toHaveLength(1);
       expect(contextManager.getPinnedTabs()[0].url).toBe("https://b.com");
-      expect(mockStorageService.set).toHaveBeenCalledTimes(1);
+      expect(mockLocalStorageService.set).toHaveBeenCalledTimes(1);
     });
 
     it("should do nothing if URL not found", async () => {
       const tab = new TabContext("https://example.com", "Example", mockTabService);
       await contextManager.addTab(tab);
-      vi.mocked(mockStorageService.set).mockClear();
+      vi.mocked(mockLocalStorageService.set).mockClear();
 
       await contextManager.removeTab("https://notfound.com");
 
       expect(contextManager.getPinnedTabs()).toHaveLength(1);
-      expect(mockStorageService.set).not.toHaveBeenCalled();
+      expect(mockLocalStorageService.set).not.toHaveBeenCalled();
     });
   });
 
@@ -206,7 +206,7 @@ describe("ContextManager", () => {
           const storedData = [
               { url: "https://saved.com", title: "Saved" }
           ];
-          vi.mocked(mockStorageService.get).mockResolvedValue(storedData);
+          vi.mocked(mockLocalStorageService.get).mockResolvedValue(storedData);
 
           await contextManager.load();
 
@@ -217,7 +217,7 @@ describe("ContextManager", () => {
       });
 
       it("should handle invalid storage data gracefully", async () => {
-          vi.mocked(mockStorageService.get).mockResolvedValue("Not an array");
+          vi.mocked(mockLocalStorageService.get).mockResolvedValue("Not an array");
           
           await contextManager.load();
           
