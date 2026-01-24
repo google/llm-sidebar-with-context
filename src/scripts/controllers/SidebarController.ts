@@ -121,6 +121,7 @@ export class SidebarController {
 
     if (apiKey) {
       this.apiKeyContainer.style.display = "none";
+      this.apiKeyInput.value = apiKey;
     } else {
       this.apiKeyContainer.style.display = "flex";
     }

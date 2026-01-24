@@ -120,6 +120,55 @@ describe("SidebarController", () => {
       keyButton.click();
       expect(container.style.display).toBe("none");
     });
+
+    it("should populate the API key input with the stored key when loaded", async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue("existing-secret-key");
+      await controller.start();
+
+      const apiKeyInput = document.getElementById("api-key-input") as HTMLInputElement;
+      expect(apiKeyInput.value).toBe("existing-secret-key");
+    });
+
+    it("should show alert and not send message when attempting to save an empty API key", async () => {
+      const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+      const apiKeyInput = document.getElementById("api-key-input") as HTMLInputElement;
+      const saveButton = document.getElementById("save-api-key-button") as HTMLButtonElement;
+
+      apiKeyInput.value = "   "; // Whitespace only
+      saveButton.click();
+
+      expect(alertSpy).toHaveBeenCalledWith("Please enter your Gemini API Key.");
+      expect(mockMessageService.sendMessage).not.toHaveBeenCalled();
+      alertSpy.mockRestore();
+    });
+
+    it("should show alert if API key saving fails", async () => {
+      const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+      const apiKeyInput = document.getElementById("api-key-input") as HTMLInputElement;
+      const saveButton = document.getElementById("save-api-key-button") as HTMLButtonElement;
+
+      apiKeyInput.value = "new-key";
+      vi.mocked(mockMessageService.sendMessage).mockResolvedValue({ success: false });
+
+      await saveButton.click();
+
+      expect(alertSpy).toHaveBeenCalledWith("Failed to save API Key.");
+      alertSpy.mockRestore();
+    });
+
+    it("should show alert if API key saving throws error", async () => {
+      const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+      const apiKeyInput = document.getElementById("api-key-input") as HTMLInputElement;
+      const saveButton = document.getElementById("save-api-key-button") as HTMLButtonElement;
+
+      apiKeyInput.value = "new-key";
+      vi.mocked(mockMessageService.sendMessage).mockRejectedValue(new Error("Network error"));
+
+      await saveButton.click();
+
+      expect(alertSpy).toHaveBeenCalledWith("Failed to save API Key.");
+      alertSpy.mockRestore();
+    });
   });
 
   describe("Tab Context Updates", () => {
@@ -199,6 +248,42 @@ describe("SidebarController", () => {
       // Wait for async response
       await new Promise(resolve => setTimeout(resolve, 0));
       expect(messagesDiv.innerHTML).toContain("Hi User");
+    });
+
+    it("should display error message if backend returns an error", async () => {
+      const promptInput = document.getElementById("prompt-input") as HTMLInputElement;
+      const promptForm = document.getElementById("prompt-form") as HTMLFormElement;
+      const messagesDiv = document.getElementById("messages") as HTMLDivElement;
+
+      promptInput.value = "Hello";
+      vi.mocked(mockMessageService.sendMessage).mockResolvedValue({ error: "API Quota Exceeded" });
+
+      promptForm.dispatchEvent(new Event("submit"));
+
+      // Wait for async response
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      const errorMsg = messagesDiv.querySelector(".message.error");
+      expect(errorMsg).not.toBeNull();
+      expect(errorMsg?.textContent).toContain("Error: API Quota Exceeded");
+    });
+
+    it("should display error message if sending message throws exception", async () => {
+      const promptInput = document.getElementById("prompt-input") as HTMLInputElement;
+      const promptForm = document.getElementById("prompt-form") as HTMLFormElement;
+      const messagesDiv = document.getElementById("messages") as HTMLDivElement;
+
+      promptInput.value = "Hello";
+      vi.mocked(mockMessageService.sendMessage).mockRejectedValue(new Error("Network Failure"));
+
+      promptForm.dispatchEvent(new Event("submit"));
+
+      // Wait for async response
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      const errorMsg = messagesDiv.querySelector(".message.error");
+      expect(errorMsg).not.toBeNull();
+      expect(errorMsg?.textContent).toContain("Error: Error: Network Failure");
     });
   });
 });
