@@ -30,7 +30,6 @@ import {
   CheckPinnedTabsResponse,
   GetHistoryResponse,
   GeminiResponse,
-  PinnedContext,
   TabInfo
 } from "../types";
 
@@ -76,7 +75,8 @@ export class BackgroundController {
     });
 
     // Update pinned tabs status when a tab is closed
-    chrome.tabs.onRemoved.addListener(() => {
+    chrome.tabs.onRemoved.addListener(async (tabId) => {
+      await this.contextManager.removeTab(tabId);
       this.messageService.sendMessage({ type: MessageTypes.CHECK_PINNED_TABS }).catch(() => {});
     });
 
@@ -91,10 +91,11 @@ export class BackgroundController {
   private async broadcastCurrentTabInfo() {
     try {
       const [tab] = await this.tabService.query({ active: true, currentWindow: true });
-      if (tab && tab.url) {
+      if (tab && tab.url && tab.id !== undefined) {
         await this.messageService.sendMessage({
           type: MessageTypes.CURRENT_TAB_INFO,
           tab: {
+            id: tab.id,
             title: tab.title || "Untitled",
             url: tab.url,
           },
@@ -126,11 +127,9 @@ export class BackgroundController {
         case MessageTypes.PIN_TAB:
           return await this.handlePinTab();
         case MessageTypes.UNPIN_TAB:
-          return await this.handleUnpinTab(request.url);
+          return await this.handleUnpinTab(request.tabId);
         case MessageTypes.CHECK_PINNED_TABS:
           return await this.handleCheckPinnedTabs();
-        case MessageTypes.REOPEN_TAB:
-          return await this.handleReopenTab(request.url);
         case MessageTypes.CLEAR_CHAT:
           return await this.handleClearChat();
         case MessageTypes.GET_HISTORY:
@@ -190,11 +189,15 @@ export class BackgroundController {
       currentWindow: true,
     });
 
-    const pinnedWithStatus = await this.getPinnedTabsWithStatus();
+    const pinnedContexts = this.contextManager.getPinnedTabs().map((context) => ({
+      id: context.tabId,
+      url: context.url,
+      title: context.title,
+    }));
 
     return {
-      pinnedContexts: pinnedWithStatus,
-      tab: tab && tab.url ? { title: tab.title || "Untitled", url: tab.url } : null,
+      pinnedContexts: pinnedContexts,
+      tab: tab && tab.url && tab.id ? { id: tab.id, title: tab.title || "Untitled", url: tab.url } : null,
     };
   }
 
@@ -209,12 +212,12 @@ export class BackgroundController {
       currentWindow: true,
     });
 
-    if (!tab || !tab.url) {
+    if (!tab || !tab.url || tab.id === undefined) {
         return { success: false, message: "No active tab found." };
     }
 
     try {
-        const newContext = new TabContext(tab.url, tab.title || "Untitled", this.tabService);
+        const newContext = new TabContext(tab.id, tab.url, tab.title || "Untitled", this.tabService);
         await this.contextManager.addTab(newContext);
         return { success: true };
     } catch (e: unknown) {
@@ -223,41 +226,18 @@ export class BackgroundController {
     }
   }
 
-  private async handleUnpinTab(url: string): Promise<SuccessResponse> {
-    await this.contextManager.removeTab(url);
+  private async handleUnpinTab(tabId: number): Promise<SuccessResponse> {
+    await this.contextManager.removeTab(tabId);
     return { success: true };
   }
 
   private async handleCheckPinnedTabs(): Promise<CheckPinnedTabsResponse> {
-    const checkedContexts = await this.getPinnedTabsWithStatus();
-    return { success: true, pinnedContexts: checkedContexts };
-  }
-
-  private async getPinnedTabsWithStatus(): Promise<PinnedContext[]> {
-    const openTabs = await this.tabService.query({});
-    const openTabUrls = new Set(openTabs.map((tab) => tab.url));
-    
-    return this.contextManager.getPinnedTabs().map((context) => ({
+    const pinnedContexts = this.contextManager.getPinnedTabs().map((context) => ({
+      id: context.tabId,
       url: context.url,
       title: context.title,
-      isClosed: !openTabUrls.has(context.url),
     }));
-  }
-
-  private async handleReopenTab(url: string): Promise<SuccessResponse> {
-    const newTab = await this.tabService.create({ url: url });
-    const tabId = newTab.id;
-
-    if (tabId === undefined) {
-      return { success: false, message: "Failed to create tab" };
-    }
-
-    try {
-      await this.tabService.waitForTabComplete(tabId);
-      return { success: true };
-    } catch (e) {
-      return { success: false, message: (e as Error).message };
-    }
+    return { success: true, pinnedContexts };
   }
 
   private async handleClearChat(): Promise<SuccessResponse> {

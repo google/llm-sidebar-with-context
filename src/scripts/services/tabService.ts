@@ -47,6 +47,11 @@ export interface ITabService {
    * @throws TimeoutError if the timeout is reached.
    */
   waitForTabComplete(tabId: number, timeoutMs?: number): Promise<void>;
+
+  /**
+   * Gets a specific tab by ID.
+   */
+  getTab(tabId: number): Promise<ChromeTab | undefined>;
 }
 
 /**
@@ -68,6 +73,15 @@ export class ChromeTabService implements ITabService {
   async query(queryInfo: chrome.tabs.QueryInfo): Promise<ChromeTab[]> {
     const tabs = await chrome.tabs.query(queryInfo);
     return tabs.map(this.mapTab);
+  }
+
+  async getTab(tabId: number): Promise<ChromeTab | undefined> {
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      return this.mapTab(tab);
+    } catch {
+      return undefined;
+    }
   }
 
   async executeScript<T>(tabId: number, func: () => T): Promise<T | null> {

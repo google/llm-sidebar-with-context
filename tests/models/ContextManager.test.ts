@@ -37,27 +37,30 @@ describe("ContextManager", () => {
       executeScript: vi.fn(),
       create: vi.fn(),
       waitForTabComplete: vi.fn(),
-    };
+      getTab: vi.fn(),
+    } as unknown as ITabService;
 
     contextManager = new ContextManager(mockLocalStorageService, mockTabService);
   });
 
   describe("addTab", () => {
     it("should add a valid tab and save", async () => {
-      const tab = new TabContext("https://example.com", "Example", mockTabService);
+      const tabId = 1;
+      const tab = new TabContext(tabId, "https://example.com", "Example", mockTabService);
       
       await contextManager.addTab(tab);
 
       expect(contextManager.getPinnedTabs()).toHaveLength(1);
-      expect(contextManager.getPinnedTabs()[0].url).toBe("https://example.com");
+      expect(contextManager.getPinnedTabs()[0].tabId).toBe(tabId);
+      // Verify saved data includes ID
       expect(mockLocalStorageService.set).toHaveBeenCalledWith(
         StorageKeys.PINNED_CONTEXTS,
-        [tab]
+        expect.arrayContaining([expect.objectContaining({ id: tabId })])
       );
     });
 
     it("should throw error for restricted URLs", async () => {
-      const tab = new TabContext("chrome://settings", "Settings", mockTabService);
+      const tab = new TabContext(1, "chrome://settings", "Settings", mockTabService);
 
       await expect(contextManager.addTab(tab)).rejects.toThrow(
         "Cannot pin restricted Chrome pages."
@@ -66,60 +69,59 @@ describe("ContextManager", () => {
       expect(mockLocalStorageService.set).not.toHaveBeenCalled();
     });
 
-    it("should be idempotent (ignore duplicates)", async () => {
-      const tab = new TabContext("https://example.com", "Example", mockTabService);
+    it("should be idempotent (ignore duplicates by ID)", async () => {
+      const tab = new TabContext(1, "https://example.com", "Example", mockTabService);
       
       await contextManager.addTab(tab);
       await contextManager.addTab(tab); // Add again
 
       expect(contextManager.getPinnedTabs()).toHaveLength(1);
-      expect(mockLocalStorageService.set).toHaveBeenCalledTimes(1); // Saved only once
+      expect(mockLocalStorageService.set).toHaveBeenCalledTimes(1); 
     });
 
-    it("should be idempotent based on URL (ignore same URL with different title)", async () => {
-      const tab1 = new TabContext("https://example.com", "Title 1", mockTabService);
-      const tab2 = new TabContext("https://example.com", "Title 2", mockTabService);
+    it("should allow duplicate URLs if IDs are different", async () => {
+      const tab1 = new TabContext(1, "https://example.com", "Example 1", mockTabService);
+      const tab2 = new TabContext(2, "https://example.com", "Example 2", mockTabService);
 
       await contextManager.addTab(tab1);
-      await contextManager.addTab(tab2); // Add same URL, diff title
+      await contextManager.addTab(tab2); 
 
-      // Should still be length 1, and should keep the ORIGINAL one (tab1)
-      expect(contextManager.getPinnedTabs()).toHaveLength(1);
-      expect(contextManager.getPinnedTabs()[0].title).toBe("Title 1"); 
-      expect(mockLocalStorageService.set).toHaveBeenCalledTimes(1);
+      expect(contextManager.getPinnedTabs()).toHaveLength(2);
+      expect(contextManager.getPinnedTabs()[0].tabId).toBe(1);
+      expect(contextManager.getPinnedTabs()[1].tabId).toBe(2);
+      expect(mockLocalStorageService.set).toHaveBeenCalledTimes(2);
     });
 
     it("should throw error when pinning a tab with an empty URL", async () => {
-       const tab = new TabContext("", "No URL", mockTabService);
+       const tab = new TabContext(1, "", "No URL", mockTabService);
        await expect(contextManager.addTab(tab)).rejects.toThrow("Cannot pin a tab with no URL.");
        expect(contextManager.getPinnedTabs()).toHaveLength(0);
     });
   });
 
   describe("removeTab", () => {
-    it("should remove a tab by URL and save", async () => {
-      const tab1 = new TabContext("https://a.com", "A", mockTabService);
-      const tab2 = new TabContext("https://b.com", "B", mockTabService);
+    it("should remove a tab by ID and save", async () => {
+      const tab1 = new TabContext(1, "https://a.com", "A", mockTabService);
+      const tab2 = new TabContext(2, "https://b.com", "B", mockTabService);
       
       await contextManager.addTab(tab1);
       await contextManager.addTab(tab2);
       
-      // Reset mock to clear previous calls
       vi.mocked(mockLocalStorageService.set).mockClear();
 
-      await contextManager.removeTab("https://a.com");
+      await contextManager.removeTab(1);
 
       expect(contextManager.getPinnedTabs()).toHaveLength(1);
-      expect(contextManager.getPinnedTabs()[0].url).toBe("https://b.com");
+      expect(contextManager.getPinnedTabs()[0].tabId).toBe(2);
       expect(mockLocalStorageService.set).toHaveBeenCalledTimes(1);
     });
 
-    it("should do nothing if URL not found", async () => {
-      const tab = new TabContext("https://example.com", "Example", mockTabService);
+    it("should do nothing if ID not found", async () => {
+      const tab = new TabContext(1, "https://example.com", "Example", mockTabService);
       await contextManager.addTab(tab);
       vi.mocked(mockLocalStorageService.set).mockClear();
 
-      await contextManager.removeTab("https://notfound.com");
+      await contextManager.removeTab(999);
 
       expect(contextManager.getPinnedTabs()).toHaveLength(1);
       expect(mockLocalStorageService.set).not.toHaveBeenCalled();
@@ -128,10 +130,9 @@ describe("ContextManager", () => {
 
   describe("getAllContent", () => {
     it("should concatenate content from all pinned tabs", async () => {
-      const tab1 = new TabContext("https://a.com", "A", mockTabService);
-      const tab2 = new TabContext("https://b.com", "B", mockTabService);
+      const tab1 = new TabContext(1, "https://a.com", "A", mockTabService);
+      const tab2 = new TabContext(2, "https://b.com", "B", mockTabService);
       
-      // Spy on readContent to decouple from TabContext implementation
       vi.spyOn(tab1, 'readContent').mockResolvedValue("Content A");
       vi.spyOn(tab2, 'readContent').mockResolvedValue("Content B");
       
@@ -145,14 +146,13 @@ describe("ContextManager", () => {
       expect(content).toContain("--- Pinned Tab: B (https://b.com) ---");
       expect(content).toContain("Content B");
       
-      // Verify readContent was called
       expect(tab1.readContent).toHaveBeenCalled();
       expect(tab2.readContent).toHaveBeenCalled();
     });
 
     it("should handle partial failure (one tab fails to read)", async () => {
-        const tab1 = new TabContext("https://good.com", "Good", mockTabService);
-        const tab2 = new TabContext("https://bad.com", "Bad", mockTabService);
+        const tab1 = new TabContext(1, "https://good.com", "Good", mockTabService);
+        const tab2 = new TabContext(2, "https://bad.com", "Bad", mockTabService);
         
         vi.spyOn(tab1, 'readContent').mockResolvedValue("Good Content");
         vi.spyOn(tab2, 'readContent').mockResolvedValue(CONTEXT_MESSAGES.TAB_NOT_FOUND);
@@ -168,19 +168,21 @@ describe("ContextManager", () => {
   });
 
   describe("getActiveTabContent", () => {
-    it("should fetch content for the active tab", async () => {
+    it("should fetch content for the active tab using ID", async () => {
       const activeTab = { id: 99, url: "https://active.com", title: "Active", status: "complete" } as ChromeTab;
 
-      vi.mocked(mockTabService.query)
-        .mockResolvedValueOnce([activeTab]) // For ContextManager finding the tab
-        .mockResolvedValueOnce([activeTab]); // For TabContext finding it (complete)
-
+      vi.mocked(mockTabService.query).mockResolvedValueOnce([activeTab]);
+      // Mock getTab for the internally created TabContext's readContent
+      vi.mocked(mockTabService.getTab).mockResolvedValue(activeTab);
       vi.mocked(mockTabService.executeScript).mockResolvedValue("Active Content");
 
       const content = await contextManager.getActiveTabContent();
 
       expect(content).toContain("Current tab URL: https://active.com");
       expect(content).toContain("Active Content");
+      
+      // Verify we passed the ID to getTab
+      expect(mockTabService.getTab).toHaveBeenCalledWith(99);
     });
     
     it("should return empty string if no active tab found", async () => {
@@ -201,19 +203,41 @@ describe("ContextManager", () => {
     });
   });
 
-  describe("load", () => {
-      it("should rehydrate pinned tabs from storage", async () => {
+  describe("load (Rehydration)", () => {
+      it("should rehydrate pinned tabs if ID is still valid", async () => {
           const storedData = [
-              { url: "https://saved.com", title: "Saved" }
+              { id: 101, url: "https://saved.com", title: "Saved" }
           ];
           vi.mocked(mockLocalStorageService.get).mockResolvedValue(storedData);
+          
+          // Mock tab service finding the tab
+          vi.mocked(mockTabService.getTab).mockResolvedValue({ 
+              id: 101, url: "https://saved.com", title: "Saved", status: "complete", active: false, windowId: 1
+          });
 
           await contextManager.load();
 
           const pinned = contextManager.getPinnedTabs();
           expect(pinned).toHaveLength(1);
-          expect(pinned[0].url).toBe("https://saved.com");
-          expect(pinned[0].title).toBe("Saved");
+          expect(pinned[0].tabId).toBe(101);
+      });
+
+      it("should drop tabs if ID is no longer valid (Strict Session Persistence)", async () => {
+          const storedData = [
+              { id: 101, url: "https://saved.com", title: "Saved" }
+          ];
+          vi.mocked(mockLocalStorageService.get).mockResolvedValue(storedData);
+          
+          // Mock tab service NOT finding the tab (undefined)
+          vi.mocked(mockTabService.getTab).mockResolvedValue(undefined);
+
+          await contextManager.load();
+
+          const pinned = contextManager.getPinnedTabs();
+          expect(pinned).toHaveLength(0);
+          
+          // Should also save the cleaned list
+          expect(mockLocalStorageService.set).toHaveBeenCalledWith(StorageKeys.PINNED_CONTEXTS, []);
       });
 
       it("should handle invalid storage data gracefully", async () => {

@@ -17,14 +17,9 @@
 import { MessageTypes } from "./constants";
 
 export interface TabInfo {
+  id: number;
   title: string;
   url: string;
-}
-
-export interface PinnedContext {
-  url: string;
-  title: string;
-  isClosed: boolean;
 }
 
 export interface ChatMessage {
@@ -53,7 +48,7 @@ export interface PinTabRequest {
 
 export interface UnpinTabRequest {
   type: typeof MessageTypes.UNPIN_TAB;
-  url: string;
+  tabId: number;
 }
 
 export interface CheckPinnedTabsRequest {
@@ -96,7 +91,7 @@ export interface GeminiResponse {
 }
 
 export interface GetContextResponse {
-  pinnedContexts: PinnedContext[];
+  pinnedContexts: TabInfo[];
   tab: TabInfo | null;
 }
 
@@ -107,7 +102,7 @@ export interface SuccessResponse {
 
 export interface CheckPinnedTabsResponse {
   success: boolean;
-  pinnedContexts: PinnedContext[];
+  pinnedContexts: TabInfo[];
 }
 
 export interface GetHistoryResponse {

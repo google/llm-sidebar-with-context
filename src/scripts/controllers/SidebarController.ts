@@ -18,7 +18,6 @@ import { marked } from "marked";
 import { MessageTypes, StorageKeys } from "../constants";
 import {
   ExtensionMessage,
-  PinnedContext,
   TabInfo,
   GeminiResponse,
   GetContextResponse,
@@ -68,9 +67,7 @@ export class SidebarController {
       if (target.id === "pin-tab-button") {
         this.pinCurrentTab();
       } else if (target.classList.contains("unpin-button")) {
-        this.unpinTab(target.dataset.url!);
-      } else if (target.classList.contains("reopen-button")) {
-        this.reopenTab(target.dataset.url!);
+        this.unpinTab(Number(target.dataset.id));
       }
     });
 
@@ -104,12 +101,14 @@ export class SidebarController {
       }
     });
 
-    this.messageService.onMessage((request: ExtensionMessage) => {
+    this.messageService.onMessage((request: ExtensionMessage, _sender: unknown, sendResponse: (response?: any) => void) => {
       if (request.type === MessageTypes.CURRENT_TAB_INFO) {
         this.updateCurrentTabInfo(request.tab);
+        sendResponse({ success: true });
       }
       if (request.type === MessageTypes.CHECK_PINNED_TABS) {
         this.checkPinnedTabs();
+        sendResponse({ success: true });
       }
     });
   }
@@ -135,7 +134,7 @@ export class SidebarController {
       const response = await this.messageService.sendMessage<GetContextResponse>({ type: MessageTypes.GET_CONTEXT });
       if (response) {
         if (response.pinnedContexts) {
-          this.checkPinnedTabs();
+          await this.checkPinnedTabs();
         }
         if (response.tab) {
           this.updateCurrentTabInfo(response.tab);
@@ -242,9 +241,9 @@ export class SidebarController {
     }
   }
 
-  private async unpinTab(url: string) {
+  private async unpinTab(tabId: number) {
     try {
-      const response = await this.messageService.sendMessage<SuccessResponse>({ type: MessageTypes.UNPIN_TAB, url: url });
+      const response = await this.messageService.sendMessage<SuccessResponse>({ type: MessageTypes.UNPIN_TAB, tabId: tabId });
       if (response && response.success) {
         this.checkPinnedTabs();
       }
@@ -253,16 +252,7 @@ export class SidebarController {
     }
   }
 
-  private async reopenTab(url: string) {
-    try {
-      await this.messageService.sendMessage({ type: MessageTypes.REOPEN_TAB, url: url });
-      this.checkPinnedTabs(); // Refresh pinned tabs after reopening
-    } catch (error) {
-      console.error("Failed to reopen tab:", error);
-    }
-  }
-
-  private displayPinnedTabs(pinnedContexts: PinnedContext[]) {
+  private displayPinnedTabs(pinnedContexts: TabInfo[]) {
     this.pinnedTabsDiv.innerHTML = "";
     if (!pinnedContexts || pinnedContexts.length === 0) {
       return;
@@ -270,11 +260,7 @@ export class SidebarController {
     const ul = document.createElement("ul");
     pinnedContexts.forEach((context) => {
       const li = document.createElement("li");
-      li.classList.toggle("closed", context.isClosed);
-      let buttons = `<button class="unpin-button" data-url="${context.url}">x</button>`;
-      if (context.isClosed) {
-        buttons += `<button class="reopen-button" data-url="${context.url}">Reopen</button>`;
-      }
+      const buttons = `<button class="unpin-button" data-id="${context.id}">x</button>`;
       li.innerHTML = `<span>${context.title}</span>${buttons}`;
       ul.appendChild(li);
     });

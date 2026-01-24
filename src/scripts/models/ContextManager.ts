@@ -36,7 +36,7 @@ export class ContextManager {
     if (isRestrictedURL(tab.url)) {
       throw new Error("Cannot pin restricted Chrome pages.");
     }
-    if (this.isTabPinned(tab.url)) {
+    if (this.isTabPinned(tab.tabId)) {
       // Idempotent: If already pinned, do nothing.
       return;
     }
@@ -44,16 +44,16 @@ export class ContextManager {
     await this.save();
   }
 
-  async removeTab(url: string): Promise<void> {
+  async removeTab(tabId: number): Promise<void> {
     const initialLength = this.pinnedTabs.length;
-    this.pinnedTabs = this.pinnedTabs.filter((t) => t.url !== url);
+    this.pinnedTabs = this.pinnedTabs.filter((t) => t.tabId !== tabId);
     if (this.pinnedTabs.length < initialLength) {
         await this.save();
     }
   }
 
-  isTabPinned(url: string): boolean {
-    return this.pinnedTabs.some((t) => t.url === url);
+  isTabPinned(tabId: number): boolean {
+    return this.pinnedTabs.some((t) => t.tabId === tabId);
   }
 
   getPinnedTabs(): TabContext[] {
@@ -87,8 +87,8 @@ export class ContextManager {
           currentWindow: true,
       });
   
-      if (activeTab && activeTab.url) {
-          const tempContext = new TabContext(activeTab.url, activeTab.title || "", this.tabService);
+      if (activeTab && activeTab.url && activeTab.id !== undefined) {
+          const tempContext = new TabContext(activeTab.id, activeTab.url, activeTab.title || "", this.tabService);
           const content = await tempContext.readContent();
           return `Current tab URL: ${activeTab.url}\nContent: ${content}`;
       }
@@ -98,13 +98,27 @@ export class ContextManager {
   async load(): Promise<void> {
     const stored = await this.localStorageService.get<TabInfo[]>(StorageKeys.PINNED_CONTEXTS);
     if (Array.isArray(stored)) {
-      this.pinnedTabs = stored.map(
-        (s: TabInfo) => new TabContext(s.url, s.title, this.tabService)
-      );
+      const rehydratedTabs: TabContext[] = [];
+      for (const s of stored) {
+        if (s.id !== undefined) {
+            // Verify the tab still exists (Strict Session Persistence)
+            const tab = await this.tabService.getTab(s.id);
+            if (tab) {
+                // We update title/url to match current reality
+                rehydratedTabs.push(new TabContext(s.id, tab.url || s.url, tab.title || s.title || "Untitled", this.tabService));
+            }
+        }
+      }
+      this.pinnedTabs = rehydratedTabs;
+      // If we pruned any closed tabs, save the clean list
+      if (this.pinnedTabs.length !== stored.length) {
+          await this.save();
+      }
     }
   }
 
   private async save(): Promise<void> {
-    await this.localStorageService.set(StorageKeys.PINNED_CONTEXTS, this.pinnedTabs);
+    const infos: TabInfo[] = this.pinnedTabs.map(t => ({ id: t.tabId, title: t.title, url: t.url }));
+    await this.localStorageService.set(StorageKeys.PINNED_CONTEXTS, infos);
   }
 }

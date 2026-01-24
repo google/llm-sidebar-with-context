@@ -20,6 +20,7 @@ import { ITabService, TimeoutError } from "../services/tabService";
 
 export class TabContext {
   constructor(
+    public readonly tabId: number,
     public readonly url: string,
     public readonly title: string,
     private tabService: ITabService
@@ -35,30 +36,14 @@ export class TabContext {
       return `${CONTEXT_MESSAGES.RESTRICTED_URL}: ${this.url}`;
     }
 
-    // 1. Try to find a 'complete' tab first
-    let tabs = await this.tabService.query({
-      url: this.url,
-      status: "complete",
-    });
+    const tab = await this.tabService.getTab(this.tabId);
 
-    // 2. If not found, look for ANY tab (including loading ones)
-    if (tabs.length === 0) {
-      tabs = await this.tabService.query({ url: this.url });
-    }
-
-    if (tabs.length === 0) {
-      console.error(`Tab not found or accessible: ${this.url}`);
+    if (!tab) {
+      console.error(`Tab not found or accessible: ${this.tabId} (${this.url})`);
       return `${CONTEXT_MESSAGES.TAB_NOT_FOUND}: ${this.url}`;
     }
 
-    const tab = tabs[0];
-    const id = tab.id ?? null;
-
-    if (id === null) {
-      console.error(`Tab ID not found for: ${this.url}`);
-      return `${CONTEXT_MESSAGES.TAB_ID_NOT_FOUND}: ${this.url}`;
-    }
-
+    const id = tab.id ?? this.tabId;
     let warningPrefix = "";
 
     // 3. Handle 'loading' state
