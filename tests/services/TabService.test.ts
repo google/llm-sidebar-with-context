@@ -70,8 +70,35 @@ describe('ChromeTabService', () => {
         title: 'Example',
         status: 'complete',
         active: true,
+        discarded: false,
         windowId: 1
       });
+    });
+  });
+
+  describe('getTab', () => {
+    it('should get a tab by id and map it', async () => {
+      const rawTab = { id: 123, url: 'https://example.com', active: true, windowId: 1, discarded: true } as any;
+      mockTabs.get.mockResolvedValue(rawTab);
+
+      const result = await service.getTab(123);
+
+      expect(mockTabs.get).toHaveBeenCalledWith(123);
+      expect(result).toEqual({
+        id: 123,
+        url: 'https://example.com',
+        active: true,
+        windowId: 1,
+        discarded: true,
+        title: undefined,
+        status: undefined
+      });
+    });
+
+    it('should return undefined if chrome.tabs.get throws', async () => {
+      mockTabs.get.mockRejectedValue(new Error('Tab not found'));
+      const result = await service.getTab(999);
+      expect(result).toBeUndefined();
     });
   });
 

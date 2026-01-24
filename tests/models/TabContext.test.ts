@@ -94,6 +94,49 @@ describe("TabContext", () => {
     expect(content).toContain(CONTEXT_MESSAGES.TAB_NOT_FOUND);
   });
 
+  it("should return a specific message if the tab is discarded", async () => {
+    const tabId = 123;
+    vi.mocked(mockTabService.getTab).mockResolvedValue({ 
+        id: tabId, discarded: true, active: true, windowId: 1, url: "https://example.com" 
+    });
+
+    const tabContext = new TabContext(tabId, "https://example.com", "Example", mockTabService);
+    const content = await tabContext.readContent();
+
+    expect(content).toContain(CONTEXT_MESSAGES.TAB_DISCARDED);
+    expect(mockTabService.executeScript).not.toHaveBeenCalled();
+  });
+
+  it("should return a restricted message if a pinned tab navigates to a restricted URL", async () => {
+    const tabId = 123;
+    const tabContext = new TabContext(tabId, "https://valid.com", "Valid", mockTabService);
+
+    // Update URL to a restricted one
+    tabContext.url = "chrome://extensions"; 
+    
+    const content = await tabContext.readContent();
+
+    expect(content).toContain(CONTEXT_MESSAGES.RESTRICTED_URL);
+    expect(mockTabService.getTab).not.toHaveBeenCalled();
+  });
+
+  it("should successfully extract content after navigating from a restricted to a valid URL", async () => {
+    const tabId = 123;
+    const tabContext = new TabContext(tabId, "chrome://newtab", "New Tab", mockTabService);
+
+    // Update URL back to a valid one
+    tabContext.url = "https://real-site.com";
+    vi.mocked(mockTabService.getTab).mockResolvedValue({ 
+        id: tabId, discarded: false, active: true, windowId: 1, url: "https://real-site.com", status: "complete"
+    });
+    vi.mocked(mockTabService.executeScript).mockResolvedValue("Site Content");
+
+    const content = await tabContext.readContent();
+
+    expect(content).toBe("Site Content");
+    expect(mockTabService.getTab).toHaveBeenCalled();
+  });
+
   it("should extract available content with a warning if the tab times out while loading", async () => {
     const tabId = 123;
     vi.mocked(mockTabService.getTab).mockResolvedValue({ id: tabId, status: "loading", active: true, windowId: 1 });

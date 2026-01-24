@@ -43,6 +43,10 @@ export class TabContext {
       return `${CONTEXT_MESSAGES.TAB_NOT_FOUND}: ${this.url}`;
     }
 
+    if (tab.discarded) {
+      return `${CONTEXT_MESSAGES.TAB_DISCARDED}: ${this.url}`;
+    }
+
     const id = tab.id ?? this.tabId;
     let warningPrefix = "";
 

@@ -44,5 +44,6 @@ export const CONTEXT_MESSAGES = {
   RESTRICTED_URL: "(Content not accessible for restricted URL)",
   TAB_NOT_FOUND: "(Tab not found or accessible)",
   TAB_ID_NOT_FOUND: "(Tab ID not found)",
+  TAB_DISCARDED: "(Tab is suspended to save memory. Click it to reload content)",
   ERROR_PREFIX: "(Could not extract content from",
 };

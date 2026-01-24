@@ -63,6 +63,7 @@ export interface ChromeTab {
   title?: string;
   status?: string;
   active: boolean;
+  discarded: boolean;
   windowId: number;
 }
 
@@ -135,6 +136,7 @@ export class ChromeTabService implements ITabService {
       title: tab.title,
       status: tab.status,
       active: tab.active,
+      discarded: tab.discarded || false,
       windowId: tab.windowId,
     };
   }
