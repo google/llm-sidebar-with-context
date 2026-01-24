@@ -25,7 +25,7 @@ export interface IMessageService {
   /**
    * Listens for messages from the extension backend.
    */
-  onMessage(listener: (message: ExtensionMessage) => void): void;
+  onMessage(listener: (message: ExtensionMessage, sender: any, sendResponse: (response?: any) => void) => boolean | void): void;
 }
 
 export class ChromeMessageService implements IMessageService {
@@ -41,9 +41,9 @@ export class ChromeMessageService implements IMessageService {
     });
   }
 
-  onMessage(listener: (message: ExtensionMessage) => void): void {
-    chrome.runtime.onMessage.addListener((message) => {
-      listener(message);
+  onMessage(listener: (message: ExtensionMessage, sender: any, sendResponse: (response?: any) => void) => boolean | void): void {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      return listener(message, sender, sendResponse);
     });
   }
 }

@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BackgroundController } from "../../src/scripts/controllers/BackgroundController";
 import { IStorageService } from "../../src/scripts/services/storageService";
 import { ITabService } from "../../src/scripts/services/tabService";
 import { IGeminiService } from "../../src/scripts/services/geminiService";
+import { IMessageService } from "../../src/scripts/services/messageService";
 import { MessageTypes, StorageKeys } from "../../src/scripts/constants";
 
 describe("BackgroundController", () => {
@@ -27,8 +28,26 @@ describe("BackgroundController", () => {
   let mockSyncStorage: IStorageService;
   let mockTabService: ITabService;
   let mockGeminiService: IGeminiService;
+  let mockMessageService: IMessageService;
 
   beforeEach(() => {
+    vi.resetAllMocks();
+    
+    // Stub global chrome for event listeners test
+    vi.stubGlobal('chrome', {
+      tabs: {
+        onActivated: { addListener: vi.fn() },
+        onUpdated: { addListener: vi.fn() },
+        onRemoved: { addListener: vi.fn() },
+      },
+      action: {
+        onClicked: { addListener: vi.fn() },
+      },
+      sidePanel: {
+        open: vi.fn(),
+      }
+    });
+
     mockLocalStorage = {
       get: vi.fn(),
       set: vi.fn(),
@@ -46,49 +65,124 @@ describe("BackgroundController", () => {
     mockGeminiService = {
       generateContent: vi.fn(),
     };
+    mockMessageService = {
+      sendMessage: vi.fn(),
+      onMessage: vi.fn(),
+    };
 
     controller = new BackgroundController(
       mockLocalStorage,
       mockSyncStorage,
       mockTabService,
-      mockGeminiService
+      mockGeminiService,
+      mockMessageService
     );
   });
 
-  it("should handle CHAT_MESSAGE correctly", async () => {
-    // 1. Setup mocks
-    vi.mocked(mockSyncStorage.get).mockResolvedValue("fake-api-key");
-    vi.mocked(mockGeminiService.generateContent).mockResolvedValue({
-      reply: "Hello from Gemini",
-    });
-    vi.mocked(mockTabService.query).mockResolvedValue([
-      { id: 1, url: "https://current.com", title: "Current" } as any,
-    ]);
-
-    // 2. Execute
-    const response = await controller.handleMessage({
-      type: MessageTypes.CHAT_MESSAGE,
-      message: "Hi",
-      model: "gemini-pro",
-    });
-
-    // 3. Verify
-    expect(response).toEqual({ reply: "Hello from Gemini" });
-    expect(mockGeminiService.generateContent).toHaveBeenCalledWith(
-      "fake-api-key",
-      expect.stringContaining("https://current.com"),
-      expect.arrayContaining([{ role: "user", text: "Hi" }]),
-      "gemini-pro"
-    );
-    // Verify history was saved
-    expect(mockLocalStorage.set).toHaveBeenCalledWith(
-      StorageKeys.CHAT_HISTORY,
-      expect.arrayContaining([
-        { role: "user", text: "Hi" },
-        { role: "model", text: "Hello from Gemini" },
-      ])
-    );
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
+
+  describe("start()", () => {
+    it("should register event listeners and broadcast initial tab info", async () => {
+      vi.mocked(mockTabService.query).mockResolvedValue([
+        { id: 1, url: "https://start.com", title: "Start Page" } as any,
+      ]);
+
+      await controller.start();
+
+      // Check listener registration
+      expect(mockMessageService.onMessage).toHaveBeenCalled();
+      expect(chrome.tabs.onActivated.addListener).toHaveBeenCalled();
+      expect(chrome.tabs.onUpdated.addListener).toHaveBeenCalled();
+      expect(chrome.tabs.onRemoved.addListener).toHaveBeenCalled();
+      expect(chrome.action.onClicked.addListener).toHaveBeenCalled();
+
+      // Check initial broadcast
+      expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+        type: MessageTypes.CURRENT_TAB_INFO,
+        tab: { title: "Start Page", url: "https://start.com" },
+      });
+    });
+
+    it("should handle tab activation events", () => {
+      controller.start();
+      const activationListener = vi.mocked(chrome.tabs.onActivated.addListener).mock.calls[0][0];
+      
+      // Simulate activation
+      activationListener({ tabId: 1, windowId: 1 } as any);
+      
+      // Should query tabs and broadcast
+      expect(mockTabService.query).toHaveBeenCalledWith({ active: true, currentWindow: true });
+    });
+
+    it("should handle tab updates (URL change)", () => {
+      controller.start();
+      const updateListener = vi.mocked(chrome.tabs.onUpdated.addListener).mock.calls[0][0];
+      
+      // Simulate URL change
+      updateListener(1, { url: "https://new.com" } as any, { active: true } as any);
+      
+      expect(mockTabService.query).toHaveBeenCalled();
+    });
+
+    it("should handle tab updates (Title change)", () => {
+      controller.start();
+      const updateListener = vi.mocked(chrome.tabs.onUpdated.addListener).mock.calls[0][0];
+      
+      // Simulate Title change
+      updateListener(1, { title: "New Title" } as any, { active: true } as any);
+      
+      expect(mockTabService.query).toHaveBeenCalled();
+    });
+
+    it("should ignore tab updates if tab is not active", () => {
+      controller.start();
+      const updateListener = vi.mocked(chrome.tabs.onUpdated.addListener).mock.calls[0][0];
+      
+      // Simulate background tab update
+      updateListener(1, { url: "https://bg.com" } as any, { active: false } as any);
+      
+      // Should NOT query (except for the initial start call)
+      expect(mockTabService.query).toHaveBeenCalledTimes(1); 
+    });
+  });
+
+  describe("handleMessage", () => {
+    it("should handle CHAT_MESSAGE correctly", async () => {
+      // 1. Setup mocks
+      vi.mocked(mockSyncStorage.get).mockResolvedValue("fake-api-key");
+      vi.mocked(mockGeminiService.generateContent).mockResolvedValue({
+        reply: "Hello from Gemini",
+      });
+      vi.mocked(mockTabService.query).mockResolvedValue([
+        { id: 1, url: "https://current.com", title: "Current" } as any,
+      ]);
+
+      // 2. Execute
+      const response = await controller.handleMessage({
+        type: MessageTypes.CHAT_MESSAGE,
+        message: "Hi",
+        model: "gemini-pro",
+      });
+
+      // 3. Verify
+      expect(response).toEqual({ reply: "Hello from Gemini" });
+      expect(mockGeminiService.generateContent).toHaveBeenCalledWith(
+        "fake-api-key",
+        expect.stringContaining("https://current.com"),
+        expect.arrayContaining([{ role: "user", text: "Hi" }]),
+        "gemini-pro"
+      );
+      // Verify history was saved
+      expect(mockLocalStorage.set).toHaveBeenCalledWith(
+        StorageKeys.CHAT_HISTORY,
+        expect.arrayContaining([
+          { role: "user", text: "Hi" },
+          { role: "model", text: "Hello from Gemini" },
+        ])
+      );
+    });
 
   it("should ensure JIT loading is called on every message", async () => {
     vi.mocked(mockLocalStorage.get).mockResolvedValue([]);
@@ -257,4 +351,5 @@ describe("BackgroundController", () => {
 
     expect(response).toEqual({ success: false, error: "Storage Error" });
   });
+});
 });

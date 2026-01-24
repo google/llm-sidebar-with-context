@@ -21,6 +21,7 @@ import { TabContext } from "../models/TabContext";
 import { IGeminiService } from "../services/geminiService";
 import { IStorageService } from "../services/storageService";
 import { ITabService } from "../services/tabService";
+import { IMessageService } from "../services/messageService";
 import {
   ExtensionMessage,
   ExtensionResponse,
@@ -41,10 +42,70 @@ export class BackgroundController {
     private localStorageService: IStorageService,
     private syncStorageService: IStorageService,
     private tabService: ITabService,
-    private geminiService: IGeminiService
+    private geminiService: IGeminiService,
+    private messageService: IMessageService
   ) {
     this.chatHistory = new ChatHistory(localStorageService);
     this.contextManager = new ContextManager(localStorageService, tabService);
+  }
+
+  /**
+   * Initializes listeners and starts the controller.
+   */
+  public start() {
+    this.setupEventListeners();
+    // Initial context update on startup
+    this.broadcastCurrentTabInfo();
+  }
+
+  private setupEventListeners() {
+    // Listen for messages from the sidebar
+    this.messageService.onMessage((request: ExtensionMessage, sender: any, sendResponse: (response?: any) => void) => {
+      this.handleMessage(request).then(sendResponse);
+      return true; // Keep the message channel open for async response
+    });
+
+    // Update context when active tab changes
+    chrome.tabs.onActivated.addListener(() => this.broadcastCurrentTabInfo());
+
+    // Update context when tab URL or Title changes
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+      if ((changeInfo.url || changeInfo.title || changeInfo.status === 'complete') && tab.active) {
+        this.broadcastCurrentTabInfo();
+      }
+    });
+
+    // Update pinned tabs status when a tab is closed
+    chrome.tabs.onRemoved.addListener(() => {
+      this.messageService.sendMessage({ type: MessageTypes.CHECK_PINNED_TABS }).catch(() => {});
+    });
+
+    // Open the side panel when the extension icon is clicked
+    chrome.action.onClicked.addListener(async (tab) => {
+      if (tab.windowId) {
+        await chrome.sidePanel.open({ windowId: tab.windowId });
+      }
+    });
+  }
+
+  private async broadcastCurrentTabInfo() {
+    try {
+      const [tab] = await this.tabService.query({ active: true, currentWindow: true });
+      if (tab && tab.url) {
+        await this.messageService.sendMessage({
+          type: MessageTypes.CURRENT_TAB_INFO,
+          tab: {
+            title: tab.title || "Untitled",
+            url: tab.url,
+          },
+        });
+      }
+    } catch (error: any) {
+       // Ignore error if sidebar is closed (receiving end does not exist)
+       if (error.message && !error.message.includes("Receiving end does not exist.")) {
+        console.error("Error sending current tab info:", error);
+      }
+    }
   }
 
   /**

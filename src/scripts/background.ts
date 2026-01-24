@@ -14,66 +14,24 @@
  * limitations under the License.
  */
 
-import { MessageTypes } from "./constants";
 import { BackgroundController } from "./controllers/BackgroundController";
 import { ChromeLocalStorageService, ChromeSyncStorageService } from "./services/storageService";
 import { ChromeTabService } from "./services/tabService";
 import { GeminiService } from "./services/geminiService";
+import { ChromeMessageService } from "./services/messageService";
 
 const localStorageService = new ChromeLocalStorageService();
 const syncStorageService = new ChromeSyncStorageService();
 const tabService = new ChromeTabService();
 const geminiService = new GeminiService();
+const messageService = new ChromeMessageService();
+
 const controller = new BackgroundController(
   localStorageService,
   syncStorageService,
   tabService,
-  geminiService
+  geminiService,
+  messageService
 );
 
-// Listen for messages from the sidebar
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  controller.handleMessage(request).then(sendResponse);
-  return true; // Keep the message channel open for async response
-});
-
-// Broadcast current tab info to the UI
-async function broadcastCurrentTabInfo() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab && tab.url) {
-    chrome.runtime
-      .sendMessage({
-        type: MessageTypes.CURRENT_TAB_INFO,
-        tab: {
-          title: tab.title,
-          url: tab.url,
-        },
-      })
-      .catch((error) => {
-        // Ignore error if sidebar is closed
-        if (!error.message.includes("Receiving end does not exist.")) {
-          console.error("Error sending current tab info:", error);
-        }
-      });
-  }
-}
-
-// Update context when active tab changes
-chrome.tabs.onActivated.addListener(broadcastCurrentTabInfo);
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.url && tab.active) {
-    broadcastCurrentTabInfo();
-  }
-});
-
-chrome.tabs.onRemoved.addListener(() => {
-  chrome.runtime.sendMessage({ type: MessageTypes.CHECK_PINNED_TABS }).catch(() => {});
-});
-
-// Initial context update on startup
-broadcastCurrentTabInfo();
-
-// Open the side panel when the extension icon is clicked
-chrome.action.onClicked.addListener(async (tab) => {
-  await chrome.sidePanel.open({ windowId: tab.windowId });
-});
+controller.start();

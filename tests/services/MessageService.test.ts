@@ -108,10 +108,13 @@ describe('ChromeMessageService', () => {
       service.onMessage(listener);
 
       const message = { type: MessageTypes.GET_CONTEXT };
+      const sender = { id: 'test' };
+      const sendResponse = vi.fn();
+      
       // Simulate Chrome calling the listener
-      registeredListener(message);
+      registeredListener(message, sender, sendResponse);
 
-      expect(listener).toHaveBeenCalledWith(message);
+      expect(listener).toHaveBeenCalledWith(message, sender, sendResponse);
     });
   });
 });
