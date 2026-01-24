@@ -56,6 +56,15 @@ export class ContextManager {
     return this.pinnedTabs.some((t) => t.tabId === tabId);
   }
 
+  async updateTabMetadata(tabId: number, url: string, title: string): Promise<void> {
+    const tab = this.pinnedTabs.find((t) => t.tabId === tabId);
+    if (tab) {
+      tab.url = url;
+      tab.title = title;
+      await this.save();
+    }
+  }
+
   getPinnedTabs(): TabContext[] {
     return [...this.pinnedTabs];
   }

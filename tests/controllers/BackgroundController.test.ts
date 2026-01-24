@@ -125,6 +125,29 @@ describe("BackgroundController", () => {
       expect(mockTabService.query).toHaveBeenCalled();
     });
 
+    it("should update pinned tab metadata when it navigates to a new URL", async () => {
+      // 1. Pin a tab first
+      vi.mocked(mockTabService.query).mockResolvedValue([
+        { id: 101, url: "https://old.com", title: "Old" } as any
+      ]);
+      await controller.handleMessage({ type: MessageTypes.PIN_TAB });
+      
+      // 2. Simulate Navigation
+      controller.start();
+      const updateListener = vi.mocked(chrome.tabs.onUpdated.addListener).mock.calls[0][0];
+      
+      await updateListener(101, { url: "https://new.com" } as any, { id: 101, url: "https://new.com", title: "New", active: true } as any);
+      
+      // 3. Verify storage was updated with new metadata
+      // The first call was for PIN_TAB, the second should be for metadata update
+      expect(mockLocalStorage.set).toHaveBeenCalledWith(
+          StorageKeys.PINNED_CONTEXTS,
+          expect.arrayContaining([expect.objectContaining({ url: "https://new.com", title: "New" })])
+      );
+      // Verify sidebar was notified
+      expect(mockMessageService.sendMessage).toHaveBeenCalledWith({ type: MessageTypes.CHECK_PINNED_TABS });
+    });
+
     it("should ignore tab updates if tab is not active", () => {
       controller.start();
       const updateListener = vi.mocked(chrome.tabs.onUpdated.addListener).mock.calls[0][0];

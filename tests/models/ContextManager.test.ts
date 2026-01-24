@@ -92,6 +92,31 @@ describe("ContextManager", () => {
       expect(mockLocalStorageService.set).toHaveBeenCalledTimes(2);
     });
 
+    it("should not remove both tabs when removing one of two tabs with the same URL", async () => {
+      const tab1 = new TabContext(1, "https://example.com", "Example 1", mockTabService);
+      const tab2 = new TabContext(2, "https://example.com", "Example 2", mockTabService);
+
+      await contextManager.addTab(tab1);
+      await contextManager.addTab(tab2); 
+
+      await contextManager.removeTab(1);
+
+      expect(contextManager.getPinnedTabs()).toHaveLength(1);
+      expect(contextManager.getPinnedTabs()[0].tabId).toBe(2);
+      expect(contextManager.getPinnedTabs()[0].url).toBe("https://example.com");
+    });
+
+    it("should update tab metadata correctly", async () => {
+      const tab = new TabContext(1, "https://old.com", "Old Title", mockTabService);
+      await contextManager.addTab(tab);
+
+      await contextManager.updateTabMetadata(1, "https://new.com", "New Title");
+
+      expect(contextManager.getPinnedTabs()[0].url).toBe("https://new.com");
+      expect(contextManager.getPinnedTabs()[0].title).toBe("New Title");
+      expect(mockLocalStorageService.set).toHaveBeenCalledTimes(2);
+    });
+
     it("should throw error when pinning a tab with an empty URL", async () => {
        const tab = new TabContext(1, "", "No URL", mockTabService);
        await expect(contextManager.addTab(tab)).rejects.toThrow("Cannot pin a tab with no URL.");

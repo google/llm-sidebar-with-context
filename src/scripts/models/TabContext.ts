@@ -21,8 +21,8 @@ import { ITabService, TimeoutError } from "../services/tabService";
 export class TabContext {
   constructor(
     public readonly tabId: number,
-    public readonly url: string,
-    public readonly title: string,
+    public url: string,
+    public title: string,
     private tabService: ITabService
   ) {}
 

@@ -68,9 +68,17 @@ export class BackgroundController {
     chrome.tabs.onActivated.addListener(() => this.broadcastCurrentTabInfo());
 
     // Update context when tab URL or Title changes
-    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-      if ((changeInfo.url || changeInfo.title || changeInfo.status === 'complete') && tab.active) {
-        this.broadcastCurrentTabInfo();
+    chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+      if (changeInfo.url || changeInfo.title || changeInfo.status === 'complete') {
+        // If the tab is pinned, update its metadata
+        if (this.contextManager.isTabPinned(tabId)) {
+          await this.contextManager.updateTabMetadata(tabId, tab.url || "", tab.title || "Untitled");
+          this.messageService.sendMessage({ type: MessageTypes.CHECK_PINNED_TABS }).catch(() => {});
+        }
+
+        if (tab.active) {
+          this.broadcastCurrentTabInfo();
+        }
       }
     });
 
