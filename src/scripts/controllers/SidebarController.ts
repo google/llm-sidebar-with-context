@@ -26,7 +26,7 @@ import {
   CheckPinnedTabsResponse,
   GetHistoryResponse
 } from "../types";
-import { IStorageService } from "../services/storageService";
+import { ISyncStorageService } from "../services/storageService";
 import { IMessageService } from "../services/messageService";
 
 export class SidebarController {
@@ -43,7 +43,7 @@ export class SidebarController {
   private newChatButton: HTMLButtonElement;
 
   constructor(
-    private syncStorageService: IStorageService,
+    private syncStorageService: ISyncStorageService,
     private messageService: IMessageService
   ) {
     this.promptForm = document.getElementById("prompt-form") as HTMLFormElement;

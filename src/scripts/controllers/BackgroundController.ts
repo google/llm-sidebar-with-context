@@ -19,7 +19,7 @@ import { ChatHistory } from "../models/ChatHistory";
 import { ContextManager } from "../models/ContextManager";
 import { TabContext } from "../models/TabContext";
 import { IGeminiService } from "../services/geminiService";
-import { IStorageService } from "../services/storageService";
+import { ILocalStorageService, ISyncStorageService } from "../services/storageService";
 import { ITabService } from "../services/tabService";
 import { IMessageService } from "../services/messageService";
 import {
@@ -39,8 +39,8 @@ export class BackgroundController {
   private contextManager: ContextManager;
 
   constructor(
-    private localStorageService: IStorageService,
-    private syncStorageService: IStorageService,
+    private localStorageService: ILocalStorageService,
+    private syncStorageService: ISyncStorageService,
     private tabService: ITabService,
     private geminiService: IGeminiService,
     private messageService: IMessageService

@@ -17,13 +17,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ContextManager } from "../../src/scripts/models/ContextManager";
 import { TabContext } from "../../src/scripts/models/TabContext";
-import { IStorageService } from "../../src/scripts/services/storageService";
+import { ILocalStorageService } from "../../src/scripts/services/storageService";
 import { ITabService, ChromeTab } from "../../src/scripts/services/tabService";
 import { StorageKeys, CONTEXT_MESSAGES } from "../../src/scripts/constants";
 
 describe("ContextManager", () => {
   let contextManager: ContextManager;
-  let mockLocalStorageService: IStorageService;
+  let mockLocalStorageService: ILocalStorageService;
   let mockTabService: ITabService;
 
   beforeEach(() => {

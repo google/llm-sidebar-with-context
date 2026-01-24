@@ -16,7 +16,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SidebarController } from "../../src/scripts/controllers/SidebarController";
-import { IStorageService } from "../../src/scripts/services/storageService";
+import { ISyncStorageService } from "../../src/scripts/services/storageService";
 import { IMessageService } from "../../src/scripts/services/messageService";
 import { MessageTypes, StorageKeys } from "../../src/scripts/constants";
 import fs from "fs";
@@ -36,7 +36,7 @@ const htmlContent = fs.readFileSync(
 
 describe("SidebarController", () => {
   let controller: SidebarController;
-  let mockSyncStorage: IStorageService;
+  let mockSyncStorage: ISyncStorageService;
   let mockMessageService: IMessageService;
 
   beforeEach(() => {

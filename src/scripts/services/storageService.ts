@@ -15,10 +15,9 @@
  */
 
 /**
- * Interface for storage operations to allow for easier testing and decoupling
- * from the Chrome extension APIs.
+ * Interface for local storage operations.
  */
-export interface IStorageService {
+export interface ILocalStorageService {
   /**
    * Retrieves data from storage.
    * @param key The key to retrieve.
@@ -36,9 +35,29 @@ export interface IStorageService {
 }
 
 /**
- * Concrete implementation of IStorageService using chrome.storage.local.
+ * Interface for sync storage operations.
  */
-export class ChromeLocalStorageService implements IStorageService {
+export interface ISyncStorageService {
+  /**
+   * Retrieves data from storage.
+   * @param key The key to retrieve.
+   * @returns A promise that resolves with the data or undefined.
+   */
+  get<T>(key: string): Promise<T | undefined>;
+
+  /**
+   * Saves data to storage.
+   * @param key The key to save.
+   * @param value The value to save.
+   * @returns A promise that resolves when the save is complete.
+   */
+  set<T>(key: string, value: T): Promise<void>;
+}
+
+/**
+ * Concrete implementation of ILocalStorageService using chrome.storage.local.
+ */
+export class ChromeLocalStorageService implements ILocalStorageService {
   async get<T>(key: string): Promise<T | undefined> {
     return new Promise((resolve, reject) => {
       chrome.storage.local.get([key], (result) => {
@@ -69,9 +88,9 @@ export class ChromeLocalStorageService implements IStorageService {
 }
 
 /**
- * Concrete implementation of IStorageService using chrome.storage.sync.
+ * Concrete implementation of ISyncStorageService using chrome.storage.sync.
  */
-export class ChromeSyncStorageService implements IStorageService {
+export class ChromeSyncStorageService implements ISyncStorageService {
   async get<T>(key: string): Promise<T | undefined> {
     return new Promise((resolve, reject) => {
       chrome.storage.sync.get([key], (result) => {

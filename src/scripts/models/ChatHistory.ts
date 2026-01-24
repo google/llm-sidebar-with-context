@@ -15,13 +15,13 @@
  */
 
 import { StorageKeys } from "../constants";
-import { IStorageService } from "../services/storageService";
+import { ILocalStorageService } from "../services/storageService";
 import { ChatMessage } from "../types";
 
 export class ChatHistory {
   private messages: ChatMessage[] = [];
 
-  constructor(private localStorageService: IStorageService) {}
+  constructor(private localStorageService: ILocalStorageService) {}
 
   /**
    * Adds a message to the history and saves it.

@@ -18,14 +18,14 @@ import { StorageKeys } from "../constants";
 import { TabContext } from "./TabContext";
 import { isRestrictedURL } from "../utils";
 import { TabInfo } from "../types";
-import { IStorageService } from "../services/storageService";
+import { ILocalStorageService } from "../services/storageService";
 import { ITabService } from "../services/tabService";
 
 export class ContextManager {
   private pinnedTabs: TabContext[] = [];
 
   constructor(
-    private localStorageService: IStorageService,
+    private localStorageService: ILocalStorageService,
     private tabService: ITabService
   ) {}
 

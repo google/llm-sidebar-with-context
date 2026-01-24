@@ -16,13 +16,13 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ChatHistory } from "../../src/scripts/models/ChatHistory";
-import { IStorageService } from "../../src/scripts/services/storageService";
+import { ILocalStorageService } from "../../src/scripts/services/storageService";
 import { StorageKeys } from "../../src/scripts/constants";
 import { ChatMessage } from "../../src/scripts/types";
 
 describe("ChatHistory", () => {
   let chatHistory: ChatHistory;
-  let mockLocalStorageService: IStorageService;
+  let mockLocalStorageService: ILocalStorageService;
 
   beforeEach(() => {
     // Create a mock storage service for each test
