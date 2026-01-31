@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,14 @@ html, body {
 }
 
 body {
-  font-family: sans-serif;
-  background-color: #1e1e1e; /* Dark Gray */
-  color: #d4d4d4; /* Light Gray */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #1e1e1e; /* Background Dark */
+  color: #d4d4d4; /* Text Light Gray */
   display: flex;
   flex-direction: column;
   min-width: 300px;
   min-height: 400px;
+  -webkit-font-smoothing: antialiased;
 }
 
 .container {
@@ -44,97 +45,117 @@ body {
   flex-grow: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 10px;
+  padding: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+#messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+#messages::-webkit-scrollbar-thumb {
+  background-color: #333; /* Scrollbar Gray */
+  border-radius: 3px;
 }
 
 .message {
-  padding: 10px;
-  border-radius: 5px;
-  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+  font-size: 13.5px;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 
 .message.user {
-  background-color: #0e639c; /* Blue */
+  background-color: #0e639c; /* Accent Blue */
   color: #ffffff; /* White */
+  margin-left: 5px; /* Subtle right alignment */
 }
 
 .message.model {
-  background-color: #252526; /* Medium Gray */
+  background-color: #252526; /* Surface Dark */
+  margin-right: 5px; /* Subtle left alignment */
 }
 
 .message.model pre {
-  background-color: #1e1e1e; /* Dark Gray */
-  padding: 8px;
-  border-radius: 3px;
+  background-color: #1e1e1e; /* Code Block Background */
+  padding: 10px;
+  border-radius: 4px;
   overflow-x: auto;
   max-width: 100%;
+  border: 1px solid #333; /* Code Block Border */
 }
 
 .message.model code {
-  font-family: monospace;
-  background-color: #333; /* Darker Gray */
-  padding: 2px 4px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  background-color: #333; /* Inline Code Background */
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-size: 85%;
 }
 
 .message.thinking {
   font-style: italic;
+  opacity: 0.6;
+  font-size: 12px;
 }
 
-/* --- Bottom Panel (High Density) --- */
+/* --- Bottom Panel (Modern High Density) --- */
 
 .bottom-panel {
   flex-shrink: 0;
-  background-color: #252526; /* Medium Gray */
-  border-top: 1px solid #3c3c3c; /* Border Gray */
-  padding: 8px;
+  background-color: #252526; /* Panel Surface */
+  border-top: 1px solid #333; /* Subtle Separator */
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
-#api-key-container {
-  display: flex;
-  gap: 5px;
-}
-
-#api-key-input {
-  flex-grow: 1;
-  border: 1px solid #3c3c3c; /* Border Gray */
-  background-color: #252526; /* Medium Gray */
-  color: #d4d4d4; /* Light Gray */
-  padding: 4px;
-  font-size: 11px;
-}
-
-#save-api-key-button {
-  background-color: #0e639c; /* Blue */
-  color: #ffffff; /* White */
-  border: none;
-  padding: 4px 8px;
-  cursor: pointer;
-  font-size: 11px;
-}
-
+/* Pinned Contexts */
 #pinned-tabs-container {
+  font-size: 11.5px;
+  color: #cccccc; /* Increased contrast for readability */
+}
+
+#current-tab, #pinned-tabs li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 4px 0;
-  font-size: 11px;
 }
 
 #current-tab {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2px;
+  color: #fff; /* Current Tab Highlight */
+  font-weight: 500;
+  border-bottom: 1px dashed #333; /* Distinction from pinned list */
+  margin-bottom: 4px;
+  padding-bottom: 6px;
 }
 
-#current-tab button {
+#current-tab span, #pinned-tabs li span {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#current-tab button, #pinned-tabs button {
   background: none;
   border: none;
-  color: #d4d4d4; /* Light Gray */
+  color: #888; /* Subtle Icon Color */
   cursor: pointer;
-  padding: 0;
+  padding: 2px 4px;
+  font-size: 14px;
+  transition: color 0.2s, transform 0.1s;
+}
+
+#current-tab button:hover, #pinned-tabs button:hover {
+  color: #fff;
+  transform: scale(1.1);
 }
 
 #pinned-tabs ul {
@@ -143,25 +164,12 @@ body {
   margin: 0;
 }
 
-#pinned-tabs li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 #pinned-tabs li.closed span {
   text-decoration: line-through;
-  opacity: 0.7;
+  opacity: 0.5;
 }
 
-#pinned-tabs button {
-  background: none;
-  border: none;
-  color: #d4d4d4; /* Light Gray */
-  cursor: pointer;
-  padding: 0 5px;
-}
-
+/* Controls Toolbar */
 #controls-container {
   display: flex;
   justify-content: space-between;
@@ -169,56 +177,107 @@ body {
 }
 
 #model-select {
-  background-color: #252526; /* Medium Gray */
-  color: #d4d4d4; /* Light Gray */
-  border: 1px solid #3c3c3c; /* Border Gray */
-  padding: 4px;
+  background-color: #1e1e1e; /* Input Dark */
+  color: #d4d4d4;
+  border: 1px solid #333; /* Control Border */
+  padding: 4px 8px;
   font-size: 11px;
+  border-radius: 4px;
+  outline: none;
+}
+
+#model-select:focus {
+  border-color: #0e639c; /* Focus Blue */
 }
 
 .button-group {
   display: flex;
-  gap: 5px;
+  gap: 6px;
 }
 
-#edit-api-key-button, #new-chat-button {
-  background-color: #0e639c; /* Blue */
-  color: #ffffff; /* White */
-  border: none;
-  padding: 4px 8px;
+#edit-api-key-button, #new-chat-button, #save-api-key-button {
+  background-color: #333; /* Button Base Gray */
+  color: #fff;
+  border: 1px solid #444; /* Subtle Button Border */
+  padding: 4px 10px;
   cursor: pointer;
   font-size: 11px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
 
+#edit-api-key-button:hover, #new-chat-button:hover, #save-api-key-button:hover {
+  background-color: #444; /* Hover Gray */
+}
+
+/* API Key Input Area */
+#api-key-container {
+  display: flex;
+  gap: 6px;
+  padding-bottom: 4px;
+}
+
+#api-key-input {
+  flex-grow: 1;
+  border: 1px solid #333;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  padding: 6px 8px;
+  font-size: 11.5px;
+  border-radius: 4px;
+  outline: none;
+}
+
+#api-key-input:focus {
+  border-color: #0e639c;
+}
+
+/* Chat Input Bar */
 #prompt-form {
   display: flex;
   align-items: flex-end;
-  border: 1px solid #3c3c3c; /* Border Gray */
-  background-color: #1e1e1e; /* Dark Gray */
+  border: 1px solid #333;
+  background-color: #1e1e1e;
+  border-radius: 6px;
+  padding: 2px;
+  transition: border-color 0.2s;
+}
+
+#prompt-form:focus-within {
+  border-color: #0e639c; /* Focus Accent */
 }
 
 #prompt-input {
   flex-grow: 1;
-  background-color: transparent; /* Seamless input */
-  color: #d4d4d4; /* Light Gray */
+  background-color: transparent;
+  color: #fff;
   border: none;
-  padding: 8px;
+  padding: 8px 10px;
   resize: none;
   font-size: 13px;
+  line-height: 1.4;
   min-height: 20px;
-  max-height: 100px;
+  max-height: 80px; /* Approximately 4 lines of text */
+  outline: none;
+  overflow-y: auto;
+  field-sizing: content; /* Auto-grow height based on content */
 }
 
 #send-button {
   background: none;
   border: none;
-  color: #d4d4d4; /* Light Gray */
+  color: #666;
   cursor: pointer;
   padding: 8px;
   display: flex;
+  transition: color 0.2s;
+}
+
+#send-button:hover {
+  color: #0e639c; /* Active Color */
 }
 
 .feather-send {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
