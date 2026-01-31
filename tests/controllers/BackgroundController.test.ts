@@ -251,10 +251,9 @@ describe("BackgroundController", () => {
       vi.mocked(mockTabService.query).mockResolvedValue([
         { id: 1, url: "chrome://settings", title: "Settings" } as any
       ]);
-      vi.mocked(mockContextManager.addTab).mockRejectedValue(new Error("Cannot pin restricted Chrome pages."));
 
       const response = await controller.handleMessage({ type: MessageTypes.PIN_TAB });
-      expect(response).toEqual({ success: false, message: "Cannot pin restricted Chrome pages." });
+      expect(response).toEqual({ success: false, message: "Cannot pin restricted URL" });
     });
 
     it("should handle PIN_TAB successfully", async () => {

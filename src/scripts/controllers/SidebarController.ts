@@ -169,6 +169,7 @@ export class SidebarController {
       }
     } catch (error) {
       console.error("Failed to load history:", error);
+      this.appendMessage("system", "System: Failed to load chat history. Try starting a new chat.");
     }
   }
 
@@ -246,9 +247,13 @@ export class SidebarController {
       const response = await this.messageService.sendMessage<SuccessResponse>({ type: MessageTypes.PIN_TAB });
       if (response && response.success) {
         this.checkPinnedTabs();
+      } else if (response && response.message) {
+        this.appendMessage("system", `System: ${response.message}`);
       }
     } catch (error) {
       console.error("Failed to pin tab:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.appendMessage("system", `System: ${errorMessage}`);
     }
   }
 

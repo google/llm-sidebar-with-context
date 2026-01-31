@@ -103,6 +103,14 @@ body {
   font-size: 12px;
 }
 
+.message.error, .message.system {
+  font-style: italic;
+  opacity: 0.8;
+  font-size: 12px;
+  margin-bottom: 8px;
+  padding: 0 12px; /* Align text with other messages */
+}
+
 /* --- Bottom Panel (Modern High Density) --- */
 
 .bottom-panel {

@@ -377,5 +377,47 @@ describe("SidebarController", () => {
       expect(pinButton.disabled).toBe(true);
       expect(pinButton.title).toContain("restricted");
     });
+
+    it("should display a system message if pinning fails", async () => {
+      const currentTab = { id: 101, title: "Google", url: "https://google.com" };
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(async (msg: any) => {
+        if (msg.type === MessageTypes.GET_CONTEXT) {
+          return { pinnedContexts: [], tab: currentTab };
+        }
+        if (msg.type === MessageTypes.PIN_TAB) {
+          return { success: false, message: "Cannot pin restricted URL" };
+        }
+        return { success: true };
+      });
+
+      await controller.start();
+
+      const pinButton = document.getElementById("pin-tab-button") as HTMLButtonElement;
+      pinButton.click();
+
+      // Wait for async appendMessage
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      const messagesDiv = document.getElementById("messages") as HTMLDivElement;
+      const systemMsg = messagesDiv.querySelector(".message.system");
+      expect(systemMsg?.textContent).toBe("System: Cannot pin restricted URL");
+    });
+  });
+
+  describe("History Rehydration Error Handling", () => {
+    it("should display a system message if history loading throws an error", async () => {
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(async (msg: any) => {
+        if (msg.type === MessageTypes.GET_HISTORY) {
+          throw new Error("Storage failure");
+        }
+        return { success: true };
+      });
+
+      await controller.start();
+
+      const messagesDiv = document.getElementById("messages") as HTMLDivElement;
+      const systemMsg = messagesDiv.querySelector(".message.system");
+      expect(systemMsg?.textContent).toBe("System: Failed to load chat history. Try starting a new chat.");
+    });
   });
 });

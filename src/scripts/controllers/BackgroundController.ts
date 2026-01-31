@@ -22,6 +22,7 @@ import { IGeminiService } from "../services/geminiService";
 import { ILocalStorageService, ISyncStorageService } from "../services/storageService";
 import { ITabService } from "../services/tabService";
 import { IMessageService } from "../services/messageService";
+import { isRestrictedURL } from "../utils";
 import {
   ExtensionMessage,
   ExtensionResponse,
@@ -215,6 +216,10 @@ export class BackgroundController {
 
     if (!tab || !tab.url || tab.id === undefined) {
         return { success: false, message: "No active tab found." };
+    }
+
+    if (isRestrictedURL(tab.url)) {
+      return { success: false, message: "Cannot pin restricted URL" };
     }
 
     try {
