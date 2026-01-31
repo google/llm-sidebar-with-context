@@ -148,7 +148,7 @@ body {
   border: none;
   color: #888; /* Subtle Icon Color */
   cursor: pointer;
-  padding: 4px; /* Larger hit area */
+  padding: 2px;
   display: flex; /* Flex to center SVG */
   align-items: center;
   justify-content: center;
@@ -179,7 +179,6 @@ body {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px; /* Vertical spacing between items */
 }
 
 #pinned-tabs li.closed span {
