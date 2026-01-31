@@ -15,7 +15,7 @@
  */
 
 import { marked } from "marked";
-import { MessageTypes, StorageKeys } from "../constants";
+import { MessageTypes, StorageKeys, RestrictedURLs } from "../constants";
 import {
   ExtensionMessage,
   TabInfo,
@@ -41,6 +41,9 @@ export class SidebarController {
   private editApiKeyButton: HTMLButtonElement;
   private newChatButton: HTMLButtonElement;
 
+  private pinnedContexts: TabInfo[] = [];
+  private currentTab: TabInfo | null = null;
+
   constructor(
     private syncStorageService: ISyncStorageService,
     private messageService: IMessageService
@@ -63,9 +66,17 @@ export class SidebarController {
   private setupEventListeners() {
     // Use event delegation for dynamically created buttons
     document.body.addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
+      const target = (e.target as HTMLElement).closest("button");
+      if (!target) return;
+
       if (target.id === "pin-tab-button") {
-        this.pinCurrentTab();
+        if (!this.currentTab) return;
+        const isPinned = this.pinnedContexts.some(t => t.id === this.currentTab!.id);
+        if (isPinned) {
+          this.unpinTab(this.currentTab.id);
+        } else {
+          this.pinCurrentTab();
+        }
       } else if (target.classList.contains("unpin-button")) {
         this.unpinTab(Number(target.dataset.id));
       }
@@ -134,7 +145,7 @@ export class SidebarController {
       const response = await this.messageService.sendMessage<GetContextResponse>({ type: MessageTypes.GET_CONTEXT });
       if (response) {
         if (response.pinnedContexts) {
-          await this.checkPinnedTabs();
+          this.displayPinnedTabs(response.pinnedContexts);
         }
         if (response.tab) {
           this.updateCurrentTabInfo(response.tab);
@@ -253,14 +264,24 @@ export class SidebarController {
   }
 
   private displayPinnedTabs(pinnedContexts: TabInfo[]) {
+    this.pinnedContexts = pinnedContexts || [];
     this.pinnedTabsDiv.innerHTML = "";
-    if (!pinnedContexts || pinnedContexts.length === 0) {
+    
+    // Refresh current tab icon as its state might change based on pinned list
+    if (this.currentTab) {
+      this.updateCurrentTabInfo(this.currentTab);
+    }
+
+    if (!this.pinnedContexts || this.pinnedContexts.length === 0) {
       return;
     }
     const ul = document.createElement("ul");
-    pinnedContexts.forEach((context) => {
+    this.pinnedContexts.forEach((context) => {
       const li = document.createElement("li");
-      const buttons = `<button class="unpin-button" data-id="${context.id}">x</button>`;
+      const buttons = `
+        <button class="unpin-button" data-id="${context.id}" title="Unpin this tab">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>`;
       li.innerHTML = `<span>${context.title}</span>${buttons}`;
       ul.appendChild(li);
     });
@@ -279,10 +300,37 @@ export class SidebarController {
   }
 
   private updateCurrentTabInfo(tab: TabInfo) {
-    if (tab) {
-      this.currentTabDiv.innerHTML = `<span>Current: ${tab.title}</span><button id="pin-tab-button">+</button>`;
-    } else {
+    this.currentTab = tab;
+    
+    if (!tab) {
       this.currentTabDiv.innerHTML = "<span>Current: No active tab found.</span>";
+      return;
     }
+
+    const isPinned = this.pinnedContexts.some(t => t.id === tab.id);
+    const isRestricted = RestrictedURLs.some(url => tab.url.startsWith(url));
+    
+    let buttonHtml = "";
+    if (isRestricted) {
+       // Restricted Icon
+      buttonHtml = `
+        <button id="pin-tab-button" class="restricted" title="Can't pin restricted tab: ${tab.url}" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-slash"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+        </button>`;
+    } else if (isPinned) {
+      // Pinned Icon
+      buttonHtml = `
+        <button id="pin-tab-button" class="pinned" title="Unpin current tab">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        </button>`;
+    } else {
+      // Pinnable Icon
+      buttonHtml = `
+        <button id="pin-tab-button" class="pinnable" title="Pin current tab">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pin"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>
+        </button>`;
+    }
+
+    this.currentTabDiv.innerHTML = `<span>Current: ${tab.title}</span>${buttonHtml}`;
   }
 }

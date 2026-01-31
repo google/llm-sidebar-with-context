@@ -29,16 +29,14 @@ import {
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
-  GeminiResponse,
-  TabInfo
-} from "../types";
+  GeminiResponse} from "../types";
 
 export class BackgroundController {
   private chatHistory: ChatHistory;
   private contextManager: ContextManager;
 
   constructor(
-    private localStorageService: ILocalStorageService,
+    localStorageService: ILocalStorageService,
     private syncStorageService: ISyncStorageService,
     private tabService: ITabService,
     private geminiService: IGeminiService,

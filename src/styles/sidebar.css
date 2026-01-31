@@ -117,8 +117,8 @@ body {
 
 /* Pinned Contexts */
 #pinned-tabs-container {
-  font-size: 11.5px;
-  color: #cccccc; /* Increased contrast for readability */
+  font-size: 12px; 
+  color: #e0e0e0;
 }
 
 #current-tab, #pinned-tabs li {
@@ -148,13 +148,28 @@ body {
   border: none;
   color: #888; /* Subtle Icon Color */
   cursor: pointer;
-  padding: 2px 4px;
-  font-size: 14px;
+  padding: 4px; /* Larger hit area */
+  display: flex; /* Flex to center SVG */
+  align-items: center;
+  justify-content: center;
   transition: color 0.2s, transform 0.1s;
 }
 
+#current-tab button.pinned {
+  color: #0e639c; /* Accent Blue */
+}
+
+#current-tab button.restricted {
+  color: #555; /* Dark Gray */
+  cursor: not-allowed;
+}
+
+#current-tab button.pinnable {
+  color: #888; /* Icon Gray */
+}
+
 #current-tab button:hover, #pinned-tabs button:hover {
-  color: #fff;
+  color: #fff; /* White on Hover */
   transform: scale(1.1);
 }
 
@@ -162,6 +177,9 @@ body {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Vertical spacing between items */
 }
 
 #pinned-tabs li.closed span {

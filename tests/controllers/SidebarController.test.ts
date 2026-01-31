@@ -309,4 +309,73 @@ describe("SidebarController", () => {
       expect(errorMsg?.textContent).toContain("Error: Error: Network Failure");
     });
   });
+
+  describe("Icon Logic", () => {
+    it("should render PIN icon and call PIN_TAB when tab is pinnable", async () => {
+      const currentTab = { id: 101, title: "Google", url: "https://google.com" };
+      vi.mocked(mockSyncStorage.get).mockResolvedValue("test-api-key");
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(async (msg: any) => {
+        if (msg.type === MessageTypes.GET_CONTEXT) {
+          return { pinnedContexts: [], tab: currentTab };
+        }
+        return { success: true };
+      });
+
+      await controller.start();
+
+      const pinButton = document.getElementById("pin-tab-button") as HTMLButtonElement;
+      expect(pinButton).toBeTruthy();
+      expect(pinButton.className).toContain("pinnable");
+      expect(pinButton.disabled).toBe(false);
+
+      pinButton.click();
+      expect(mockMessageService.sendMessage).toHaveBeenCalledWith({ type: MessageTypes.PIN_TAB });
+    });
+
+    it("should render UNPIN icon and call UNPIN_TAB when tab is already pinned", async () => {
+      const currentTab = { id: 101, title: "Google", url: "https://google.com" };
+      const pinnedContexts = [currentTab];
+
+      vi.mocked(mockSyncStorage.get).mockResolvedValue("test-api-key");
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(async (msg: any) => {
+        if (msg.type === MessageTypes.GET_CONTEXT) {
+          return { pinnedContexts, tab: currentTab };
+        }
+        return { success: true };
+      });
+
+      await controller.start();
+
+      const pinButton = document.getElementById("pin-tab-button") as HTMLButtonElement;
+      expect(pinButton).toBeTruthy();
+      expect(pinButton.className).toContain("pinned");
+      expect(pinButton.title).toContain("Unpin");
+
+      pinButton.click();
+      expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+        type: MessageTypes.UNPIN_TAB,
+        tabId: 101,
+      });
+    });
+
+    it("should render RESTRICTED icon and be disabled when URL is restricted", async () => {
+      const currentTab = { id: 102, title: "Settings", url: "chrome://settings" };
+      
+      vi.mocked(mockSyncStorage.get).mockResolvedValue("test-api-key");
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(async (msg: any) => {
+        if (msg.type === MessageTypes.GET_CONTEXT) {
+          return { pinnedContexts: [], tab: currentTab };
+        }
+        return { success: true };
+      });
+
+      await controller.start();
+
+      const pinButton = document.getElementById("pin-tab-button") as HTMLButtonElement;
+      expect(pinButton).toBeTruthy();
+      expect(pinButton.className).toContain("restricted");
+      expect(pinButton.disabled).toBe(true);
+      expect(pinButton.title).toContain("restricted");
+    });
+  });
 });
