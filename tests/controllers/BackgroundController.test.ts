@@ -20,6 +20,8 @@ import { ILocalStorageService, ISyncStorageService } from "../../src/scripts/ser
 import { ITabService } from "../../src/scripts/services/tabService";
 import { IGeminiService } from "../../src/scripts/services/geminiService";
 import { IMessageService } from "../../src/scripts/services/messageService";
+import { ChatHistory } from "../../src/scripts/models/ChatHistory";
+import { ContextManager } from "../../src/scripts/models/ContextManager";
 import { MessageTypes, StorageKeys } from "../../src/scripts/constants";
 
 describe("BackgroundController", () => {
@@ -29,11 +31,12 @@ describe("BackgroundController", () => {
   let mockTabService: ITabService;
   let mockGeminiService: IGeminiService;
   let mockMessageService: IMessageService;
+  let mockChatHistory: ChatHistory;
+  let mockContextManager: ContextManager;
 
   beforeEach(() => {
     vi.resetAllMocks();
     
-    // Stub global chrome for event listeners test
     vi.stubGlobal('chrome', {
       tabs: {
         onActivated: { addListener: vi.fn() },
@@ -48,14 +51,8 @@ describe("BackgroundController", () => {
       }
     });
 
-    mockLocalStorage = {
-      get: vi.fn(),
-      set: vi.fn(),
-    };
-    mockSyncStorage = {
-      get: vi.fn(),
-      set: vi.fn(),
-    };
+    mockLocalStorage = { get: vi.fn(), set: vi.fn() };
+    mockSyncStorage = { get: vi.fn(), set: vi.fn() };
     mockTabService = {
       query: vi.fn().mockResolvedValue([]),
       executeScript: vi.fn(),
@@ -63,16 +60,35 @@ describe("BackgroundController", () => {
       waitForTabComplete: vi.fn(),
       getTab: vi.fn(),
     };
-    mockGeminiService = {
-      generateContent: vi.fn(),
-    };
+    mockGeminiService = { generateContent: vi.fn() };
     mockMessageService = {
-      sendMessage: vi.fn().mockResolvedValue({}), // Return promise to allow .catch()
+      sendMessage: vi.fn().mockResolvedValue({}),
       onMessage: vi.fn(),
     };
 
+    // Create mocks for models
+    mockChatHistory = {
+      load: vi.fn(),
+      addMessage: vi.fn(),
+      getMessages: vi.fn(),
+      clear: vi.fn(),
+    } as unknown as ChatHistory;
+
+    mockContextManager = {
+      load: vi.fn(),
+      getActiveTabContent: vi.fn(),
+      getAllContent: vi.fn(),
+      getPinnedTabs: vi.fn(),
+      addTab: vi.fn(),
+      removeTab: vi.fn(),
+      clear: vi.fn(),
+      isTabPinned: vi.fn(),
+      updateTabMetadata: vi.fn(),
+    } as unknown as ContextManager;
+
     controller = new BackgroundController(
-      mockLocalStorage,
+      mockChatHistory,
+      mockContextManager,
       mockSyncStorage,
       mockTabService,
       mockGeminiService,
@@ -126,25 +142,14 @@ describe("BackgroundController", () => {
     });
 
     it("should update pinned tab metadata when it navigates to a new URL", async () => {
-      // 1. Pin a tab first
-      vi.mocked(mockTabService.query).mockResolvedValue([
-        { id: 101, url: "https://old.com", title: "Old" } as any
-      ]);
-      await controller.handleMessage({ type: MessageTypes.PIN_TAB });
-      
-      // 2. Simulate Navigation
+      vi.mocked(mockContextManager.isTabPinned).mockReturnValue(true);
+
       controller.start();
       const updateListener = vi.mocked(chrome.tabs.onUpdated.addListener).mock.calls[0][0];
       
       await updateListener(101, { url: "https://new.com" } as any, { id: 101, url: "https://new.com", title: "New", active: true } as any);
       
-      // 3. Verify storage was updated with new metadata
-      // The first call was for PIN_TAB, the second should be for metadata update
-      expect(mockLocalStorage.set).toHaveBeenCalledWith(
-          StorageKeys.PINNED_CONTEXTS,
-          expect.arrayContaining([expect.objectContaining({ url: "https://new.com", title: "New" })])
-      );
-      // Verify sidebar was notified
+      expect(mockContextManager.updateTabMetadata).toHaveBeenCalledWith(101, "https://new.com", "New");
       expect(mockMessageService.sendMessage).toHaveBeenCalledWith({ type: MessageTypes.CHECK_PINNED_TABS });
     });
 
@@ -161,6 +166,7 @@ describe("BackgroundController", () => {
         
         await removedListener(123, {} as any);
         
+        expect(mockContextManager.removeTab).toHaveBeenCalledWith(123);
         expect(mockMessageService.sendMessage).toHaveBeenCalledWith({ type: MessageTypes.CHECK_PINNED_TABS });
     });
   });
@@ -171,10 +177,9 @@ describe("BackgroundController", () => {
       vi.mocked(mockGeminiService.generateContent).mockResolvedValue({
         reply: "Hello from Gemini",
       });
-      vi.mocked(mockTabService.query).mockResolvedValue([
-        { id: 1, url: "https://current.com", title: "Current" } as any,
-      ]);
-      vi.mocked(mockTabService.getTab).mockResolvedValue({ id: 1, url: "https://current.com" } as any);
+      vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue("Active Content");
+      vi.mocked(mockContextManager.getAllContent).mockResolvedValue("Pinned Content");
+      vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
 
       const response = await controller.handleMessage({
         type: MessageTypes.CHAT_MESSAGE,
@@ -184,40 +189,22 @@ describe("BackgroundController", () => {
 
       expect(response).toEqual({ reply: "Hello from Gemini" });
       expect(mockGeminiService.generateContent).toHaveBeenCalled();
-      expect(mockLocalStorage.set).toHaveBeenCalledWith(
-        StorageKeys.CHAT_HISTORY,
-        expect.arrayContaining([{ role: "user", text: "Hi" }])
-      );
+      expect(mockChatHistory.addMessage).toHaveBeenCalledWith({ role: "user", text: "Hi" });
+      expect(mockChatHistory.addMessage).toHaveBeenCalledWith({ role: "model", text: "Hello from Gemini" });
     });
 
     it("should ensure JIT loading is called on every message", async () => {
-      vi.mocked(mockLocalStorage.get).mockResolvedValue([]);
+      await controller.handleMessage({ type: MessageTypes.GET_HISTORY });
       
-      await controller.handleMessage({ type: MessageTypes.GET_HISTORY });
-      await controller.handleMessage({ type: MessageTypes.GET_HISTORY });
-  
-      expect(mockLocalStorage.get).toHaveBeenCalledWith(StorageKeys.CHAT_HISTORY);
-      expect(mockLocalStorage.get).toHaveBeenCalledWith(StorageKeys.PINNED_CONTEXTS);
-      expect(mockLocalStorage.get).toHaveBeenCalledTimes(4); 
+      expect(mockChatHistory.load).toHaveBeenCalled();
+      expect(mockContextManager.load).toHaveBeenCalled();
     });
 
-    it("should handle CHAT_MESSAGE with composed context (active + pinned)", async () => {
+    it("should handle CHAT_MESSAGE with composed context", async () => {
         vi.mocked(mockSyncStorage.get).mockResolvedValue("fake-key");
-        vi.mocked(mockLocalStorage.get).mockImplementation((key) => {
-          if (key === StorageKeys.PINNED_CONTEXTS) return Promise.resolve([{ id: 101, url: "https://pinned.com", title: "Pinned" }]);
-          return Promise.resolve([]);
-        });
-        vi.mocked(mockTabService.query).mockResolvedValue([
-          { id: 1, url: "https://active.com", title: "Active" } as any
-        ]);
-        
-        vi.mocked(mockTabService.getTab).mockImplementation(async (id) => {
-            if (id === 101) return { id: 101, url: "https://pinned.com", status: "complete" } as any;
-            if (id === 1) return { id: 1, url: "https://active.com", status: "complete" } as any;
-            return undefined;
-        });
-
-        vi.mocked(mockTabService.executeScript).mockResolvedValue("Content");
+        vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue("Active Content");
+        vi.mocked(mockContextManager.getAllContent).mockResolvedValue("Pinned Content");
+        vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
         vi.mocked(mockGeminiService.generateContent).mockResolvedValue({ reply: "Responded" });
     
         await controller.handleMessage({
@@ -228,7 +215,7 @@ describe("BackgroundController", () => {
     
         expect(mockGeminiService.generateContent).toHaveBeenCalledWith(
           "fake-key",
-          expect.stringContaining("Pinned"),
+          "Active ContentPinned Content",
           expect.any(Array),
           "gemini-pro"
         );
@@ -239,6 +226,9 @@ describe("BackgroundController", () => {
         vi.mocked(mockGeminiService.generateContent).mockResolvedValue({
           error: "Safety concerns",
         });
+        vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue("");
+        vi.mocked(mockContextManager.getAllContent).mockResolvedValue("");
+        vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
     
         const response = await controller.handleMessage({
           type: MessageTypes.CHAT_MESSAGE,
@@ -247,11 +237,8 @@ describe("BackgroundController", () => {
         });
     
         expect(response).toEqual({ error: "Safety concerns" });
-        
-        const historyCall = vi.mocked(mockLocalStorage.set).mock.calls.find(call => call[0] === StorageKeys.CHAT_HISTORY);
-        const savedHistory = historyCall![1] as any[];
-        expect(savedHistory).toHaveLength(1);
-        expect(savedHistory[0].role).toBe("user");
+        expect(mockChatHistory.addMessage).toHaveBeenCalledWith({ role: "user", text: "Dangerous prompt" });
+        expect(mockChatHistory.addMessage).not.toHaveBeenCalledWith(expect.objectContaining({ role: "model" }));
     });
 
     it("should handle PIN_TAB failure when no active tab exists", async () => {
@@ -264,6 +251,8 @@ describe("BackgroundController", () => {
       vi.mocked(mockTabService.query).mockResolvedValue([
         { id: 1, url: "chrome://settings", title: "Settings" } as any
       ]);
+      vi.mocked(mockContextManager.addTab).mockRejectedValue(new Error("Cannot pin restricted Chrome pages."));
+
       const response = await controller.handleMessage({ type: MessageTypes.PIN_TAB });
       expect(response).toEqual({ success: false, message: "Cannot pin restricted Chrome pages." });
     });
@@ -274,29 +263,30 @@ describe("BackgroundController", () => {
         ]);
         const response = await controller.handleMessage({ type: MessageTypes.PIN_TAB });
         expect(response).toEqual({ success: true });
-        expect(mockLocalStorage.set).toHaveBeenCalledWith(
-            StorageKeys.PINNED_CONTEXTS, 
-            expect.arrayContaining([expect.objectContaining({ id: 101 })])
-        );
+        expect(mockContextManager.addTab).toHaveBeenCalledWith(expect.objectContaining({ tabId: 101 }));
     });
 
     it("should handle UNPIN_TAB correctly", async () => {
-        vi.mocked(mockLocalStorage.get).mockResolvedValue([{ id: 101, url: "https://pin.com", title: "Pin" }]);
-        vi.mocked(mockTabService.getTab).mockResolvedValue({ id: 101 } as any);
-
         const response = await controller.handleMessage({ type: MessageTypes.UNPIN_TAB, tabId: 101 });
 
         expect(response).toEqual({ success: true });
-        expect(mockLocalStorage.set).toHaveBeenCalledWith(StorageKeys.PINNED_CONTEXTS, []);
+        expect(mockContextManager.removeTab).toHaveBeenCalledWith(101);
     });
 
     it("should handle GET_CONTEXT correctly", async () => {
       vi.mocked(mockTabService.query).mockResolvedValue([{ id: 1, url: "https://a.com", title: "A" } as any]);
-      vi.mocked(mockLocalStorage.get).mockResolvedValue([]);
+      vi.mocked(mockContextManager.getPinnedTabs).mockReturnValue([]);
 
       const response = await controller.handleMessage({ type: MessageTypes.GET_CONTEXT }) as any;
 
       expect(response.tab).toEqual({ id: 1, url: "https://a.com", title: "A" });
+      expect(response.pinnedContexts).toEqual([]);
+    });
+
+    it("should handle CHECK_PINNED_TABS correctly", async () => {
+      vi.mocked(mockContextManager.getPinnedTabs).mockReturnValue([]);
+      const response = await controller.handleMessage({ type: MessageTypes.CHECK_PINNED_TABS }) as any;
+      expect(response.success).toBe(true);
       expect(response.pinnedContexts).toEqual([]);
     });
 
@@ -311,7 +301,7 @@ describe("BackgroundController", () => {
 
     it("should handle GET_HISTORY correctly", async () => {
         const history = [{ role: "user" as const, text: "Hi" }];
-        vi.mocked(mockLocalStorage.get).mockResolvedValue(history);
+        vi.mocked(mockChatHistory.getMessages).mockReturnValue(history);
     
         const response = await controller.handleMessage({
           type: MessageTypes.GET_HISTORY,
@@ -328,8 +318,8 @@ describe("BackgroundController", () => {
         type: MessageTypes.CLEAR_CHAT,
       });
       expect(response).toEqual({ success: true });
-      expect(mockLocalStorage.set).toHaveBeenCalledWith(StorageKeys.CHAT_HISTORY, []);
-      expect(mockLocalStorage.set).toHaveBeenCalledWith(StorageKeys.PINNED_CONTEXTS, []);
+      expect(mockChatHistory.clear).toHaveBeenCalled();
+      expect(mockContextManager.clear).toHaveBeenCalled();
     });
 
     it("should handle unknown message types gracefully", async () => {
@@ -341,13 +331,13 @@ describe("BackgroundController", () => {
     });
     
     it("should catch and return errors during message handling", async () => {
-        vi.mocked(mockLocalStorage.get).mockRejectedValue(new Error("Storage Error"));
+        vi.mocked(mockChatHistory.load).mockRejectedValue(new Error("Load Error"));
     
         const response = await controller.handleMessage({
           type: MessageTypes.GET_HISTORY,
         });
     
-        expect(response).toEqual({ success: false, error: "Storage Error" });
+        expect(response).toEqual({ success: false, error: "Load Error" });
     });
   });
 });

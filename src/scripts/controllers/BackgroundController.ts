@@ -32,19 +32,14 @@ import {
   GeminiResponse} from "../types";
 
 export class BackgroundController {
-  private chatHistory: ChatHistory;
-  private contextManager: ContextManager;
-
   constructor(
-    localStorageService: ILocalStorageService,
+    private chatHistory: ChatHistory,
+    private contextManager: ContextManager,
     private syncStorageService: ISyncStorageService,
     private tabService: ITabService,
     private geminiService: IGeminiService,
     private messageService: IMessageService
-  ) {
-    this.chatHistory = new ChatHistory(localStorageService);
-    this.contextManager = new ContextManager(localStorageService, tabService);
-  }
+  ) {}
 
   /**
    * Initializes listeners and starts the controller.

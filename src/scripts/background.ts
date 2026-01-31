@@ -19,6 +19,8 @@ import { ChromeLocalStorageService, ChromeSyncStorageService } from "./services/
 import { ChromeTabService } from "./services/tabService";
 import { GeminiService } from "./services/geminiService";
 import { ChromeMessageService } from "./services/messageService";
+import { ChatHistory } from "./models/ChatHistory";
+import { ContextManager } from "./models/ContextManager";
 
 const localStorageService = new ChromeLocalStorageService();
 const syncStorageService = new ChromeSyncStorageService();
@@ -26,8 +28,12 @@ const tabService = new ChromeTabService();
 const geminiService = new GeminiService();
 const messageService = new ChromeMessageService();
 
+const chatHistory = new ChatHistory(localStorageService);
+const contextManager = new ContextManager(localStorageService, tabService);
+
 const controller = new BackgroundController(
-  localStorageService,
+  chatHistory,
+  contextManager,
   syncStorageService,
   tabService,
   geminiService,

@@ -226,6 +226,25 @@ describe("ContextManager", () => {
         expect(content).toContain("Current tab URL: chrome://settings");
         expect(content).toContain(CONTEXT_MESSAGES.RESTRICTED_URL);
     });
+
+    it("should not extract active tab content if it's already pinned", async () => {
+      const tabId = 123;
+      const activeTab = { id: tabId, url: "https://pinned.com", title: "Pinned", status: "complete" } as ChromeTab;
+      
+      vi.mocked(mockTabService.query).mockResolvedValueOnce([activeTab]);
+      
+      // Pin the tab
+      const pinnedTab = new TabContext(tabId, activeTab.url!, activeTab.title!, mockTabService);
+      await contextManager.addTab(pinnedTab);
+      
+      vi.mocked(mockTabService.executeScript).mockClear();
+
+      const content = await contextManager.getActiveTabContent();
+
+      expect(content).toContain(`Current tab URL: ${activeTab.url}`);
+      expect(content).toContain("(Content included in pinned tabs below)");
+      expect(mockTabService.executeScript).not.toHaveBeenCalled();
+    });
   });
 
   describe("load (Rehydration)", () => {

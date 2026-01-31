@@ -97,6 +97,11 @@ export class ContextManager {
       });
   
       if (activeTab && activeTab.url && activeTab.id !== undefined) {
+          // De-duplication: If active tab is already pinned, don't re-extract.
+          if (this.isTabPinned(activeTab.id)) {
+              return `Current tab URL: ${activeTab.url}\n(Content included in pinned tabs below)`;
+          }
+
           const tempContext = new TabContext(activeTab.id, activeTab.url, activeTab.title || "", this.tabService);
           const content = await tempContext.readContent();
           return `Current tab URL: ${activeTab.url}\nContent: ${content}`;
