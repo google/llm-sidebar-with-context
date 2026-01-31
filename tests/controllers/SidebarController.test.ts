@@ -37,6 +37,7 @@ const htmlContent = fs.readFileSync(
 describe("SidebarController", () => {
   let controller: SidebarController;
   let mockSyncStorage: ISyncStorageService;
+  let mockLocalStorage: ISyncStorageService;
   let mockMessageService: IMessageService;
 
   beforeEach(() => {
@@ -47,12 +48,16 @@ describe("SidebarController", () => {
       get: vi.fn(),
       set: vi.fn(),
     };
+    mockLocalStorage = {
+      get: vi.fn(),
+      set: vi.fn(),
+    };
     mockMessageService = {
       sendMessage: vi.fn().mockResolvedValue({}),
       onMessage: vi.fn(),
     };
     
-    controller = new SidebarController(mockSyncStorage, mockMessageService);
+    controller = new SidebarController(mockSyncStorage, mockLocalStorage, mockMessageService);
   });
 
   describe("Initialization", () => {
@@ -171,7 +176,7 @@ describe("SidebarController", () => {
       vi.mocked(mockMessageService.onMessage).mockImplementation((listener) => {
         messageListener = listener;
       });
-      controller = new SidebarController(mockSyncStorage, mockMessageService);
+      controller = new SidebarController(mockSyncStorage, mockLocalStorage, mockMessageService);
     });
 
     it("should update current tab info when receiving a message", () => {
@@ -349,7 +354,7 @@ describe("SidebarController", () => {
       const pinButton = document.getElementById("pin-tab-button") as HTMLButtonElement;
       expect(pinButton).toBeTruthy();
       expect(pinButton.className).toContain("pinned");
-      expect(pinButton.title).toContain("Unpin");
+      expect(pinButton.title).toContain("unpin");
 
       pinButton.click();
       expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
@@ -418,6 +423,82 @@ describe("SidebarController", () => {
       const messagesDiv = document.getElementById("messages") as HTMLDivElement;
       const systemMsg = messagesDiv.querySelector(".message.system");
       expect(systemMsg?.textContent).toBe("System: Failed to load chat history. Try starting a new chat.");
+    });
+  });
+
+  describe("Sharing Toggle", () => {
+    beforeEach(() => {
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(async (msg: any) => {
+        if (msg.type === MessageTypes.GET_CONTEXT) {
+          return { pinnedContexts: [], tab: { id: 1, title: "Test Tab", url: "https://test.com" } };
+        }
+        return { success: true };
+      });
+    });
+
+    it("should load sharing preference from localStorage on start", async () => {
+      vi.mocked(mockLocalStorage.get).mockImplementation(async (key) => {
+        if (key === StorageKeys.INCLUDE_CURRENT_TAB) return false;
+        return undefined;
+      });
+
+      await controller.start();
+
+      const toggleButton = document.getElementById("toggle-share-button") as HTMLButtonElement;
+      expect(toggleButton).not.toBeNull();
+      expect(toggleButton.className).not.toContain("active");
+      expect(toggleButton.title).toContain("start sharing");
+    });
+
+    it("should toggle sharing state and save to localStorage when clicked", async () => {
+      vi.mocked(mockLocalStorage.get).mockResolvedValue(true);
+      await controller.start();
+
+      let toggleButton = document.getElementById("toggle-share-button") as HTMLButtonElement;
+      expect(toggleButton.className).toContain("active");
+
+      toggleButton.click();
+
+      expect(mockLocalStorage.set).toHaveBeenCalledWith(StorageKeys.INCLUDE_CURRENT_TAB, false);
+      
+      // Wait for UI to update using waitFor
+      await vi.waitFor(() => {
+        toggleButton = document.getElementById("toggle-share-button") as HTMLButtonElement;
+        expect(toggleButton.className).not.toContain("active");
+      });
+    });
+
+    it("should pass includeCurrentTab=false in CHAT_MESSAGE when sharing is disabled", async () => {
+      vi.mocked(mockLocalStorage.get).mockResolvedValue(false);
+      await controller.start();
+
+      const promptForm = document.getElementById("prompt-form") as HTMLFormElement;
+      const promptInput = document.getElementById("prompt-input") as HTMLInputElement;
+      promptInput.value = "Test message";
+
+      promptForm.dispatchEvent(new Event("submit"));
+
+      expect(mockMessageService.sendMessage).toHaveBeenCalledWith(expect.objectContaining({
+        type: MessageTypes.CHAT_MESSAGE,
+        includeCurrentTab: false
+      }));
+    });
+
+    it("should handle the case where no active tab is found (no toggle rendered)", async () => {
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(async (msg: any) => {
+        if (msg.type === MessageTypes.GET_CONTEXT) {
+          return { pinnedContexts: [], tab: null };
+        }
+        return { success: true };
+      });
+
+      await controller.start();
+
+      const currentTabDiv = document.getElementById("current-tab");
+      expect(currentTabDiv?.textContent).toContain("No active tab found.");
+      
+      const toggleButton = document.getElementById("toggle-share-button");
+      expect(toggleButton).toBeNull();
     });
   });
 });

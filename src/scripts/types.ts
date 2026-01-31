@@ -31,6 +31,7 @@ export interface ChatMessageRequest {
   type: typeof MessageTypes.CHAT_MESSAGE;
   message: string;
   model: string;
+  includeCurrentTab: boolean;
 }
 
 export interface GetContextRequest {

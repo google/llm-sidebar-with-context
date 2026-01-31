@@ -151,7 +151,8 @@ body {
   text-overflow: ellipsis;
 }
 
-#current-tab button, #pinned-tabs button {
+/* Icon Buttons (Pin, Eye, Close) */
+.icon-button {
   background: none;
   border: none;
   color: #888; /* Subtle Icon Color */
@@ -161,6 +162,24 @@ body {
   align-items: center;
   justify-content: center;
   transition: color 0.2s, transform 0.1s;
+}
+
+.icon-button.active {
+  color: #0e639c; /* Accent Blue */
+}
+
+.icon-button.disabled {
+  color: #555; /* Dark Gray */
+  cursor: not-allowed;
+}
+
+.icon-button.disabled:hover {
+  transform: none;
+  color: #555;
+}
+
+#current-tab button, #pinned-tabs button {
+  /* Inherits from .icon-button */
 }
 
 #current-tab button.pinned {
@@ -176,7 +195,8 @@ body {
   color: #888; /* Icon Gray */
 }
 
-#current-tab button:hover, #pinned-tabs button:hover {
+/* Specificity fix: Ensure hover overrides specific state colors */
+#current-tab button:hover, #pinned-tabs button:hover, .icon-button:hover {
   color: #fff; /* White on Hover */
   transform: scale(1.1);
 }

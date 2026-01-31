@@ -34,6 +34,7 @@ export const StorageKeys = {
   PINNED_CONTEXTS: "pinnedContexts",
   SELECTED_MODEL: "selectedModel",
   CHAT_HISTORY: "chatHistory",
+  INCLUDE_CURRENT_TAB: "includeCurrentTab",
 };
 
 export const RestrictedURLs = ["chrome://", "about:", "chrome-extension://", "file://"];

@@ -25,8 +25,17 @@ import {
   CheckPinnedTabsResponse,
   GetHistoryResponse
 } from "../types";
-import { ISyncStorageService } from "../services/storageService";
+import { ISyncStorageService, ILocalStorageService } from "../services/storageService";
 import { IMessageService } from "../services/messageService";
+
+const ICONS = {
+  PIN: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pin"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>`,
+  PINNED: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`,
+  RESTRICTED: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-slash"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>`,
+  EYE: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
+  EYE_OFF: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye-off"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`,
+  CLOSE: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+};
 
 export class SidebarController {
   private promptForm: HTMLFormElement;
@@ -43,9 +52,11 @@ export class SidebarController {
 
   private pinnedContexts: TabInfo[] = [];
   private currentTab: TabInfo | null = null;
+  private isCurrentTabShared: boolean = true;
 
   constructor(
     private syncStorageService: ISyncStorageService,
+    private localStorageService: ILocalStorageService,
     private messageService: IMessageService
   ) {
     this.promptForm = document.getElementById("prompt-form") as HTMLFormElement;
@@ -77,6 +88,8 @@ export class SidebarController {
         } else {
           this.pinCurrentTab();
         }
+      } else if (target.id === "toggle-share-button") {
+        this.toggleCurrentTabSharing();
       } else if (target.classList.contains("unpin-button")) {
         this.unpinTab(Number(target.dataset.id));
       }
@@ -140,6 +153,12 @@ export class SidebarController {
       this.modelSelect.value = selectedModel;
     }
 
+    // Load Sharing Preference
+    const storedSharing = await this.localStorageService.get<boolean>(StorageKeys.INCLUDE_CURRENT_TAB);
+    if (storedSharing !== undefined) {
+      this.isCurrentTabShared = storedSharing;
+    }
+
     // Initial context update
     try {
       const response = await this.messageService.sendMessage<GetContextResponse>({ type: MessageTypes.GET_CONTEXT });
@@ -147,9 +166,7 @@ export class SidebarController {
         if (response.pinnedContexts) {
           this.displayPinnedTabs(response.pinnedContexts);
         }
-        if (response.tab) {
-          this.updateCurrentTabInfo(response.tab);
-        }
+        this.updateCurrentTabInfo(response.tab as TabInfo); // Always update, even if null
       }
     } catch (error) {
       console.error("Failed to get context:", error);
@@ -207,6 +224,7 @@ export class SidebarController {
         type: MessageTypes.CHAT_MESSAGE,
         message: message,
         model: this.modelSelect.value,
+        includeCurrentTab: this.isCurrentTabShared,
       });
 
       thinkingMessageElement.remove();
@@ -284,8 +302,8 @@ export class SidebarController {
     this.pinnedContexts.forEach((context) => {
       const li = document.createElement("li");
       const buttons = `
-        <button class="unpin-button" data-id="${context.id}" title="Unpin this tab">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <button class="icon-button unpin-button" data-id="${context.id}" title="Unpin this tab">
+          ${ICONS.CLOSE}
         </button>`;
       li.innerHTML = `<span>${context.title}</span>${buttons}`;
       ul.appendChild(li);
@@ -304,6 +322,14 @@ export class SidebarController {
     }
   }
 
+  private async toggleCurrentTabSharing() {
+    this.isCurrentTabShared = !this.isCurrentTabShared;
+    await this.localStorageService.set(StorageKeys.INCLUDE_CURRENT_TAB, this.isCurrentTabShared);
+    if (this.currentTab) {
+      this.updateCurrentTabInfo(this.currentTab);
+    }
+  }
+
   private updateCurrentTabInfo(tab: TabInfo) {
     this.currentTab = tab;
     
@@ -315,27 +341,35 @@ export class SidebarController {
     const isPinned = this.pinnedContexts.some(t => t.id === tab.id);
     const isRestricted = RestrictedURLs.some(url => tab.url.startsWith(url));
     
-    let buttonHtml = "";
+    let pinButtonHtml = "";
     if (isRestricted) {
        // Restricted Icon
-      buttonHtml = `
-        <button id="pin-tab-button" class="restricted" title="Can't pin restricted tab: ${tab.url}" disabled>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-slash"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+      pinButtonHtml = `
+        <button id="pin-tab-button" class="icon-button restricted" title="Can't pin restricted tab: ${tab.url}" disabled>
+          ${ICONS.RESTRICTED}
         </button>`;
     } else if (isPinned) {
       // Pinned Icon
-      buttonHtml = `
-        <button id="pin-tab-button" class="pinned" title="Unpin current tab">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+      pinButtonHtml = `
+        <button id="pin-tab-button" class="icon-button pinned" title="Click to unpin current tab">
+          ${ICONS.PINNED}
         </button>`;
     } else {
       // Pinnable Icon
-      buttonHtml = `
-        <button id="pin-tab-button" class="pinnable" title="Pin current tab">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pin"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>
+      pinButtonHtml = `
+        <button id="pin-tab-button" class="icon-button pinnable" title="Click to pin current tab">
+          ${ICONS.PIN}
         </button>`;
     }
 
-    this.currentTabDiv.innerHTML = `<span>Current: ${tab.title}</span>${buttonHtml}`;
+    const eyeIcon = this.isCurrentTabShared ? ICONS.EYE : ICONS.EYE_OFF;
+
+    const shareButtonHtml = `
+      <button id="toggle-share-button" class="icon-button ${this.isCurrentTabShared ? 'active' : ''}" title="${this.isCurrentTabShared ? 'Current tab is being shared. Click to stop sharing current tab' : 'Current tab is NOT being shared. Click to start sharing.'}">
+        ${eyeIcon}
+      </button>
+    `;
+
+    this.currentTabDiv.innerHTML = `${shareButtonHtml}<span>Current: ${tab.title}</span>${pinButtonHtml}`;
   }
 }

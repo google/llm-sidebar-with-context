@@ -121,7 +121,7 @@ export class BackgroundController {
 
       switch (request.type) {
         case MessageTypes.CHAT_MESSAGE:
-          return await this.handleChatMessage(request.message, request.model);
+          return await this.handleChatMessage(request.message, request.model, request.includeCurrentTab);
         case MessageTypes.GET_CONTEXT:
           return await this.handleGetContext();
         case MessageTypes.SAVE_API_KEY:
@@ -153,7 +153,7 @@ export class BackgroundController {
     };
   }
 
-  private async handleChatMessage(message: string, model: string): Promise<GeminiResponse> {
+  private async handleChatMessage(message: string, model: string, includeCurrentTab: boolean): Promise<GeminiResponse> {
     const apiKey = await this.getApiKey();
     if (!apiKey) {
       return {
@@ -165,7 +165,10 @@ export class BackgroundController {
     await this.chatHistory.addMessage({ role: "user", text: message });
 
     // 2. Build Context
-    const activeContext = await this.contextManager.getActiveTabContent();
+    let activeContext = "";
+    if (includeCurrentTab) {
+      activeContext = await this.contextManager.getActiveTabContent();
+    }
     const pinnedContent = await this.contextManager.getAllContent();
     const fullContext = activeContext + pinnedContent;
 

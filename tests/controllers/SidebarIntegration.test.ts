@@ -37,6 +37,7 @@ const htmlContent = fs.readFileSync(
 describe("Sidebar Integration: Message Handling", () => {
   let controller: SidebarController;
   let mockSyncStorage: ISyncStorageService;
+  let mockLocalStorage: ISyncStorageService;
   let mockMessageService: IMessageService;
 
   beforeEach(() => {
@@ -44,6 +45,10 @@ describe("Sidebar Integration: Message Handling", () => {
     document.body.innerHTML = htmlContent;
     
     mockSyncStorage = {
+      get: vi.fn(),
+      set: vi.fn(),
+    };
+    mockLocalStorage = {
       get: vi.fn(),
       set: vi.fn(),
     };
@@ -60,7 +65,7 @@ describe("Sidebar Integration: Message Handling", () => {
     });
 
     // Initialize controller to attach listeners
-    controller = new SidebarController(mockSyncStorage, mockMessageService);
+    controller = new SidebarController(mockSyncStorage, mockLocalStorage, mockMessageService);
 
     expect(capturedListener).toBeDefined();
 
@@ -85,7 +90,7 @@ describe("Sidebar Integration: Message Handling", () => {
     });
 
     // Initialize controller to attach listeners
-    controller = new SidebarController(mockSyncStorage, mockMessageService);
+    controller = new SidebarController(mockSyncStorage, mockLocalStorage, mockMessageService);
 
     expect(capturedListener).toBeDefined();
 

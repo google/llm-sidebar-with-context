@@ -15,12 +15,13 @@
  */
 
 import { SidebarController } from "./controllers/SidebarController";
-import { ChromeSyncStorageService } from "./services/storageService";
+import { ChromeSyncStorageService, ChromeLocalStorageService } from "./services/storageService";
 import { ChromeMessageService } from "./services/messageService";
 
 document.addEventListener("DOMContentLoaded", () => {
   const syncStorageService = new ChromeSyncStorageService();
+  const localStorageService = new ChromeLocalStorageService();
   const messageService = new ChromeMessageService();
-  const controller = new SidebarController(syncStorageService, messageService);
+  const controller = new SidebarController(syncStorageService, localStorageService, messageService);
   controller.start();
 });

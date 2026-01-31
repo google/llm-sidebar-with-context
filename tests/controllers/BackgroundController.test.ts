@@ -185,6 +185,7 @@ describe("BackgroundController", () => {
         type: MessageTypes.CHAT_MESSAGE,
         message: "Hi",
         model: "gemini-pro",
+        includeCurrentTab: true,
       });
 
       expect(response).toEqual({ reply: "Hello from Gemini" });
@@ -211,6 +212,7 @@ describe("BackgroundController", () => {
           type: MessageTypes.CHAT_MESSAGE,
           message: "Test context",
           model: "gemini-pro",
+          includeCurrentTab: true,
         });
     
         expect(mockGeminiService.generateContent).toHaveBeenCalledWith(
@@ -219,6 +221,29 @@ describe("BackgroundController", () => {
           expect.any(Array),
           "gemini-pro"
         );
+    });
+
+    it("should respect includeCurrentTab=false in CHAT_MESSAGE", async () => {
+        vi.mocked(mockSyncStorage.get).mockResolvedValue("fake-key");
+        vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue("Active Content");
+        vi.mocked(mockContextManager.getAllContent).mockResolvedValue("Pinned Content");
+        vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
+        vi.mocked(mockGeminiService.generateContent).mockResolvedValue({ reply: "Responded" });
+    
+        await controller.handleMessage({
+          type: MessageTypes.CHAT_MESSAGE,
+          message: "Test context",
+          model: "gemini-pro",
+          includeCurrentTab: false,
+        });
+    
+        expect(mockGeminiService.generateContent).toHaveBeenCalledWith(
+          "fake-key",
+          "Pinned Content", // Active content should be excluded
+          expect.any(Array),
+          "gemini-pro"
+        );
+        expect(mockContextManager.getActiveTabContent).not.toHaveBeenCalled();
     });
 
     it("should not save model response to history if Gemini fails", async () => {
@@ -234,6 +259,7 @@ describe("BackgroundController", () => {
           type: MessageTypes.CHAT_MESSAGE,
           message: "Dangerous prompt",
           model: "gemini-pro",
+          includeCurrentTab: true,
         });
     
         expect(response).toEqual({ error: "Safety concerns" });
