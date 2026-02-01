@@ -70,7 +70,7 @@ body {
 }
 
 .message.user {
-  background-color: #0e639c; /* Accent Blue */
+  background-color: #007fd4; /* Accent Blue */
   color: #ffffff; /* White */
   margin-left: 5px; /* Subtle right alignment */
 }
@@ -165,7 +165,7 @@ body {
 }
 
 .icon-button.active {
-  color: #0e639c; /* Accent Blue */
+  color: #007fd4; /* Accent Blue */
 }
 
 .icon-button.disabled {
@@ -183,7 +183,7 @@ body {
 }
 
 #current-tab button.pinned {
-  color: #0e639c; /* Accent Blue */
+  color: #007fd4; /* Accent Blue */
 }
 
 #current-tab button.restricted {
@@ -232,7 +232,7 @@ body {
 }
 
 #model-select:focus {
-  border-color: #0e639c; /* Focus Blue */
+  border-color: #007fd4; /* Focus Blue */
 }
 
 .button-group {
@@ -270,7 +270,7 @@ body {
 }
 
 .api-key-help a {
-  color: #0e639c; /* Accent Blue */
+  color: #007fd4; /* Accent Blue */
   text-decoration: none;
 }
 
@@ -301,7 +301,7 @@ body {
 }
 
 #api-key-input:focus {
-  border-color: #0e639c;
+  border-color: #007fd4;
 }
 
 /* Chat Input Bar */
@@ -316,7 +316,7 @@ body {
 }
 
 #prompt-form:focus-within {
-  border-color: #0e639c; /* Focus Accent */
+  border-color: #007fd4; /* Focus Accent */
 }
 
 #prompt-input {
@@ -346,7 +346,7 @@ body {
 }
 
 #send-button:hover {
-  color: #0e639c; /* Active Color */
+  color: #007fd4; /* Active Color */
 }
 
 .feather-send {
