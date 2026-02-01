@@ -100,7 +100,7 @@ describe("SidebarController", () => {
       await controller.start();
 
       const select = document.getElementById("model-select") as HTMLSelectElement;
-      expect(select.value).toBe("gemini-2.5-flash");
+      expect(select.value).toBe("gemini-2.5-flash-lite");
     });
   });
 

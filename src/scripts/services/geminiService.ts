@@ -43,7 +43,7 @@ export class GeminiService implements IGeminiService {
     apiKey: string,
     context: string,
     history: ChatMessage[],
-    model: string = "gemini-2.5-flash"
+    model: string = "gemini-2.5-flash-lite"
   ): Promise<GeminiResponse> {
     try {
       if (!apiKey) {

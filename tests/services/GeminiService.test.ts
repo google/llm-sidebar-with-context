@@ -64,7 +64,7 @@ describe("GeminiService", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     const [url, options] = vi.mocked(fetch).mock.calls[0];
     
-    expect(url).toContain("gemini-2.5-flash");
+    expect(url).toContain("gemini-2.5-flash-lite");
     expect((options as RequestInit).headers).toEqual({
       "Content-Type": "application/json",
       "x-goog-api-key": apiKey,
