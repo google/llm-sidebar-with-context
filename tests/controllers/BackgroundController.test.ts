@@ -282,6 +282,21 @@ describe("BackgroundController", () => {
       expect(response).toEqual({ success: false, message: "Cannot pin restricted URL" });
     });
 
+    it("should return error message when pinning fails due to limit", async () => {
+      vi.mocked(mockContextManager.addTab).mockRejectedValue(new Error("You can only pin up to 6 tabs."));
+      // Ensure mockTabService.query returns a valid tab so handlePinTab proceeds to call addTab
+      vi.mocked(mockTabService.query).mockResolvedValue([
+        { id: 101, url: "https://pin.com", title: "Pin Me" } as any
+      ]);
+
+      const response = await controller.handleMessage({ type: MessageTypes.PIN_TAB });
+
+      expect(response).toEqual({
+        success: false,
+        message: "You can only pin up to 6 tabs.",
+      });
+    });
+
     it("should handle PIN_TAB successfully", async () => {
         vi.mocked(mockTabService.query).mockResolvedValue([
           { id: 101, url: "https://pin.com", title: "Pin Me" } as any

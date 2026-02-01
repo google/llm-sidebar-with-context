@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { StorageKeys } from "../constants";
+import { StorageKeys, MAX_PINNED_TABS } from "../constants";
 import { TabContext } from "./TabContext";
 import { isRestrictedURL } from "../utils";
 import { TabInfo } from "../types";
@@ -39,6 +39,9 @@ export class ContextManager {
     if (this.isTabPinned(tab.tabId)) {
       // Idempotent: If already pinned, do nothing.
       return;
+    }
+    if (this.pinnedTabs.length >= MAX_PINNED_TABS) {
+      throw new Error(`You can only pin up to ${MAX_PINNED_TABS} tabs.`);
     }
     this.pinnedTabs.push(tab);
     await this.save();

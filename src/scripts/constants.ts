@@ -15,6 +15,7 @@
  */
 
 export const MAX_CONTEXT_LENGTH = 250000;
+export const MAX_PINNED_TABS = 6;
 
 export const MessageTypes = {
   CHAT_MESSAGE: "chatMessage",

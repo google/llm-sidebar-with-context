@@ -407,6 +407,31 @@ describe("SidebarController", () => {
       const systemMsg = messagesDiv.querySelector(".message.system");
       expect(systemMsg?.textContent).toBe("System: Cannot pin restricted URL");
     });
+    it("should display system message when pinning limit is reached", async () => {
+      const currentTab = { id: 101, title: "Google", url: "https://google.com" };
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(async (msg: any) => {
+        if (msg.type === MessageTypes.GET_CONTEXT) {
+          return { pinnedContexts: [], tab: currentTab };
+        }
+        if (msg.type === MessageTypes.PIN_TAB) {
+          return { success: false, message: "You can only pin up to 6 tabs." };
+        }
+        return { success: true };
+      });
+
+      await controller.start();
+
+      const pinButton = document.getElementById("pin-tab-button") as HTMLButtonElement;
+      pinButton.click();
+
+      // Wait for async appendMessage
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      const messagesDiv = document.getElementById("messages") as HTMLDivElement;
+      const systemMsg = messagesDiv.querySelector(".message.system");
+      expect(systemMsg?.textContent).toBe("System: You can only pin up to 6 tabs.");
+    });
+
   });
 
   describe("History Rehydration Error Handling", () => {

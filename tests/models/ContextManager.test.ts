@@ -122,6 +122,93 @@ describe("ContextManager", () => {
        await expect(contextManager.addTab(tab)).rejects.toThrow("Cannot pin a tab with no URL.");
        expect(contextManager.getPinnedTabs()).toHaveLength(0);
     });
+
+    it("should throw error if pinning more than MAX_PINNED_TABS", async () => {
+      // Pin 6 tabs (MAX_PINNED_TABS)
+      for (let i = 0; i < 6; i++) {
+        const tab = new TabContext(i + 1, `https://example${i}.com`, `Title ${i}`, mockTabService);
+        await contextManager.addTab(tab);
+      }
+
+      // Try to pin 7th
+      const extraTab = new TabContext(99, "https://overflow.com", "Overflow", mockTabService);
+      await expect(contextManager.addTab(extraTab)).rejects.toThrow("You can only pin up to 6 tabs.");
+      expect(contextManager.isTabPinned(99)).toBe(false);
+    });
+
+    it("should allow pinning after reaching limit, failing, and then removing an item", async () => {
+       // Pin 6 tabs
+       for (let i = 0; i < 6; i++) {
+        const tab = new TabContext(i + 1, `https://example${i}.com`, `Title ${i}`, mockTabService);
+        await contextManager.addTab(tab);
+      }
+
+      // Try to pin 7th - should fail
+      const extraTab = new TabContext(99, "https://overflow.com", "Overflow", mockTabService);
+      await expect(contextManager.addTab(extraTab)).rejects.toThrow("You can only pin up to 6 tabs.");
+
+      // Remove one
+      await contextManager.removeTab(1);
+
+      // Now trying to add the same extraTab should succeed
+      await expect(contextManager.addTab(extraTab)).resolves.not.toThrow();
+      expect(contextManager.getPinnedTabs()).toHaveLength(6);
+      expect(contextManager.isTabPinned(99)).toBe(true);
+    });
+
+    it("should handle simultaneous addTab calls correctly (Concurrency)", async () => {
+      // Pin 5 tabs
+      for (let i = 0; i < 5; i++) {
+        const tab = new TabContext(i + 1, `https://example${i}.com`, `Title ${i}`, mockTabService);
+        await contextManager.addTab(tab);
+      }
+
+      // Try to add two tabs simultaneously
+      const tabA = new TabContext(100, "https://a.com", "A", mockTabService);
+      const tabB = new TabContext(101, "https://b.com", "B", mockTabService);
+
+      // In JS, these aren't truly parallel but test if the state remains consistent
+      const results = await Promise.allSettled([
+        contextManager.addTab(tabA),
+        contextManager.addTab(tabB)
+      ]);
+
+      const fulfilled = results.filter(r => r.status === 'fulfilled');
+      const rejected = results.filter(r => r.status === 'rejected');
+
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+      expect((rejected[0] as PromiseRejectedResult).reason.message).toContain("You can only pin up to 6 tabs.");
+      expect(contextManager.getPinnedTabs()).toHaveLength(6);
+    });
+
+    it("should be idempotent even when at the limit", async () => {
+      // Pin 6 tabs
+      for (let i = 0; i < 6; i++) {
+        const tab = new TabContext(i + 1, `https://example${i}.com`, `Title ${i}`, mockTabService);
+        await contextManager.addTab(tab);
+      }
+
+      // Try to pin one of the already pinned tabs
+      const existingTab = new TabContext(1, "https://example0.com", "Title 0", mockTabService);
+      await expect(contextManager.addTab(existingTab)).resolves.not.toThrow();
+      expect(contextManager.getPinnedTabs()).toHaveLength(6);
+    });
+
+    it("should prevent adding items if storage already has limit exceeded (Legacy Data)", async () => {
+        // mock load() to populate the array with 7 items
+        const storedData = Array.from({ length: 7 }, (_, i) => ({ id: i + 1, url: `https://site${i}.com`, title: `Site ${i}` }));
+        vi.mocked(mockLocalStorageService.get).mockResolvedValue(storedData);
+        // Mock getTab to return valid tabs for all 7
+        vi.mocked(mockTabService.getTab).mockImplementation(async (id) => ({ id, url: "u", title: "t", active: false } as any));
+        
+        await contextManager.load();
+        expect(contextManager.getPinnedTabs()).toHaveLength(7);
+
+        // Try to add an 8th tab
+        const newTab = new TabContext(100, "https://new.com", "New", mockTabService);
+        await expect(contextManager.addTab(newTab)).rejects.toThrow("You can only pin up to 6 tabs.");
+    });
   });
 
   describe("removeTab", () => {
@@ -255,8 +342,9 @@ describe("ContextManager", () => {
           vi.mocked(mockLocalStorageService.get).mockResolvedValue(storedData);
           
           // Mock tab service finding the tab
-          vi.mocked(mockTabService.getTab).mockResolvedValue({ 
-              id: 101, url: "https://saved.com", title: "Saved", status: "complete", active: false, windowId: 1
+          vi.mocked(mockTabService.getTab).mockResolvedValue({
+            id: 101, url: "https://saved.com", title: "Saved", status: "complete", active: false, windowId: 1,
+            discarded: false
           });
 
           await contextManager.load();
