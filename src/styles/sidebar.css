@@ -258,15 +258,42 @@ body {
 /* API Key Input Area */
 #api-key-container {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.api-key-help {
+  font-size: 11px;
+  color: #bbb; /* Light Gray */
+  line-height: 1.4;
+}
+
+.api-key-help a {
+  color: #0e639c; /* Accent Blue */
+  text-decoration: none;
+}
+
+.api-key-help a:hover {
+  text-decoration: underline;
+}
+
+.terms-text {
+  font-size: 10px;
+  color: #888; /* Dark Gray */
+  margin-top: 2px;
+}
+
+.api-key-input-wrapper {
+  display: flex;
   gap: 6px;
-  padding-bottom: 4px;
 }
 
 #api-key-input {
   flex-grow: 1;
-  border: 1px solid #333;
-  background-color: #1e1e1e;
-  color: #d4d4d4;
+  border: 1px solid #333; /* Control Border */
+  background-color: #1e1e1e; /* Input Dark */
+  color: #d4d4d4; /* Text Light Gray */
   padding: 6px 8px;
   font-size: 11.5px;
   border-radius: 4px;

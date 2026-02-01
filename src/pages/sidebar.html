@@ -26,12 +26,18 @@
       
       <div class="bottom-panel">
         <div id="api-key-container">
-          <input
-            type="password"
-            id="api-key-input"
-            placeholder="Enter your Gemini API Key"
-          />
-          <button id="save-api-key-button">Save</button>
+          <div class="api-key-help">
+            Get your API Key for free on <a href="https://aistudio.google.com/api-keys" target="_blank">Google AI Studio</a>
+            <div class="terms-text">Please read the API's <a href="https://ai.google.dev/gemini-api/terms" target="_blank">terms of service</a></div>
+          </div>
+          <div class="api-key-input-wrapper">
+            <input
+              type="password"
+              id="api-key-input"
+              placeholder="Enter your Gemini API Key"
+            />
+            <button id="save-api-key-button">Save</button>
+          </div>
         </div>
 
         <div id="pinned-tabs-container">
