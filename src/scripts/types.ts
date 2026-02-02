@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { MessageTypes } from "./constants";
+import { MessageTypes } from './constants';
 
 export interface TabInfo {
   id: number;
@@ -23,7 +23,7 @@ export interface TabInfo {
 }
 
 export interface ChatMessage {
-  role: "user" | "model";
+  role: 'user' | 'model';
   text: string;
 }
 
@@ -79,8 +79,8 @@ export interface CurrentTabInfoMessage {
 }
 
 export type ContentPart =
-  | { type: "text"; text: string }
-  | { type: "file_data"; mimeType: string; fileUri: string };
+  | { type: 'text'; text: string }
+  | { type: 'file_data'; mimeType: string; fileUri: string };
 
 export type ExtensionMessage =
   | ChatMessageRequest

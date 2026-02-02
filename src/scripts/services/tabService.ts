@@ -17,7 +17,7 @@
 export class TimeoutError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "TimeoutError";
+    this.name = 'TimeoutError';
   }
 }
 
@@ -93,28 +93,32 @@ export class ChromeTabService implements ITabService {
     return (result.result as T) ?? null;
   }
 
-  async create(createProperties: chrome.tabs.CreateProperties): Promise<ChromeTab> {
+  async create(
+    createProperties: chrome.tabs.CreateProperties,
+  ): Promise<ChromeTab> {
     const tab = await chrome.tabs.create(createProperties);
     return this.mapTab(tab);
   }
 
   async waitForTabComplete(tabId: number, timeoutMs = 10000): Promise<void> {
     const tab = await chrome.tabs.get(tabId);
-    if (tab.status === "complete") {
+    if (tab.status === 'complete') {
       return;
     }
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         cleanup();
-        reject(new TimeoutError(`Timed out waiting for tab ${tabId} to complete`));
+        reject(
+          new TimeoutError(`Timed out waiting for tab ${tabId} to complete`),
+        );
       }, timeoutMs);
 
       const listener = (
         updatedTabId: number,
-        changeInfo: chrome.tabs.OnUpdatedInfo
+        changeInfo: chrome.tabs.OnUpdatedInfo,
       ) => {
-        if (updatedTabId === tabId && changeInfo.status === "complete") {
+        if (updatedTabId === tabId && changeInfo.status === 'complete') {
           cleanup();
           resolve();
         }

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { MAX_CONTEXT_LENGTH, CONTEXT_MESSAGES } from "../constants";
-import { isRestrictedURL } from "../utils";
-import { ITabService, TimeoutError } from "../services/tabService";
-import { ContentPart } from "../types";
-import { IContentStrategy } from "../strategies/IContentStrategy";
-import { YouTubeStrategy } from "../strategies/YouTubeStrategy";
-import { DefaultWebPageStrategy } from "../strategies/DefaultWebPageStrategy";
+import { MAX_CONTEXT_LENGTH, CONTEXT_MESSAGES } from '../constants';
+import { isRestrictedURL } from '../utils';
+import { ITabService, TimeoutError } from '../services/tabService';
+import { ContentPart } from '../types';
+import { IContentStrategy } from '../strategies/IContentStrategy';
+import { YouTubeStrategy } from '../strategies/YouTubeStrategy';
+import { DefaultWebPageStrategy } from '../strategies/DefaultWebPageStrategy';
 
 export class TabContext {
   private strategies: IContentStrategy[];
@@ -29,7 +29,7 @@ export class TabContext {
     public readonly tabId: number,
     public url: string,
     public title: string,
-    private tabService: ITabService
+    private tabService: ITabService,
   ) {
     this.strategies = [
       new YouTubeStrategy(),
@@ -44,22 +44,32 @@ export class TabContext {
   async readContent(): Promise<ContentPart> {
     if (isRestrictedURL(this.url)) {
       console.warn(`Cannot extract content from restricted URL: ${this.url}`);
-      return { type: "text", text: `${CONTEXT_MESSAGES.RESTRICTED_URL}: ${this.url}` };
+      return {
+        type: 'text',
+        text: `${CONTEXT_MESSAGES.RESTRICTED_URL}: ${this.url}`,
+      };
     }
 
     const strategy = this.strategies.find((s) => s.canHandle(this.url));
 
     if (!strategy) {
       // Should not happen as DefaultWebPageStrategy handles everything
-      return { type: "text", text: `${CONTEXT_MESSAGES.ERROR_PREFIX} No strategy found for ${this.url}` };
+      return {
+        type: 'text',
+        text: `${CONTEXT_MESSAGES.ERROR_PREFIX} No strategy found for ${this.url}`,
+      };
     }
 
     try {
       return await strategy.getContent(this.tabId, this.url);
     } catch (error: unknown) {
       console.error(`Failed to extract content for tab ${this.url}:`, error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      return { type: "text", text: `${CONTEXT_MESSAGES.ERROR_PREFIX} ${this.url}: ${errorMessage})` };
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return {
+        type: 'text',
+        text: `${CONTEXT_MESSAGES.ERROR_PREFIX} ${this.url}: ${errorMessage})`,
+      };
     }
   }
 }

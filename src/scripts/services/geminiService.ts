@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ChatMessage, GeminiResponse, ContentPart } from "../types";
+import { ChatMessage, GeminiResponse, ContentPart } from '../types';
 
 interface GeminiApiResponse {
   candidates?: Array<{
@@ -35,7 +35,7 @@ export interface IGeminiService {
     context: ContentPart[],
     history: ChatMessage[],
     model?: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ): Promise<GeminiResponse>;
 }
 
@@ -44,18 +44,18 @@ export class GeminiService implements IGeminiService {
     apiKey: string,
     context: ContentPart[],
     history: ChatMessage[],
-    model: string = "gemini-2.5-flash-lite",
-    signal?: AbortSignal
+    model: string = 'gemini-2.5-flash-lite',
+    signal?: AbortSignal,
   ): Promise<GeminiResponse> {
     try {
       if (!apiKey) {
-        return { error: "API key is required" };
+        return { error: 'API key is required' };
       }
       if (history.length === 0) {
-        return { error: "Chat history cannot be empty" };
+        return { error: 'Chat history cannot be empty' };
       }
-      if (history[history.length - 1].role !== "user") {
-        return { error: "The last message must be from the user" };
+      if (history[history.length - 1].role !== 'user') {
+        return { error: 'The last message must be from the user' };
       }
 
       // Map history to Gemini API format
@@ -68,39 +68,39 @@ export class GeminiService implements IGeminiService {
       // Inject context parts into the last user message
       if (contents.length > 0) {
         const lastMessage = contents[contents.length - 1];
-        if (lastMessage.role === "user" && context.length > 0) {
-             // Map ContentPart[] to Gemini API Part format
-             const contextParts = context.map(part => {
-                 if (part.type === 'text') {
-                     return { text: part.text };
-                 } else {
-                     return {
-                         file_data: {
-                             mime_type: part.mimeType,
-                             file_uri: part.fileUri
-                         }
-                     };
-                 }
-             });
-             
-             // Prepend context parts to the existing message parts
-             lastMessage.parts = [...contextParts, ...lastMessage.parts];
+        if (lastMessage.role === 'user' && context.length > 0) {
+          // Map ContentPart[] to Gemini API Part format
+          const contextParts = context.map((part) => {
+            if (part.type === 'text') {
+              return { text: part.text };
+            } else {
+              return {
+                file_data: {
+                  mime_type: part.mimeType,
+                  file_uri: part.fileUri,
+                },
+              };
+            }
+          });
+
+          // Prepend context parts to the existing message parts
+          lastMessage.parts = [...contextParts, ...lastMessage.parts];
         }
       }
 
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey,
           },
           body: JSON.stringify({
             contents: contents,
           }),
           signal: signal,
-        }
+        },
       );
 
       const data: GeminiApiResponse = await response.json();
@@ -110,7 +110,7 @@ export class GeminiService implements IGeminiService {
       } else if (data.error) {
         return { error: data.error.message };
       } else {
-        return { error: "Unknown error from Gemini API." };
+        return { error: 'Unknown error from Gemini API.' };
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);

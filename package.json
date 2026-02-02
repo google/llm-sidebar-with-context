@@ -6,7 +6,9 @@
   "scripts": {
     "test": "vitest run",
     "build": "node build-scripts/build.js",
-    "type-check": "tsc"
+    "type-check": "tsc",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "repository": {
     "type": "git",
@@ -30,6 +32,7 @@
     "esbuild": "^0.27.2",
     "fs-extra": "^11.3.3",
     "jsdom": "^27.4.0",
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.17"
   }

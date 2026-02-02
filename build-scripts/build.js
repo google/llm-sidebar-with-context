@@ -14,28 +14,28 @@ async function build() {
   const filesToCopy = [
     {
       src: path.join(projectRoot, 'manifest.json'),
-      dest: path.join(distDir, 'manifest.json')
+      dest: path.join(distDir, 'manifest.json'),
     },
     {
       src: path.join(projectRoot, 'icon16.png'),
-      dest: path.join(distDir, 'icon16.png')
+      dest: path.join(distDir, 'icon16.png'),
     },
     {
       src: path.join(projectRoot, 'icon48.png'),
-      dest: path.join(distDir, 'icon48.png')
+      dest: path.join(distDir, 'icon48.png'),
     },
     {
       src: path.join(projectRoot, 'icon128.png'),
-      dest: path.join(distDir, 'icon128.png')
+      dest: path.join(distDir, 'icon128.png'),
     },
     {
       src: path.join(srcDir, 'pages'),
-      dest: path.join(distDir, 'src/pages')
+      dest: path.join(distDir, 'src/pages'),
     },
     {
       src: path.join(srcDir, 'styles'),
-      dest: path.join(distDir, 'src/styles')
-    }
+      dest: path.join(distDir, 'src/styles'),
+    },
   ];
 
   for (const file of filesToCopy) {

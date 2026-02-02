@@ -25,7 +25,7 @@ describe('ChromeMessageService', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    
+
     vi.stubGlobal('chrome', {
       runtime: {
         sendMessage: mockSendMessage,
@@ -53,7 +53,10 @@ describe('ChromeMessageService', () => {
       const message = { type: MessageTypes.GET_CONTEXT };
       const response = await service.sendMessage(message);
 
-      expect(mockSendMessage).toHaveBeenCalledWith(message, expect.any(Function));
+      expect(mockSendMessage).toHaveBeenCalledWith(
+        message,
+        expect.any(Function),
+      );
       expect(response).toEqual(mockResponse);
     });
 
@@ -64,8 +67,10 @@ describe('ChromeMessageService', () => {
       });
 
       const message = { type: MessageTypes.GET_CONTEXT };
-      
-      await expect(service.sendMessage(message)).rejects.toThrow('Connection failed');
+
+      await expect(service.sendMessage(message)).rejects.toThrow(
+        'Connection failed',
+      );
     });
 
     it('should resolve with undefined if response is empty (void return)', async () => {
@@ -85,13 +90,15 @@ describe('ChromeMessageService', () => {
       const listener = vi.fn();
       service.onMessage(listener);
 
-      expect(mockOnMessageAddListener).toHaveBeenCalledWith(expect.any(Function));
+      expect(mockOnMessageAddListener).toHaveBeenCalledWith(
+        expect.any(Function),
+      );
     });
 
     it('should allow registering multiple listeners', () => {
       const listenerA = vi.fn();
       const listenerB = vi.fn();
-      
+
       service.onMessage(listenerA);
       service.onMessage(listenerB);
 
@@ -110,7 +117,7 @@ describe('ChromeMessageService', () => {
       const message = { type: MessageTypes.GET_CONTEXT };
       const sender = { id: 'test' };
       const sendResponse = vi.fn();
-      
+
       // Simulate Chrome calling the listener
       registeredListener(message, sender, sendResponse);
 

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import { StorageKeys } from "../constants";
-import { ILocalStorageService } from "../services/storageService";
-import { ChatMessage } from "../types";
+import { StorageKeys } from '../constants';
+import { ILocalStorageService } from '../services/storageService';
+import { ChatMessage } from '../types';
 
 export class ChatHistory {
   private messages: ChatMessage[] = [];
@@ -59,7 +59,7 @@ export class ChatHistory {
    */
   async load(): Promise<void> {
     const history = await this.localStorageService.get<ChatMessage[]>(
-      StorageKeys.CHAT_HISTORY
+      StorageKeys.CHAT_HISTORY,
     );
     if (Array.isArray(history)) {
       this.messages = history;

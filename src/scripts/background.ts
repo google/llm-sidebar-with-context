@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-import { BackgroundController } from "./controllers/BackgroundController";
-import { ChromeLocalStorageService, ChromeSyncStorageService } from "./services/storageService";
-import { ChromeTabService } from "./services/tabService";
-import { GeminiService } from "./services/geminiService";
-import { ChromeMessageService } from "./services/messageService";
-import { ChatHistory } from "./models/ChatHistory";
-import { ContextManager } from "./models/ContextManager";
+import { BackgroundController } from './controllers/BackgroundController';
+import {
+  ChromeLocalStorageService,
+  ChromeSyncStorageService,
+} from './services/storageService';
+import { ChromeTabService } from './services/tabService';
+import { GeminiService } from './services/geminiService';
+import { ChromeMessageService } from './services/messageService';
+import { ChatHistory } from './models/ChatHistory';
+import { ContextManager } from './models/ContextManager';
 
 const localStorageService = new ChromeLocalStorageService();
 const syncStorageService = new ChromeSyncStorageService();
@@ -37,7 +40,7 @@ const controller = new BackgroundController(
   syncStorageService,
   tabService,
   geminiService,
-  messageService
+  messageService,
 );
 
 controller.start();

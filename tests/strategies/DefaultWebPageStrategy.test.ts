@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { DefaultWebPageStrategy } from "../../src/scripts/strategies/DefaultWebPageStrategy";
-import { ITabService, TimeoutError } from "../../src/scripts/services/tabService";
-import { MAX_CONTEXT_LENGTH, CONTEXT_MESSAGES } from "../../src/scripts/constants";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { DefaultWebPageStrategy } from '../../src/scripts/strategies/DefaultWebPageStrategy';
+import {
+  ITabService,
+  TimeoutError,
+} from '../../src/scripts/services/tabService';
+import {
+  MAX_CONTEXT_LENGTH,
+  CONTEXT_MESSAGES,
+} from '../../src/scripts/constants';
 
-describe("DefaultWebPageStrategy", () => {
+describe('DefaultWebPageStrategy', () => {
   let mockTabService: ITabService;
   let strategy: DefaultWebPageStrategy;
 
@@ -32,113 +38,159 @@ describe("DefaultWebPageStrategy", () => {
     strategy = new DefaultWebPageStrategy(mockTabService);
   });
 
-  it("should always return true for canHandle", () => {
-    expect(strategy.canHandle("https://anything.com")).toBe(true);
+  it('should always return true for canHandle', () => {
+    expect(strategy.canHandle('https://anything.com')).toBe(true);
   });
 
-  it("should fetch tab by ID and extract content", async () => {
+  it('should fetch tab by ID and extract content', async () => {
     const tabId = 123;
-    const url = "https://example.com";
-    vi.mocked(mockTabService.getTab).mockResolvedValue({ id: tabId, status: "complete", active: true, windowId: 1, url } as any);
-    vi.mocked(mockTabService.executeScript).mockResolvedValue("Content");
+    const url = 'https://example.com';
+    vi.mocked(mockTabService.getTab).mockResolvedValue({
+      id: tabId,
+      status: 'complete',
+      active: true,
+      windowId: 1,
+      url,
+    } as any);
+    vi.mocked(mockTabService.executeScript).mockResolvedValue('Content');
 
     const content = await strategy.getContent(tabId, url);
 
     expect(mockTabService.getTab).toHaveBeenCalledWith(tabId);
-    expect(content).toEqual({ type: "text", text: "Content" });
+    expect(content).toEqual({ type: 'text', text: 'Content' });
   });
 
-  it("should wait for loading tabs to complete and then extract content", async () => {
+  it('should wait for loading tabs to complete and then extract content', async () => {
     const tabId = 123;
-    const url = "https://example.com";
-    vi.mocked(mockTabService.getTab).mockResolvedValue({ id: tabId, status: "loading", active: true, windowId: 1, url } as any);
+    const url = 'https://example.com';
+    vi.mocked(mockTabService.getTab).mockResolvedValue({
+      id: tabId,
+      status: 'loading',
+      active: true,
+      windowId: 1,
+      url,
+    } as any);
     vi.mocked(mockTabService.waitForTabComplete).mockResolvedValue(undefined);
-    vi.mocked(mockTabService.executeScript).mockResolvedValue("Final content");
+    vi.mocked(mockTabService.executeScript).mockResolvedValue('Final content');
 
     const content = await strategy.getContent(tabId, url);
-    
+
     expect(mockTabService.waitForTabComplete).toHaveBeenCalledWith(tabId, 2000);
-    expect(content).toEqual({ type: "text", text: "Final content" });
+    expect(content).toEqual({ type: 'text', text: 'Final content' });
   });
 
-  it("should return a not found message if the tab ID does not exist", async () => {
+  it('should return a not found message if the tab ID does not exist', async () => {
     vi.mocked(mockTabService.getTab).mockResolvedValue(undefined);
-    const content = await strategy.getContent(999, "https://gone.com");
-    expect(content.type).toBe("text");
-    if (content.type === "text") {
+    const content = await strategy.getContent(999, 'https://gone.com');
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
       expect(content.text).toContain(CONTEXT_MESSAGES.TAB_NOT_FOUND);
     }
   });
 
-  it("should return a specific message if the tab is discarded", async () => {
+  it('should return a specific message if the tab is discarded', async () => {
     const tabId = 123;
-    const url = "https://example.com";
-    vi.mocked(mockTabService.getTab).mockResolvedValue({ 
-        id: tabId, discarded: true, active: true, windowId: 1, url 
+    const url = 'https://example.com';
+    vi.mocked(mockTabService.getTab).mockResolvedValue({
+      id: tabId,
+      discarded: true,
+      active: true,
+      windowId: 1,
+      url,
     } as any);
 
     const content = await strategy.getContent(tabId, url);
 
-    expect(content.type).toBe("text");
-    if (content.type === "text") {
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
       expect(content.text).toContain(CONTEXT_MESSAGES.TAB_DISCARDED);
     }
   });
 
-  it("should extract available content with a warning if the tab times out while loading", async () => {
+  it('should extract available content with a warning if the tab times out while loading', async () => {
     const tabId = 123;
-    const url = "https://example.com";
-    vi.mocked(mockTabService.getTab).mockResolvedValue({ id: tabId, status: "loading", active: true, windowId: 1, url } as any);
-    vi.mocked(mockTabService.waitForTabComplete).mockRejectedValue(new TimeoutError("Timeout"));
-    vi.mocked(mockTabService.executeScript).mockResolvedValue("Partial content");
+    const url = 'https://example.com';
+    vi.mocked(mockTabService.getTab).mockResolvedValue({
+      id: tabId,
+      status: 'loading',
+      active: true,
+      windowId: 1,
+      url,
+    } as any);
+    vi.mocked(mockTabService.waitForTabComplete).mockRejectedValue(
+      new TimeoutError('Timeout'),
+    );
+    vi.mocked(mockTabService.executeScript).mockResolvedValue(
+      'Partial content',
+    );
 
     const content = await strategy.getContent(tabId, url);
 
-    expect(content.type).toBe("text");
-    if (content.type === "text") {
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
       expect(content.text).toContain(CONTEXT_MESSAGES.LOADING_WARNING);
-      expect(content.text).toContain("Partial content");
+      expect(content.text).toContain('Partial content');
     }
   });
 
-  it("should return an error message if script execution fails", async () => {
+  it('should return an error message if script execution fails', async () => {
     const tabId = 123;
-    const url = "https://example.com";
-    vi.mocked(mockTabService.getTab).mockResolvedValue({ id: tabId, active: true, windowId: 1, url } as any);
-    vi.mocked(mockTabService.executeScript).mockRejectedValue(new Error("Script failed"));
+    const url = 'https://example.com';
+    vi.mocked(mockTabService.getTab).mockResolvedValue({
+      id: tabId,
+      active: true,
+      windowId: 1,
+      url,
+    } as any);
+    vi.mocked(mockTabService.executeScript).mockRejectedValue(
+      new Error('Script failed'),
+    );
 
     const content = await strategy.getContent(tabId, url);
 
-    expect(content.type).toBe("text");
-    if (content.type === "text") {
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
       expect(content.text).toContain(CONTEXT_MESSAGES.ERROR_PREFIX);
-      expect(content.text).toContain("Script failed");
+      expect(content.text).toContain('Script failed');
     }
   });
 
   it("should return a 'No content' message if the page is empty", async () => {
     const tabId = 123;
-    const url = "https://example.com";
-    vi.mocked(mockTabService.getTab).mockResolvedValue({ id: tabId, active: true, windowId: 1, url } as any);
-    vi.mocked(mockTabService.executeScript).mockResolvedValue("   ");
+    const url = 'https://example.com';
+    vi.mocked(mockTabService.getTab).mockResolvedValue({
+      id: tabId,
+      active: true,
+      windowId: 1,
+      url,
+    } as any);
+    vi.mocked(mockTabService.executeScript).mockResolvedValue('   ');
 
     const content = await strategy.getContent(tabId, url);
-    expect(content).toEqual({ type: "text", text: CONTEXT_MESSAGES.NO_CONTENT_WARNING });
+    expect(content).toEqual({
+      type: 'text',
+      text: CONTEXT_MESSAGES.NO_CONTENT_WARNING,
+    });
   });
 
-  it("should return the truncated text content of the tab", async () => {
+  it('should return the truncated text content of the tab', async () => {
     const tabId = 123;
-    const url = "https://example.com";
-    const longContent = "A".repeat(MAX_CONTEXT_LENGTH + 100);
-    vi.mocked(mockTabService.getTab).mockResolvedValue({ id: tabId, active: true, windowId: 1, url } as any);
+    const url = 'https://example.com';
+    const longContent = 'A'.repeat(MAX_CONTEXT_LENGTH + 100);
+    vi.mocked(mockTabService.getTab).mockResolvedValue({
+      id: tabId,
+      active: true,
+      windowId: 1,
+      url,
+    } as any);
     vi.mocked(mockTabService.executeScript).mockResolvedValue(longContent);
 
     const content = await strategy.getContent(tabId, url);
 
-    expect(content.type).toBe("text");
-    if (content.type === "text") {
-        expect(content.text.length).toBe(MAX_CONTEXT_LENGTH);
-        expect(content.text).toBe("A".repeat(MAX_CONTEXT_LENGTH));
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
+      expect(content.text.length).toBe(MAX_CONTEXT_LENGTH);
+      expect(content.text).toBe('A'.repeat(MAX_CONTEXT_LENGTH));
     }
   });
 });

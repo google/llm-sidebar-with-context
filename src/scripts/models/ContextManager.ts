@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-import { StorageKeys, MAX_PINNED_TABS } from "../constants";
-import { TabContext } from "./TabContext";
-import { isRestrictedURL } from "../utils";
-import { TabInfo, ContentPart } from "../types";
-import { ILocalStorageService } from "../services/storageService";
-import { ITabService } from "../services/tabService";
+import { StorageKeys, MAX_PINNED_TABS } from '../constants';
+import { TabContext } from './TabContext';
+import { isRestrictedURL } from '../utils';
+import { TabInfo, ContentPart } from '../types';
+import { ILocalStorageService } from '../services/storageService';
+import { ITabService } from '../services/tabService';
 
 export class ContextManager {
   private pinnedTabs: TabContext[] = [];
 
   constructor(
     private localStorageService: ILocalStorageService,
-    private tabService: ITabService
+    private tabService: ITabService,
   ) {}
 
   async addTab(tab: TabContext): Promise<void> {
     if (!tab.url) {
-      throw new Error("Cannot pin a tab with no URL.");
+      throw new Error('Cannot pin a tab with no URL.');
     }
     if (isRestrictedURL(tab.url)) {
-      throw new Error("Cannot pin restricted Chrome pages.");
+      throw new Error('Cannot pin restricted Chrome pages.');
     }
     if (this.isTabPinned(tab.tabId)) {
       // Idempotent: If already pinned, do nothing.
@@ -51,7 +51,7 @@ export class ContextManager {
     const initialLength = this.pinnedTabs.length;
     this.pinnedTabs = this.pinnedTabs.filter((t) => t.tabId !== tabId);
     if (this.pinnedTabs.length < initialLength) {
-        await this.save();
+      await this.save();
     }
   }
 
@@ -59,7 +59,11 @@ export class ContextManager {
     return this.pinnedTabs.some((t) => t.tabId === tabId);
   }
 
-  async updateTabMetadata(tabId: number, url: string, title: string): Promise<void> {
+  async updateTabMetadata(
+    tabId: number,
+    url: string,
+    title: string,
+  ): Promise<void> {
     const tab = this.pinnedTabs.find((t) => t.tabId === tabId);
     if (tab) {
       tab.url = url;
@@ -85,63 +89,83 @@ export class ContextManager {
 
     for (const tab of this.pinnedTabs) {
       const header = `\n\n--- Pinned Tab: ${tab.title} (${tab.url}) ---`;
-      allParts.push({ type: "text", text: header });
+      allParts.push({ type: 'text', text: header });
       allParts.push(await tab.readContent());
     }
 
     return allParts;
   }
-  
+
   /**
    * Fetches content of the currently active tab.
    */
   async getActiveTabContent(): Promise<ContentPart[]> {
-      const [activeTab] = await this.tabService.query({
-          active: true,
-          currentWindow: true,
-      });
-  
-      if (activeTab && activeTab.url && activeTab.id !== undefined) {
-          // De-duplication: If active tab is already pinned, don't re-extract.
-          if (this.isTabPinned(activeTab.id)) {
-               return [{ type: "text", text: `Current tab URL: ${activeTab.url}\n(Content included in pinned tabs)` }];
-          }
+    const [activeTab] = await this.tabService.query({
+      active: true,
+      currentWindow: true,
+    });
 
-          const tempContext = new TabContext(activeTab.id, activeTab.url, activeTab.title || "", this.tabService);
-          const header = `Current tab URL: ${activeTab.url}`;
-          
-          return [
-              { type: "text", text: header },
-              await tempContext.readContent()
-          ];
+    if (activeTab && activeTab.url && activeTab.id !== undefined) {
+      // De-duplication: If active tab is already pinned, don't re-extract.
+      if (this.isTabPinned(activeTab.id)) {
+        return [
+          {
+            type: 'text',
+            text: `Current tab URL: ${activeTab.url}\n(Content included in pinned tabs)`,
+          },
+        ];
       }
-      return [];
+
+      const tempContext = new TabContext(
+        activeTab.id,
+        activeTab.url,
+        activeTab.title || '',
+        this.tabService,
+      );
+      const header = `Current tab URL: ${activeTab.url}`;
+
+      return [{ type: 'text', text: header }, await tempContext.readContent()];
+    }
+    return [];
   }
 
   async load(): Promise<void> {
-    const stored = await this.localStorageService.get<TabInfo[]>(StorageKeys.PINNED_CONTEXTS);
+    const stored = await this.localStorageService.get<TabInfo[]>(
+      StorageKeys.PINNED_CONTEXTS,
+    );
     if (Array.isArray(stored)) {
       const rehydratedTabs: TabContext[] = [];
       for (const s of stored) {
         if (s.id !== undefined) {
-            // Verify the tab still exists (Strict Session Persistence)
-            const tab = await this.tabService.getTab(s.id);
-            if (tab) {
-                // We update title/url to match current reality
-                rehydratedTabs.push(new TabContext(s.id, tab.url || s.url, tab.title || s.title || "Untitled", this.tabService));
-            }
+          // Verify the tab still exists (Strict Session Persistence)
+          const tab = await this.tabService.getTab(s.id);
+          if (tab) {
+            // We update title/url to match current reality
+            rehydratedTabs.push(
+              new TabContext(
+                s.id,
+                tab.url || s.url,
+                tab.title || s.title || 'Untitled',
+                this.tabService,
+              ),
+            );
+          }
         }
       }
       this.pinnedTabs = rehydratedTabs;
       // If we pruned any closed tabs, save the clean list
       if (this.pinnedTabs.length !== stored.length) {
-          await this.save();
+        await this.save();
       }
     }
   }
 
   private async save(): Promise<void> {
-    const infos: TabInfo[] = this.pinnedTabs.map(t => ({ id: t.tabId, title: t.title, url: t.url }));
+    const infos: TabInfo[] = this.pinnedTabs.map((t) => ({
+      id: t.tabId,
+      title: t.title,
+      url: t.url,
+    }));
     await this.localStorageService.set(StorageKeys.PINNED_CONTEXTS, infos);
   }
 }

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { IContentStrategy } from "./IContentStrategy";
-import { ContentPart } from "../types";
-import { ITabService, TimeoutError } from "../services/tabService";
-import { MAX_CONTEXT_LENGTH, CONTEXT_MESSAGES } from "../constants";
+import { IContentStrategy } from './IContentStrategy';
+import { ContentPart } from '../types';
+import { ITabService, TimeoutError } from '../services/tabService';
+import { MAX_CONTEXT_LENGTH, CONTEXT_MESSAGES } from '../constants';
 
 export class DefaultWebPageStrategy implements IContentStrategy {
   constructor(private tabService: ITabService) {}
@@ -30,17 +30,23 @@ export class DefaultWebPageStrategy implements IContentStrategy {
     const tab = await this.tabService.getTab(tabId);
 
     if (!tab) {
-      return { type: "text", text: `${CONTEXT_MESSAGES.TAB_NOT_FOUND}: ${url}` };
+      return {
+        type: 'text',
+        text: `${CONTEXT_MESSAGES.TAB_NOT_FOUND}: ${url}`,
+      };
     }
 
     if (tab.discarded) {
-      return { type: "text", text: `${CONTEXT_MESSAGES.TAB_DISCARDED}: ${url}` };
+      return {
+        type: 'text',
+        text: `${CONTEXT_MESSAGES.TAB_DISCARDED}: ${url}`,
+      };
     }
 
     const id = tab.id ?? tabId;
-    let warningPrefix = "";
+    let warningPrefix = '';
 
-    if (tab.status === "loading") {
+    if (tab.status === 'loading') {
       try {
         await this.tabService.waitForTabComplete(id, 2000);
       } catch (error) {
@@ -53,22 +59,26 @@ export class DefaultWebPageStrategy implements IContentStrategy {
     }
 
     try {
-      const result = await this.tabService.executeScript(id, () => document.body.innerText);
+      const result = await this.tabService.executeScript(
+        id,
+        () => document.body.innerText,
+      );
 
       if (!result || result.trim().length === 0) {
-        return { type: "text", text: CONTEXT_MESSAGES.NO_CONTENT_WARNING };
+        return { type: 'text', text: CONTEXT_MESSAGES.NO_CONTENT_WARNING };
       }
 
       const truncated = result.substring(0, MAX_CONTEXT_LENGTH);
       return {
-        type: "text",
+        type: 'text',
         text: warningPrefix ? `${warningPrefix}${truncated}` : truncated,
       };
     } catch (error: unknown) {
       console.error(`Failed to execute script for tab ${url}:`, error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return {
-        type: "text",
+        type: 'text',
         text: `${CONTEXT_MESSAGES.ERROR_PREFIX} ${url}: ${errorMessage})`,
       };
     }

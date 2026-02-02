@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ChatHistory } from "../../src/scripts/models/ChatHistory";
-import { ILocalStorageService } from "../../src/scripts/services/storageService";
-import { StorageKeys } from "../../src/scripts/constants";
-import { ChatMessage } from "../../src/scripts/types";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ChatHistory } from '../../src/scripts/models/ChatHistory';
+import { ILocalStorageService } from '../../src/scripts/services/storageService';
+import { StorageKeys } from '../../src/scripts/constants';
+import { ChatMessage } from '../../src/scripts/types';
 
-describe("ChatHistory", () => {
+describe('ChatHistory', () => {
   let chatHistory: ChatHistory;
   let mockLocalStorageService: ILocalStorageService;
 
@@ -33,13 +33,13 @@ describe("ChatHistory", () => {
     chatHistory = new ChatHistory(mockLocalStorageService);
   });
 
-  it("should initialize with an empty history", () => {
+  it('should initialize with an empty history', () => {
     expect(chatHistory.getMessages()).toEqual([]);
   });
 
-  it("should add messages sequentially and persist correctly", async () => {
-    const msg1: ChatMessage = { role: "user", text: "Hello" };
-    const msg2: ChatMessage = { role: "model", text: "Hi there" };
+  it('should add messages sequentially and persist correctly', async () => {
+    const msg1: ChatMessage = { role: 'user', text: 'Hello' };
+    const msg2: ChatMessage = { role: 'model', text: 'Hi there' };
 
     // 1. Add first message
     await chatHistory.addMessage(msg1);
@@ -47,7 +47,7 @@ describe("ChatHistory", () => {
     expect(mockLocalStorageService.set).toHaveBeenCalledTimes(1);
     expect(mockLocalStorageService.set).toHaveBeenCalledWith(
       StorageKeys.CHAT_HISTORY,
-      [msg1]
+      [msg1],
     );
 
     // 2. Add second message
@@ -56,28 +56,32 @@ describe("ChatHistory", () => {
     expect(mockLocalStorageService.set).toHaveBeenCalledTimes(2);
     expect(mockLocalStorageService.set).toHaveBeenLastCalledWith(
       StorageKeys.CHAT_HISTORY,
-      [msg1, msg2]
+      [msg1, msg2],
     );
   });
 
-  it("should load history from storage", async () => {
+  it('should load history from storage', async () => {
     const storedMessages: ChatMessage[] = [
-      { role: "user", text: "Hi" },
-      { role: "model", text: "Hello there" },
+      { role: 'user', text: 'Hi' },
+      { role: 'model', text: 'Hello there' },
     ];
-    
+
     // Mock the storage.get return value
     vi.mocked(mockLocalStorageService.get).mockResolvedValue(storedMessages);
 
     await chatHistory.load();
 
-    expect(mockLocalStorageService.get).toHaveBeenCalledWith(StorageKeys.CHAT_HISTORY);
+    expect(mockLocalStorageService.get).toHaveBeenCalledWith(
+      StorageKeys.CHAT_HISTORY,
+    );
     expect(chatHistory.getMessages()).toEqual(storedMessages);
   });
 
-  it("should ignore invalid data in storage", async () => {
+  it('should ignore invalid data in storage', async () => {
     // Mock storage returning a non-array (e.g., corrupted data)
-    vi.mocked(mockLocalStorageService.get).mockResolvedValue({ some: "object" });
+    vi.mocked(mockLocalStorageService.get).mockResolvedValue({
+      some: 'object',
+    });
 
     await chatHistory.load();
 
@@ -85,7 +89,7 @@ describe("ChatHistory", () => {
     expect(chatHistory.getMessages()).toEqual([]);
   });
 
-  it("should handle undefined/null in storage gracefully", async () => {
+  it('should handle undefined/null in storage gracefully', async () => {
     vi.mocked(mockLocalStorageService.get).mockResolvedValue(undefined);
 
     await chatHistory.load();
@@ -93,48 +97,48 @@ describe("ChatHistory", () => {
     expect(chatHistory.getMessages()).toEqual([]);
   });
 
-  it("should clear history and update storage", async () => {
+  it('should clear history and update storage', async () => {
     // Setup some initial state
-    await chatHistory.addMessage({ role: "user", text: "Delete me" });
-    
+    await chatHistory.addMessage({ role: 'user', text: 'Delete me' });
+
     // Clear
     await chatHistory.clear();
 
     expect(chatHistory.getMessages()).toEqual([]);
     expect(mockLocalStorageService.set).toHaveBeenCalledWith(
       StorageKeys.CHAT_HISTORY,
-      []
+      [],
     );
   });
 
-  it("should return a copy of messages to prevent external mutation", async () => {
-    await chatHistory.addMessage({ role: "user", text: "Original" });
-    
+  it('should return a copy of messages to prevent external mutation', async () => {
+    await chatHistory.addMessage({ role: 'user', text: 'Original' });
+
     const messages = chatHistory.getMessages();
-    messages.push({ role: "model", text: "Hacker" }); // Mutate the array
+    messages.push({ role: 'model', text: 'Hacker' }); // Mutate the array
 
     // The internal state should remain unchanged
     expect(chatHistory.getMessages()).toHaveLength(1);
   });
 
-  it("should remove the last message and update storage", async () => {
-    await chatHistory.addMessage({ role: "user", text: "1" });
-    await chatHistory.addMessage({ role: "model", text: "2" });
+  it('should remove the last message and update storage', async () => {
+    await chatHistory.addMessage({ role: 'user', text: '1' });
+    await chatHistory.addMessage({ role: 'model', text: '2' });
 
     await chatHistory.removeLastMessage();
 
-    expect(chatHistory.getMessages()).toEqual([{ role: "user", text: "1" }]);
+    expect(chatHistory.getMessages()).toEqual([{ role: 'user', text: '1' }]);
     expect(mockLocalStorageService.set).toHaveBeenLastCalledWith(
       StorageKeys.CHAT_HISTORY,
-      [{ role: "user", text: "1" }]
+      [{ role: 'user', text: '1' }],
     );
   });
 
-  it("should propagate errors if storage save fails", async () => {
-    const error = new Error("Storage quota exceeded");
+  it('should propagate errors if storage save fails', async () => {
+    const error = new Error('Storage quota exceeded');
     vi.mocked(mockLocalStorageService.set).mockRejectedValue(error);
 
-    const message: ChatMessage = { role: "user", text: "Fail me" };
+    const message: ChatMessage = { role: 'user', text: 'Fail me' };
 
     // Expect the promise to reject with the error
     await expect(chatHistory.addMessage(message)).rejects.toThrow(error);

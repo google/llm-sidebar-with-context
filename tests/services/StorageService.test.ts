@@ -15,7 +15,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ChromeLocalStorageService, ChromeSyncStorageService } from '../../src/scripts/services/storageService';
+import {
+  ChromeLocalStorageService,
+  ChromeSyncStorageService,
+} from '../../src/scripts/services/storageService';
 
 describe('StorageServices', () => {
   const mockLocalStorage = {
@@ -52,8 +55,11 @@ describe('StorageServices', () => {
       });
 
       const value = await service.get('testKey');
-      
-      expect(mockLocalStorage.get).toHaveBeenCalledWith(['testKey'], expect.any(Function));
+
+      expect(mockLocalStorage.get).toHaveBeenCalledWith(
+        ['testKey'],
+        expect.any(Function),
+      );
       expect(mockSyncStorage.get).not.toHaveBeenCalled();
       expect(value).toBe('localValue');
     });
@@ -74,7 +80,10 @@ describe('StorageServices', () => {
 
       await service.set('testKey', 'localValue');
 
-      expect(mockLocalStorage.set).toHaveBeenCalledWith({ testKey: 'localValue' }, expect.any(Function));
+      expect(mockLocalStorage.set).toHaveBeenCalledWith(
+        { testKey: 'localValue' },
+        expect.any(Function),
+      );
       expect(mockSyncStorage.set).not.toHaveBeenCalled();
     });
 
@@ -84,7 +93,9 @@ describe('StorageServices', () => {
         callback();
       });
 
-      await expect(service.set('key', 'value')).rejects.toThrow('Quota exceeded');
+      await expect(service.set('key', 'value')).rejects.toThrow(
+        'Quota exceeded',
+      );
     });
 
     it('should return undefined when key is missing', async () => {
@@ -116,7 +127,10 @@ describe('StorageServices', () => {
 
       const value = await service.get('syncKey');
 
-      expect(mockSyncStorage.get).toHaveBeenCalledWith(['syncKey'], expect.any(Function));
+      expect(mockSyncStorage.get).toHaveBeenCalledWith(
+        ['syncKey'],
+        expect.any(Function),
+      );
       expect(mockLocalStorage.get).not.toHaveBeenCalled();
       expect(value).toBe('syncValue');
     });
@@ -137,7 +151,10 @@ describe('StorageServices', () => {
 
       await service.set('syncKey', 'syncValue');
 
-      expect(mockSyncStorage.set).toHaveBeenCalledWith({ syncKey: 'syncValue' }, expect.any(Function));
+      expect(mockSyncStorage.set).toHaveBeenCalledWith(
+        { syncKey: 'syncValue' },
+        expect.any(Function),
+      );
       expect(mockLocalStorage.set).not.toHaveBeenCalled();
     });
 
@@ -147,7 +164,9 @@ describe('StorageServices', () => {
         callback();
       });
 
-      await expect(service.set('key', 'value')).rejects.toThrow('Sync quota exceeded');
+      await expect(service.set('key', 'value')).rejects.toThrow(
+        'Sync quota exceeded',
+      );
     });
 
     it('should return undefined when key is missing', async () => {

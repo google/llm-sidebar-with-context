@@ -15,7 +15,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ChromeTabService, TimeoutError } from '../../src/scripts/services/tabService';
+import {
+  ChromeTabService,
+  TimeoutError,
+} from '../../src/scripts/services/tabService';
 
 describe('ChromeTabService', () => {
   const mockTabs = {
@@ -57,7 +60,7 @@ describe('ChromeTabService', () => {
         status: 'complete',
         active: true,
         windowId: 1,
-        extraProperty: 'should be ignored'
+        extraProperty: 'should be ignored',
       } as any;
       mockTabs.query.mockResolvedValue([rawTab]);
 
@@ -71,14 +74,20 @@ describe('ChromeTabService', () => {
         status: 'complete',
         active: true,
         discarded: false,
-        windowId: 1
+        windowId: 1,
       });
     });
   });
 
   describe('getTab', () => {
     it('should get a tab by id and map it', async () => {
-      const rawTab = { id: 123, url: 'https://example.com', active: true, windowId: 1, discarded: true } as any;
+      const rawTab = {
+        id: 123,
+        url: 'https://example.com',
+        active: true,
+        windowId: 1,
+        discarded: true,
+      } as any;
       mockTabs.get.mockResolvedValue(rawTab);
 
       const result = await service.getTab(123);
@@ -91,7 +100,7 @@ describe('ChromeTabService', () => {
         windowId: 1,
         discarded: true,
         title: undefined,
-        status: undefined
+        status: undefined,
       });
     });
 
@@ -104,7 +113,9 @@ describe('ChromeTabService', () => {
 
   describe('executeScript', () => {
     it('should execute script and return the result', async () => {
-      mockScripting.executeScript.mockResolvedValue([{ result: 'scriptResult' }]);
+      mockScripting.executeScript.mockResolvedValue([
+        { result: 'scriptResult' },
+      ]);
 
       const func = () => 'test';
       const result = await service.executeScript(123, func);
@@ -130,7 +141,9 @@ describe('ChromeTabService', () => {
 
       const result = await service.create({ url: 'https://google.com' });
 
-      expect(mockTabs.create).toHaveBeenCalledWith({ url: 'https://google.com' });
+      expect(mockTabs.create).toHaveBeenCalledWith({
+        url: 'https://google.com',
+      });
       expect(result.id).toBe(456);
     });
   });
@@ -140,7 +153,7 @@ describe('ChromeTabService', () => {
       mockTabs.get.mockResolvedValue({ id: 123, status: 'complete' });
 
       const promise = service.waitForTabComplete(123);
-      
+
       await expect(promise).resolves.toBeUndefined();
       expect(mockTabs.get).toHaveBeenCalledWith(123);
       // Listener should not even be added if it's already complete
@@ -161,7 +174,7 @@ describe('ChromeTabService', () => {
 
       // Simulate update to a different tab
       updateListener(999, { status: 'complete' });
-      
+
       // Simulate update to target tab but not complete
       updateListener(123, { title: 'New Title' });
 
@@ -183,7 +196,9 @@ describe('ChromeTabService', () => {
       vi.advanceTimersByTime(1001);
 
       await expect(promise).rejects.toThrow(TimeoutError);
-      await expect(promise).rejects.toThrow('Timed out waiting for tab 123 to complete');
+      await expect(promise).rejects.toThrow(
+        'Timed out waiting for tab 123 to complete',
+      );
       expect(mockTabs.onUpdated.removeListener).toHaveBeenCalled();
     });
 
@@ -196,7 +211,7 @@ describe('ChromeTabService', () => {
 
       vi.advanceTimersByTime(9999);
       // Should not have timed out yet (promise still pending)
-      
+
       vi.advanceTimersByTime(2);
       await expect(promise).rejects.toThrow(TimeoutError);
     });

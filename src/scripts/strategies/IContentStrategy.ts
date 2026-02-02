@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ContentPart } from "../types";
+import { ContentPart } from '../types';
 
 export interface IContentStrategy {
   canHandle(url: string): boolean;

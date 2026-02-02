@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -22,7 +23,15 @@ html, body {
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
   background-color: #1e1e1e; /* Background Dark */
   color: #d4d4d4; /* Text Light Gray */
   display: flex;
@@ -90,7 +99,9 @@ body {
 }
 
 .message.model code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono',
+    monospace;
   background-color: #333; /* Inline Code Background */
   padding: 0.2em 0.4em;
   border-radius: 3px;
@@ -103,7 +114,8 @@ body {
   font-size: 12px;
 }
 
-.message.error, .message.system {
+.message.error,
+.message.system {
   font-style: italic;
   opacity: 0.8;
   font-size: 12px;
@@ -125,11 +137,12 @@ body {
 
 /* Pinned Contexts */
 #pinned-tabs-container {
-  font-size: 12px; 
+  font-size: 12px;
   color: #e0e0e0;
 }
 
-#current-tab, #pinned-tabs li {
+#current-tab,
+#pinned-tabs li {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -144,7 +157,8 @@ body {
   padding-bottom: 6px;
 }
 
-#current-tab span, #pinned-tabs li span {
+#current-tab span,
+#pinned-tabs li span {
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -161,7 +175,9 @@ body {
   display: flex; /* Flex to center SVG */
   align-items: center;
   justify-content: center;
-  transition: color 0.2s, transform 0.1s;
+  transition:
+    color 0.2s,
+    transform 0.1s;
 }
 
 .icon-button.active {
@@ -178,7 +194,8 @@ body {
   color: #555;
 }
 
-#current-tab button, #pinned-tabs button {
+#current-tab button,
+#pinned-tabs button {
   /* Inherits from .icon-button */
 }
 
@@ -196,7 +213,9 @@ body {
 }
 
 /* Specificity fix: Ensure hover overrides specific state colors */
-#current-tab button:hover, #pinned-tabs button:hover, .icon-button:hover {
+#current-tab button:hover,
+#pinned-tabs button:hover,
+.icon-button:hover {
   color: #fff; /* White on Hover */
   transform: scale(1.1);
 }
@@ -240,7 +259,9 @@ body {
   gap: 6px;
 }
 
-#edit-api-key-button, #new-chat-button, #save-api-key-button {
+#edit-api-key-button,
+#new-chat-button,
+#save-api-key-button {
   background-color: #333; /* Button Base Gray */
   color: #fff;
   border: 1px solid #444; /* Subtle Button Border */
@@ -251,7 +272,9 @@ body {
   transition: background-color 0.2s;
 }
 
-#edit-api-key-button:hover, #new-chat-button:hover, #save-api-key-button:hover {
+#edit-api-key-button:hover,
+#new-chat-button:hover,
+#save-api-key-button:hover {
   background-color: #444; /* Hover Gray */
 }
 

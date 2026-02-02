@@ -30,7 +30,9 @@ describe('Utils', () => {
     });
 
     it('should identify chrome-extension:// URLs as restricted', () => {
-      expect(isRestrictedURL('chrome-extension://some-id/index.html')).toBe(true);
+      expect(isRestrictedURL('chrome-extension://some-id/index.html')).toBe(
+        true,
+      );
     });
 
     it('should identify file:// URLs as restricted', () => {

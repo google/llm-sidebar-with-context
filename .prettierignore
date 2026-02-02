@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+coverage/
+
+# Chrome Extension artifacts
+*.zip
+*.pem
+
+# Icons
+*.png

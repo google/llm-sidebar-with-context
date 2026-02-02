@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-import { MessageTypes, StorageKeys } from "../constants";
-import { ChatHistory } from "../models/ChatHistory";
-import { ContextManager } from "../models/ContextManager";
-import { TabContext } from "../models/TabContext";
-import { IGeminiService } from "../services/geminiService";
-import { ILocalStorageService, ISyncStorageService } from "../services/storageService";
-import { ITabService } from "../services/tabService";
-import { IMessageService } from "../services/messageService";
-import { isRestrictedURL } from "../utils";
+import { MessageTypes, StorageKeys } from '../constants';
+import { ChatHistory } from '../models/ChatHistory';
+import { ContextManager } from '../models/ContextManager';
+import { TabContext } from '../models/TabContext';
+import { IGeminiService } from '../services/geminiService';
+import {
+  ILocalStorageService,
+  ISyncStorageService,
+} from '../services/storageService';
+import { ITabService } from '../services/tabService';
+import { IMessageService } from '../services/messageService';
+import { isRestrictedURL } from '../utils';
 import {
   ExtensionMessage,
   ExtensionResponse,
@@ -31,7 +34,8 @@ import {
   CheckPinnedTabsResponse,
   GetHistoryResponse,
   GeminiResponse,
-  ContentPart} from "../types";
+  ContentPart,
+} from '../types';
 
 export class BackgroundController {
   private abortController: AbortController | null = null;
@@ -42,7 +46,7 @@ export class BackgroundController {
     private syncStorageService: ISyncStorageService,
     private tabService: ITabService,
     private geminiService: IGeminiService,
-    private messageService: IMessageService
+    private messageService: IMessageService,
   ) {}
 
   /**
@@ -56,21 +60,37 @@ export class BackgroundController {
 
   private setupEventListeners() {
     // Listen for messages from the sidebar
-    this.messageService.onMessage((request: ExtensionMessage, sender: any, sendResponse: (response?: any) => void) => {
-      this.handleMessage(request).then(sendResponse);
-      return true; // Keep the message channel open for async response
-    });
+    this.messageService.onMessage(
+      (
+        request: ExtensionMessage,
+        sender: any,
+        sendResponse: (response?: any) => void,
+      ) => {
+        this.handleMessage(request).then(sendResponse);
+        return true; // Keep the message channel open for async response
+      },
+    );
 
     // Update context when active tab changes
     chrome.tabs.onActivated.addListener(() => this.broadcastCurrentTabInfo());
 
     // Update context when tab URL or Title changes
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-      if (changeInfo.url || changeInfo.title || changeInfo.status === 'complete') {
+      if (
+        changeInfo.url ||
+        changeInfo.title ||
+        changeInfo.status === 'complete'
+      ) {
         // If the tab is pinned, update its metadata
         if (this.contextManager.isTabPinned(tabId)) {
-          await this.contextManager.updateTabMetadata(tabId, tab.url || "", tab.title || "Untitled");
-          this.messageService.sendMessage({ type: MessageTypes.CHECK_PINNED_TABS }).catch(() => {});
+          await this.contextManager.updateTabMetadata(
+            tabId,
+            tab.url || '',
+            tab.title || 'Untitled',
+          );
+          this.messageService
+            .sendMessage({ type: MessageTypes.CHECK_PINNED_TABS })
+            .catch(() => {});
         }
 
         if (tab.active) {
@@ -82,7 +102,9 @@ export class BackgroundController {
     // Update pinned tabs status when a tab is closed
     chrome.tabs.onRemoved.addListener(async (tabId) => {
       await this.contextManager.removeTab(tabId);
-      this.messageService.sendMessage({ type: MessageTypes.CHECK_PINNED_TABS }).catch(() => {});
+      this.messageService
+        .sendMessage({ type: MessageTypes.CHECK_PINNED_TABS })
+        .catch(() => {});
     });
 
     // Open the side panel when the extension icon is clicked
@@ -95,21 +117,27 @@ export class BackgroundController {
 
   private async broadcastCurrentTabInfo() {
     try {
-      const [tab] = await this.tabService.query({ active: true, currentWindow: true });
+      const [tab] = await this.tabService.query({
+        active: true,
+        currentWindow: true,
+      });
       if (tab && tab.url && tab.id !== undefined) {
         await this.messageService.sendMessage({
           type: MessageTypes.CURRENT_TAB_INFO,
           tab: {
             id: tab.id,
-            title: tab.title || "Untitled",
+            title: tab.title || 'Untitled',
             url: tab.url,
           },
         });
       }
     } catch (error: any) {
-       // Ignore error if sidebar is closed (receiving end does not exist)
-       if (error.message && !error.message.includes("Receiving end does not exist.")) {
-        console.error("Error sending current tab info:", error);
+      // Ignore error if sidebar is closed (receiving end does not exist)
+      if (
+        error.message &&
+        !error.message.includes('Receiving end does not exist.')
+      ) {
+        console.error('Error sending current tab info:', error);
       }
     }
   }
@@ -124,7 +152,11 @@ export class BackgroundController {
 
       switch (request.type) {
         case MessageTypes.CHAT_MESSAGE:
-          return await this.handleChatMessage(request.message, request.model, request.includeCurrentTab);
+          return await this.handleChatMessage(
+            request.message,
+            request.model,
+            request.includeCurrentTab,
+          );
         case MessageTypes.GET_CONTEXT:
           return await this.handleGetContext();
         case MessageTypes.SAVE_API_KEY:
@@ -145,11 +177,14 @@ export class BackgroundController {
           }
           return { success: true };
         default:
-          return { error: `Unknown message type: ${(request as { type: unknown }).type}` };
+          return {
+            error: `Unknown message type: ${(request as { type: unknown }).type}`,
+          };
       }
     } catch (error: unknown) {
-      console.error("BackgroundController error:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('BackgroundController error:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return { success: false, error: errorMessage };
     }
   }
@@ -161,11 +196,15 @@ export class BackgroundController {
     };
   }
 
-  private async handleChatMessage(message: string, model: string, includeCurrentTab: boolean): Promise<GeminiResponse> {
+  private async handleChatMessage(
+    message: string,
+    model: string,
+    includeCurrentTab: boolean,
+  ): Promise<GeminiResponse> {
     const apiKey = await this.getApiKey();
     if (!apiKey) {
       return {
-        error: "Gemini API Key not set. Please set it in the sidebar.",
+        error: 'Gemini API Key not set. Please set it in the sidebar.',
       };
     }
 
@@ -173,10 +212,10 @@ export class BackgroundController {
 
     try {
       // 1. Add User Message to History
-      await this.chatHistory.addMessage({ role: "user", text: message });
+      await this.chatHistory.addMessage({ role: 'user', text: message });
 
       if (this.abortController.signal.aborted) {
-        throw new DOMException("Aborted", "AbortError");
+        throw new DOMException('Aborted', 'AbortError');
       }
 
       // 2. Build Context
@@ -186,7 +225,7 @@ export class BackgroundController {
       }
 
       if (this.abortController.signal.aborted) {
-        throw new DOMException("Aborted", "AbortError");
+        throw new DOMException('Aborted', 'AbortError');
       }
 
       const pinnedContent = await this.contextManager.getAllContent();
@@ -198,19 +237,24 @@ export class BackgroundController {
         fullContext,
         this.chatHistory.getMessages(),
         model,
-        this.abortController.signal
+        this.abortController.signal,
       );
 
       // 4. Add Model Response to History
       if (response.reply) {
-        await this.chatHistory.addMessage({ role: "model", text: response.reply });
+        await this.chatHistory.addMessage({
+          role: 'model',
+          text: response.reply,
+        });
       }
 
       return response;
     } catch (error: any) {
       const isAbort =
-        error.name === "AbortError" ||
-        (error.message && typeof error.message === "string" && error.message.toLowerCase().includes("aborted"));
+        error.name === 'AbortError' ||
+        (error.message &&
+          typeof error.message === 'string' &&
+          error.message.toLowerCase().includes('aborted'));
 
       if (isAbort) {
         // Remove the user's message from history so it can be restored to the input
@@ -229,15 +273,20 @@ export class BackgroundController {
       currentWindow: true,
     });
 
-    const pinnedContexts = this.contextManager.getPinnedTabs().map((context) => ({
-      id: context.tabId,
-      url: context.url,
-      title: context.title,
-    }));
+    const pinnedContexts = this.contextManager
+      .getPinnedTabs()
+      .map((context) => ({
+        id: context.tabId,
+        url: context.url,
+        title: context.title,
+      }));
 
     return {
       pinnedContexts: pinnedContexts,
-      tab: tab && tab.url && tab.id ? { id: tab.id, title: tab.title || "Untitled", url: tab.url } : null,
+      tab:
+        tab && tab.url && tab.id
+          ? { id: tab.id, title: tab.title || 'Untitled', url: tab.url }
+          : null,
     };
   }
 
@@ -253,20 +302,25 @@ export class BackgroundController {
     });
 
     if (!tab || !tab.url || tab.id === undefined) {
-        return { success: false, message: "No active tab found." };
+      return { success: false, message: 'No active tab found.' };
     }
 
     if (isRestrictedURL(tab.url)) {
-      return { success: false, message: "Cannot pin restricted URL" };
+      return { success: false, message: 'Cannot pin restricted URL' };
     }
 
     try {
-        const newContext = new TabContext(tab.id, tab.url, tab.title || "Untitled", this.tabService);
-        await this.contextManager.addTab(newContext);
-        return { success: true };
+      const newContext = new TabContext(
+        tab.id,
+        tab.url,
+        tab.title || 'Untitled',
+        this.tabService,
+      );
+      await this.contextManager.addTab(newContext);
+      return { success: true };
     } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : String(e);
-        return { success: false, message: message };
+      const message = e instanceof Error ? e.message : String(e);
+      return { success: false, message: message };
     }
   }
 
@@ -276,11 +330,13 @@ export class BackgroundController {
   }
 
   private async handleCheckPinnedTabs(): Promise<CheckPinnedTabsResponse> {
-    const pinnedContexts = this.contextManager.getPinnedTabs().map((context) => ({
-      id: context.tabId,
-      url: context.url,
-      title: context.title,
-    }));
+    const pinnedContexts = this.contextManager
+      .getPinnedTabs()
+      .map((context) => ({
+        id: context.tabId,
+        url: context.url,
+        title: context.title,
+      }));
     return { success: true, pinnedContexts };
   }
 
@@ -291,7 +347,9 @@ export class BackgroundController {
   }
 
   private async getApiKey(): Promise<string | null> {
-    const apiKey = await this.syncStorageService.get<string>(StorageKeys.API_KEY);
+    const apiKey = await this.syncStorageService.get<string>(
+      StorageKeys.API_KEY,
+    );
     return apiKey || null;
   }
 }

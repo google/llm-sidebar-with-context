@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { RestrictedURLs } from "./constants";
+import { RestrictedURLs } from './constants';
 
 /**
  * Checks if a URL is restricted.

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { IContentStrategy } from "./IContentStrategy";
-import { ContentPart } from "../types";
+import { IContentStrategy } from './IContentStrategy';
+import { ContentPart } from '../types';
 
 export class YouTubeStrategy implements IContentStrategy {
   canHandle(url: string): boolean {
@@ -23,13 +23,16 @@ export class YouTubeStrategy implements IContentStrategy {
       const parsedUrl = new URL(url);
       // Match youtube.com, www.youtube.com, m.youtube.com, music.youtube.com
       const isYouTubeDomain = /(^|\.)youtube\.com$/i.test(parsedUrl.hostname);
-      
+
       if (isYouTubeDomain) {
-          // Standard watch or shorts
-          return (parsedUrl.pathname === '/watch' && parsedUrl.searchParams.has('v')) ||
-                 parsedUrl.pathname.startsWith('/shorts/');
+        // Standard watch or shorts
+        return (
+          (parsedUrl.pathname === '/watch' &&
+            parsedUrl.searchParams.has('v')) ||
+          parsedUrl.pathname.startsWith('/shorts/')
+        );
       }
-      
+
       // Handle youtu.be just in case, though tab URLs usually redirect.
       return parsedUrl.hostname === 'youtu.be';
     } catch {
@@ -39,8 +42,8 @@ export class YouTubeStrategy implements IContentStrategy {
 
   async getContent(_tabId: number, url: string): Promise<ContentPart> {
     return {
-      type: "file_data",
-      mimeType: "video/mp4",
+      type: 'file_data',
+      mimeType: 'video/mp4',
       fileUri: url,
     };
   }
