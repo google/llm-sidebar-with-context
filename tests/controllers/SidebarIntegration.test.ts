@@ -35,7 +35,6 @@ const htmlContent = fs.readFileSync(
 );
 
 describe('Sidebar Integration: Message Handling', () => {
-  let controller: SidebarController;
   let mockSyncStorage: ISyncStorageService;
   let mockLocalStorage: ISyncStorageService;
   let mockMessageService: IMessageService;
@@ -65,7 +64,7 @@ describe('Sidebar Integration: Message Handling', () => {
     });
 
     // Initialize controller to attach listeners
-    controller = new SidebarController(
+    new SidebarController(
       mockSyncStorage,
       mockLocalStorage,
       mockMessageService,
@@ -94,7 +93,7 @@ describe('Sidebar Integration: Message Handling', () => {
     });
 
     // Initialize controller to attach listeners
-    controller = new SidebarController(
+    new SidebarController(
       mockSyncStorage,
       mockLocalStorage,
       mockMessageService,

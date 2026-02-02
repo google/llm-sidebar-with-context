@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import { MAX_CONTEXT_LENGTH, CONTEXT_MESSAGES } from '../constants';
+import { CONTEXT_MESSAGES } from '../constants';
 import { isRestrictedURL } from '../utils';
-import { ITabService, TimeoutError } from '../services/tabService';
+import { ITabService } from '../services/tabService';
 import { ContentPart } from '../types';
 import { IContentStrategy } from '../strategies/IContentStrategy';
 import { YouTubeStrategy } from '../strategies/YouTubeStrategy';

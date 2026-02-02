@@ -19,10 +19,7 @@ import { ChatHistory } from '../models/ChatHistory';
 import { ContextManager } from '../models/ContextManager';
 import { TabContext } from '../models/TabContext';
 import { IGeminiService } from '../services/geminiService';
-import {
-  ILocalStorageService,
-  ISyncStorageService,
-} from '../services/storageService';
+import { ISyncStorageService } from '../services/storageService';
 import { ITabService } from '../services/tabService';
 import { IMessageService } from '../services/messageService';
 import { isRestrictedURL } from '../utils';

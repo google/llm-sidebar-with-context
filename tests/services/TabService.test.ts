@@ -162,7 +162,7 @@ describe('ChromeTabService', () => {
 
     it('should resolve when tab status becomes complete', async () => {
       mockTabs.get.mockResolvedValue({ id: 123, status: 'loading' });
-      let updateListener: Function = () => {};
+      let updateListener: (...args: unknown[]) => void = () => {};
       mockTabs.onUpdated.addListener.mockImplementation((listener) => {
         updateListener = listener;
       });

@@ -16,10 +16,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BackgroundController } from '../../src/scripts/controllers/BackgroundController';
-import {
-  ILocalStorageService,
-  ISyncStorageService,
-} from '../../src/scripts/services/storageService';
+import { ISyncStorageService } from '../../src/scripts/services/storageService';
 import { ITabService } from '../../src/scripts/services/tabService';
 import { IGeminiService } from '../../src/scripts/services/geminiService';
 import { IMessageService } from '../../src/scripts/services/messageService';
@@ -29,7 +26,6 @@ import { MessageTypes, StorageKeys } from '../../src/scripts/constants';
 
 describe('BackgroundController', () => {
   let controller: BackgroundController;
-  let mockLocalStorage: ILocalStorageService;
   let mockSyncStorage: ISyncStorageService;
   let mockTabService: ITabService;
   let mockGeminiService: IGeminiService;
@@ -54,7 +50,6 @@ describe('BackgroundController', () => {
       },
     });
 
-    mockLocalStorage = { get: vi.fn(), set: vi.fn() };
     mockSyncStorage = { get: vi.fn(), set: vi.fn() };
     mockTabService = {
       query: vi.fn().mockResolvedValue([]),
