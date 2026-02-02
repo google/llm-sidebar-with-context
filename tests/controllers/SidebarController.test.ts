@@ -280,8 +280,9 @@ describe("SidebarController", () => {
       promptForm.dispatchEvent(new Event("submit"));
 
       expect(messagesDiv.textContent).toContain("Hello");
-      await new Promise(resolve => setTimeout(resolve, 0));
-      expect(messagesDiv.innerHTML).toContain("Hi User");
+      await vi.waitFor(() => {
+        expect(messagesDiv.innerHTML).toContain("Hi User");
+      });
     });
 
     it("should display error message if backend returns an error", async () => {
@@ -293,10 +294,11 @@ describe("SidebarController", () => {
       vi.mocked(mockMessageService.sendMessage).mockResolvedValue({ error: "API Quota Exceeded" });
 
       promptForm.dispatchEvent(new Event("submit"));
-      await new Promise(resolve => setTimeout(resolve, 0));
-      
-      const errorMsg = messagesDiv.querySelector(".message.error");
-      expect(errorMsg?.textContent).toContain("Error: API Quota Exceeded");
+
+      await vi.waitFor(() => {
+        const errorMsg = messagesDiv.querySelector(".message.error");
+        expect(errorMsg?.textContent).toContain("Error: API Quota Exceeded");
+      });
     });
 
     it("should display error message if sending message throws exception", async () => {
@@ -308,10 +310,96 @@ describe("SidebarController", () => {
       vi.mocked(mockMessageService.sendMessage).mockRejectedValue(new Error("Network Failure"));
 
       promptForm.dispatchEvent(new Event("submit"));
-      await new Promise(resolve => setTimeout(resolve, 0));
-      
-      const errorMsg = messagesDiv.querySelector(".message.error");
-      expect(errorMsg?.textContent).toContain("Error: Error: Network Failure");
+
+      await vi.waitFor(() => {
+        const errorMsg = messagesDiv.querySelector(".message.error");
+        expect(errorMsg?.textContent).toContain("Error: Error: Network Failure");
+      });
+    });
+
+    it("should show Stop button during generation and send STOP message on click", async () => {
+      const promptInput = document.getElementById("prompt-input") as HTMLInputElement;
+      const promptForm = document.getElementById("prompt-form") as HTMLFormElement;
+      const sendButton = document.getElementById("send-button") as HTMLButtonElement;
+
+      promptInput.value = "Long running task";
+
+      // Create a promise to control when sendMessage resolves
+      let resolveMessage: (val: any) => void;
+      const messagePromise = new Promise((resolve) => {
+        resolveMessage = resolve;
+      });
+
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(async (msg: any) => {
+        if (msg.type === MessageTypes.CHAT_MESSAGE) {
+          return messagePromise;
+        }
+        if (msg.type === MessageTypes.STOP_GENERATION) {
+          return { success: true };
+        }
+        return {};
+      });
+
+      // 1. Submit form to start generation
+      promptForm.dispatchEvent(new Event("submit"));
+
+      // Verify button changed to Stop
+      expect(sendButton.title).toBe("Stop generation");
+      expect(sendButton.innerHTML).toContain("rect"); // Basic check for stop icon svg
+
+      // 2. Click Stop button (triggers submit)
+      promptForm.dispatchEvent(new Event("submit"));
+
+      expect(mockMessageService.sendMessage).toHaveBeenCalledWith({ type: MessageTypes.STOP_GENERATION });
+
+      // 3. Resolve the original message as aborted
+      resolveMessage!({ aborted: true });
+
+      // 4. Verify button resets
+      await vi.waitFor(() => {
+        expect(sendButton.title).toBe("Send prompt");
+      });
+    });
+
+    it("should restore input and remove message bubble when aborted", async () => {
+      const promptInput = document.getElementById("prompt-input") as HTMLInputElement;
+      const promptForm = document.getElementById("prompt-form") as HTMLFormElement;
+      const messagesDiv = document.getElementById("messages") as HTMLDivElement;
+
+      promptInput.value = "Cancelled message";
+      vi.mocked(mockMessageService.sendMessage).mockResolvedValue({ aborted: true });
+
+      promptForm.dispatchEvent(new Event("submit"));
+
+      // Input should be restored
+      await vi.waitFor(() => {
+        expect(promptInput.value).toBe("Cancelled message");
+        // User message bubble should be gone
+        expect(messagesDiv.textContent).not.toContain("Cancelled message");
+      });
+    });
+
+    it("should handle aborts reported as generic errors (fallback logic)", async () => {
+      const promptInput = document.getElementById("prompt-input") as HTMLInputElement;
+      const promptForm = document.getElementById("prompt-form") as HTMLFormElement;
+      const messagesDiv = document.getElementById("messages") as HTMLDivElement;
+
+      promptInput.value = "Cancelled message";
+      // Simulate the backend failing to catch the abort correctly and returning it as an error string
+      vi.mocked(mockMessageService.sendMessage).mockResolvedValue({
+        error: "Error: signal is aborted without reason",
+      });
+
+      promptForm.dispatchEvent(new Event("submit"));
+
+      // Input should be restored because the error string contains "aborted"
+      await vi.waitFor(() => {
+        expect(promptInput.value).toBe("Cancelled message");
+        // User message bubble should be gone
+        expect(messagesDiv.textContent).not.toContain("Cancelled message");
+        // Should NOT show the error message
+        expect(messagesDiv.textContent).not.toContain("signal is aborted");
+      });
     });
   });
 
@@ -365,7 +453,7 @@ describe("SidebarController", () => {
 
     it("should render RESTRICTED icon and be disabled when URL is restricted", async () => {
       const currentTab = { id: 102, title: "Settings", url: "chrome://settings" };
-      
+
       vi.mocked(mockSyncStorage.get).mockResolvedValue("test-api-key");
       vi.mocked(mockMessageService.sendMessage).mockImplementation(async (msg: any) => {
         if (msg.type === MessageTypes.GET_CONTEXT) {
@@ -400,13 +488,13 @@ describe("SidebarController", () => {
       const pinButton = document.getElementById("pin-tab-button") as HTMLButtonElement;
       pinButton.click();
 
-      // Wait for async appendMessage
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      const messagesDiv = document.getElementById("messages") as HTMLDivElement;
-      const systemMsg = messagesDiv.querySelector(".message.system");
-      expect(systemMsg?.textContent).toBe("System: Cannot pin restricted URL");
+      await vi.waitFor(() => {
+        const messagesDiv = document.getElementById("messages") as HTMLDivElement;
+        const systemMsg = messagesDiv.querySelector(".message.system");
+        expect(systemMsg?.textContent).toBe("System: Cannot pin restricted URL");
+      });
     });
+
     it("should display system message when pinning limit is reached", async () => {
       const currentTab = { id: 101, title: "Google", url: "https://google.com" };
       vi.mocked(mockMessageService.sendMessage).mockImplementation(async (msg: any) => {
@@ -424,12 +512,11 @@ describe("SidebarController", () => {
       const pinButton = document.getElementById("pin-tab-button") as HTMLButtonElement;
       pinButton.click();
 
-      // Wait for async appendMessage
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      const messagesDiv = document.getElementById("messages") as HTMLDivElement;
-      const systemMsg = messagesDiv.querySelector(".message.system");
-      expect(systemMsg?.textContent).toBe("System: You can only pin up to 6 tabs.");
+      await vi.waitFor(() => {
+        const messagesDiv = document.getElementById("messages") as HTMLDivElement;
+        const systemMsg = messagesDiv.querySelector(".message.system");
+        expect(systemMsg?.textContent).toBe("System: You can only pin up to 6 tabs.");
+      });
     });
 
   });

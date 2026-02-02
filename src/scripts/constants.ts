@@ -28,6 +28,7 @@ export const MessageTypes = {
   REOPEN_TAB: "reopenTab",
   CLEAR_CHAT: "clearChat",
   GET_HISTORY: "getHistory",
+  STOP_GENERATION: "stopGeneration",
 } as const;
 
 export const StorageKeys = {

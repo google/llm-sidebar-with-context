@@ -34,6 +34,8 @@ import {
   ContentPart} from "../types";
 
 export class BackgroundController {
+  private abortController: AbortController | null = null;
+
   constructor(
     private chatHistory: ChatHistory,
     private contextManager: ContextManager,
@@ -137,6 +139,11 @@ export class BackgroundController {
           return await this.handleClearChat();
         case MessageTypes.GET_HISTORY:
           return await this.handleGetHistory();
+        case MessageTypes.STOP_GENERATION:
+          if (this.abortController) {
+            this.abortController.abort();
+          }
+          return { success: true };
         default:
           return { error: `Unknown message type: ${(request as { type: unknown }).type}` };
       }
@@ -162,31 +169,58 @@ export class BackgroundController {
       };
     }
 
-    // 1. Add User Message to History
-    await this.chatHistory.addMessage({ role: "user", text: message });
+    this.abortController = new AbortController();
 
-    // 2. Build Context
-    let activeContext: ContentPart[] = [];
-    if (includeCurrentTab) {
-      activeContext = await this.contextManager.getActiveTabContent();
+    try {
+      // 1. Add User Message to History
+      await this.chatHistory.addMessage({ role: "user", text: message });
+
+      if (this.abortController.signal.aborted) {
+        throw new DOMException("Aborted", "AbortError");
+      }
+
+      // 2. Build Context
+      let activeContext: ContentPart[] = [];
+      if (includeCurrentTab) {
+        activeContext = await this.contextManager.getActiveTabContent();
+      }
+
+      if (this.abortController.signal.aborted) {
+        throw new DOMException("Aborted", "AbortError");
+      }
+
+      const pinnedContent = await this.contextManager.getAllContent();
+      const fullContext = [...activeContext, ...pinnedContent];
+
+      // 3. Send to Gemini
+      const response = await this.geminiService.generateContent(
+        apiKey,
+        fullContext,
+        this.chatHistory.getMessages(),
+        model,
+        this.abortController.signal
+      );
+
+      // 4. Add Model Response to History
+      if (response.reply) {
+        await this.chatHistory.addMessage({ role: "model", text: response.reply });
+      }
+
+      return response;
+    } catch (error: any) {
+      const isAbort =
+        error.name === "AbortError" ||
+        (error.message && typeof error.message === "string" && error.message.toLowerCase().includes("aborted"));
+
+      if (isAbort) {
+        // Remove the user's message from history so it can be restored to the input
+        await this.chatHistory.removeLastMessage();
+        return { aborted: true };
+      }
+      throw error;
+    } finally {
+      this.abortController = null;
     }
-    const pinnedContent = await this.contextManager.getAllContent();
-    const fullContext = [...activeContext, ...pinnedContent];
-
-    // 3. Send to Gemini
-    const response = await this.geminiService.generateContent(
-      apiKey,
-      fullContext,
-      this.chatHistory.getMessages(),
-      model
-    );
-
-    // 4. Add Model Response to History
-    if (response.reply) {
-      await this.chatHistory.addMessage({ role: "model", text: response.reply });
-    }
-
-    return response;
   }
 
   private async handleGetContext(): Promise<GetContextResponse> {

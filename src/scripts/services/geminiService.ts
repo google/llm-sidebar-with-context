@@ -34,7 +34,8 @@ export interface IGeminiService {
     apiKey: string,
     context: ContentPart[],
     history: ChatMessage[],
-    model?: string
+    model?: string,
+    signal?: AbortSignal
   ): Promise<GeminiResponse>;
 }
 
@@ -43,7 +44,8 @@ export class GeminiService implements IGeminiService {
     apiKey: string,
     context: ContentPart[],
     history: ChatMessage[],
-    model: string = "gemini-2.5-flash-lite"
+    model: string = "gemini-2.5-flash-lite",
+    signal?: AbortSignal
   ): Promise<GeminiResponse> {
     try {
       if (!apiKey) {
@@ -97,6 +99,7 @@ export class GeminiService implements IGeminiService {
           body: JSON.stringify({
             contents: contents,
           }),
+          signal: signal,
         }
       );
 

@@ -137,6 +137,21 @@ describe("GeminiService", () => {
     expect(body.contents[0].parts[4]).toEqual({ text: "Final prompt" });
   });
 
+  it("should pass AbortSignal to fetch", async () => {
+    const controller = new AbortController();
+    const history: ChatMessage[] = [{ role: "user", text: "Hi" }];
+    const apiKey = "key";
+
+    vi.mocked(fetch).mockResolvedValue({
+      json: async () => ({ candidates: [] }),
+    } as Response);
+
+    await geminiService.generateContent(apiKey, [], history, undefined, controller.signal);
+
+    const [, options] = vi.mocked(fetch).mock.calls[0];
+    expect((options as RequestInit).signal).toBe(controller.signal);
+  });
+
   it("should handle API errors", async () => {
     const mockErrorResponse = {
       error: {

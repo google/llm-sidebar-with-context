@@ -70,6 +70,7 @@ describe("BackgroundController", () => {
     mockChatHistory = {
       load: vi.fn(),
       addMessage: vi.fn(),
+      removeLastMessage: vi.fn(),
       getMessages: vi.fn(),
       clear: vi.fn(),
     } as unknown as ChatHistory;
@@ -201,6 +202,101 @@ describe("BackgroundController", () => {
       expect(mockContextManager.load).toHaveBeenCalled();
     });
 
+    it("should abort generation when STOP_GENERATION message is received", async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue("fake-key");
+      vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([]);
+      vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
+
+      let requestStartedResolve: () => void;
+      const requestStartedPromise = new Promise<void>((r) => (requestStartedResolve = r));
+
+      vi.mocked(mockGeminiService.generateContent).mockImplementation(async (key, ctx, hist, model, signal) => {
+        requestStartedResolve();
+        return new Promise((_, reject) => {
+          const abortHandler = () => reject(new DOMException("Aborted", "AbortError"));
+          if (signal?.aborted) return abortHandler();
+          signal?.addEventListener("abort", abortHandler);
+        });
+      });
+
+      // Start the request
+      const chatPromise = controller.handleMessage({
+        type: MessageTypes.CHAT_MESSAGE,
+        message: "Long prompt",
+        model: "gemini-pro",
+        includeCurrentTab: false,
+      });
+
+      // Wait until we know generateContent has been called
+      await requestStartedPromise;
+
+      // Send STOP command
+      await controller.handleMessage({ type: MessageTypes.STOP_GENERATION });
+
+      // Verify the chat message returns aborted
+      const response = await chatPromise;
+      expect(response).toEqual({ aborted: true });
+      expect(mockChatHistory.removeLastMessage).toHaveBeenCalled();
+    });
+
+    it("should abort generation during context gathering", async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue("fake-key");
+      vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
+
+      let contextGatheringStartedResolve: () => void;
+      const contextGatheringStartedPromise = new Promise<void>((r) => (contextGatheringStartedResolve = r));
+
+      // Simulate slow context gathering
+      vi.mocked(mockContextManager.getActiveTabContent).mockImplementation(async () => {
+        contextGatheringStartedResolve();
+        // Wait forever (or until aborted, though this mock doesn't handle abort logic itself,
+        // the controller checks the signal AFTER this returns)
+        // To simulate the "check after return" logic, we just return after a delay.
+        await new Promise((r) => setTimeout(r, 50));
+        return [];
+      });
+
+      // Start the request
+      const chatPromise = controller.handleMessage({
+        type: MessageTypes.CHAT_MESSAGE,
+        message: "Prompt",
+        model: "gemini-pro",
+        includeCurrentTab: true,
+      });
+
+      // Wait until context gathering starts
+      await contextGatheringStartedPromise;
+
+      // Send STOP command immediately
+      await controller.handleMessage({ type: MessageTypes.STOP_GENERATION });
+
+      const response = await chatPromise;
+      expect(response).toEqual({ aborted: true });
+      expect(mockGeminiService.generateContent).not.toHaveBeenCalled();
+      expect(mockChatHistory.removeLastMessage).toHaveBeenCalled();
+    });
+
+    it("should handle aborted generation correctly (AbortError exception)", async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue("fake-key");
+      vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([]);
+      vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
+      vi.mocked(mockGeminiService.generateContent).mockRejectedValue(new DOMException("The user aborted a request.", "AbortError"));
+      vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.CHAT_MESSAGE,
+        message: "Prompt",
+        model: "gemini-pro",
+        includeCurrentTab: false,
+      });
+
+      expect(response).toEqual({ aborted: true });
+      expect(mockChatHistory.removeLastMessage).toHaveBeenCalled();
+      // Ensure model response was NOT added
+      expect(mockChatHistory.addMessage).toHaveBeenCalledTimes(1); // Only user message
+      expect(mockChatHistory.addMessage).toHaveBeenCalledWith({ role: "user", text: "Prompt" });
+    });
+
     it("should handle CHAT_MESSAGE with composed context", async () => {
         vi.mocked(mockSyncStorage.get).mockResolvedValue("fake-key");
         vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([{ type: "text", text: "Active Content" }]);
@@ -222,7 +318,8 @@ describe("BackgroundController", () => {
             { type: "text", text: "Pinned Content" }
           ],
           expect.any(Array),
-          "gemini-pro"
+          "gemini-pro",
+          expect.any(AbortSignal)
         );
     });
 
@@ -244,7 +341,8 @@ describe("BackgroundController", () => {
           "fake-key",
           [{ type: "text", text: "Pinned Content" }], // Active content should be excluded
           expect.any(Array),
-          "gemini-pro"
+          "gemini-pro",
+          expect.any(AbortSignal)
         );
         expect(mockContextManager.getActiveTabContent).not.toHaveBeenCalled();
     });

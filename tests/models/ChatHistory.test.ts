@@ -117,6 +117,19 @@ describe("ChatHistory", () => {
     expect(chatHistory.getMessages()).toHaveLength(1);
   });
 
+  it("should remove the last message and update storage", async () => {
+    await chatHistory.addMessage({ role: "user", text: "1" });
+    await chatHistory.addMessage({ role: "model", text: "2" });
+
+    await chatHistory.removeLastMessage();
+
+    expect(chatHistory.getMessages()).toEqual([{ role: "user", text: "1" }]);
+    expect(mockLocalStorageService.set).toHaveBeenLastCalledWith(
+      StorageKeys.CHAT_HISTORY,
+      [{ role: "user", text: "1" }]
+    );
+  });
+
   it("should propagate errors if storage save fails", async () => {
     const error = new Error("Storage quota exceeded");
     vi.mocked(mockLocalStorageService.set).mockRejectedValue(error);

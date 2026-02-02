@@ -69,6 +69,10 @@ export interface GetHistoryRequest {
   type: typeof MessageTypes.GET_HISTORY;
 }
 
+export interface StopGenerationRequest {
+  type: typeof MessageTypes.STOP_GENERATION;
+}
+
 export interface CurrentTabInfoMessage {
   type: typeof MessageTypes.CURRENT_TAB_INFO;
   tab: TabInfo;
@@ -88,11 +92,13 @@ export type ExtensionMessage =
   | ReopenTabRequest
   | ClearChatRequest
   | GetHistoryRequest
-  | CurrentTabInfoMessage;
+  | CurrentTabInfoMessage
+  | StopGenerationRequest;
 
 export interface GeminiResponse {
   reply?: string;
   error?: string;
+  aborted?: boolean;
 }
 
 export interface GetContextResponse {

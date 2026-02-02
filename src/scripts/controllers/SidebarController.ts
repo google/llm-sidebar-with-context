@@ -35,11 +35,14 @@ const ICONS = {
   EYE: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
   EYE_OFF: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye-off"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`,
   CLOSE: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+  STOP: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-square"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
+  SEND: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`,
 };
 
 export class SidebarController {
   private promptForm: HTMLFormElement;
   private promptInput: HTMLInputElement;
+  private submitButton: HTMLButtonElement;
   private messagesDiv: HTMLDivElement;
   private apiKeyInput: HTMLInputElement;
   private saveApiKeyButton: HTMLButtonElement;
@@ -53,6 +56,7 @@ export class SidebarController {
   private pinnedContexts: TabInfo[] = [];
   private currentTab: TabInfo | null = null;
   private isCurrentTabShared: boolean = true;
+  private isGenerating: boolean = false;
 
   constructor(
     private syncStorageService: ISyncStorageService,
@@ -61,6 +65,7 @@ export class SidebarController {
   ) {
     this.promptForm = document.getElementById("prompt-form") as HTMLFormElement;
     this.promptInput = document.getElementById("prompt-input") as HTMLInputElement;
+    this.submitButton = document.getElementById("send-button") as HTMLButtonElement;
     this.messagesDiv = document.getElementById("messages") as HTMLDivElement;
     this.apiKeyInput = document.getElementById("api-key-input") as HTMLInputElement;
     this.saveApiKeyButton = document.getElementById("save-api-key-button") as HTMLButtonElement;
@@ -115,13 +120,19 @@ export class SidebarController {
 
     this.promptForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      this.sendMessage();
+      if (this.isGenerating) {
+        this.stopGeneration();
+      } else {
+        this.sendMessage();
+      }
     });
 
     this.promptInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        this.sendMessage();
+        if (!this.isGenerating) {
+          this.sendMessage();
+        }
       }
     });
 
@@ -212,7 +223,11 @@ export class SidebarController {
 
   private async sendMessage() {
     const message = this.promptInput.value;
-    if (message.trim() === "") return;
+    if (message.trim() === "" || this.isGenerating) return;
+
+    this.isGenerating = true;
+    this.submitButton.innerHTML = ICONS.STOP;
+    this.submitButton.title = "Stop generation";
 
     this.appendMessage("user", message);
     this.promptInput.value = "";
@@ -228,7 +243,16 @@ export class SidebarController {
       });
 
       thinkingMessageElement.remove();
-      if (response && response.reply) {
+
+      if (response && (response.aborted || (response.error && response.error.toLowerCase().includes("aborted")))) {
+        // Restore message to input if aborted
+        this.promptInput.value = message;
+        // Remove the user message from UI as well to match history
+        const lastMessage = this.messagesDiv.lastElementChild;
+        if (lastMessage && lastMessage.classList.contains("user")) {
+          lastMessage.remove();
+        }
+      } else if (response && response.reply) {
         this.appendMessage("model", response.reply);
       } else if (response && response.error) {
         this.appendMessage("error", `Error: ${response.error}`);
@@ -236,6 +260,18 @@ export class SidebarController {
     } catch (error) {
       thinkingMessageElement.remove();
       this.appendMessage("error", `Error: ${error}`);
+    } finally {
+      this.isGenerating = false;
+      this.submitButton.innerHTML = ICONS.SEND;
+      this.submitButton.title = "Send prompt";
+    }
+  }
+
+  private async stopGeneration() {
+    try {
+      await this.messageService.sendMessage({ type: MessageTypes.STOP_GENERATION });
+    } catch (error) {
+      console.error("Failed to stop generation:", error);
     }
   }
 

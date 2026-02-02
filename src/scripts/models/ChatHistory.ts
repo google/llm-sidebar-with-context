@@ -32,6 +32,14 @@ export class ChatHistory {
   }
 
   /**
+   * Removes the last message from the history and saves it.
+   */
+  async removeLastMessage(): Promise<void> {
+    this.messages.pop();
+    await this.save();
+  }
+
+  /**
    * Gets all messages in the history.
    */
   getMessages(): ChatMessage[] {
