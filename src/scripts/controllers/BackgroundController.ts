@@ -30,7 +30,8 @@ import {
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
-  GeminiResponse} from "../types";
+  GeminiResponse,
+  ContentPart} from "../types";
 
 export class BackgroundController {
   constructor(
@@ -165,12 +166,12 @@ export class BackgroundController {
     await this.chatHistory.addMessage({ role: "user", text: message });
 
     // 2. Build Context
-    let activeContext = "";
+    let activeContext: ContentPart[] = [];
     if (includeCurrentTab) {
       activeContext = await this.contextManager.getActiveTabContent();
     }
     const pinnedContent = await this.contextManager.getAllContent();
-    const fullContext = activeContext + pinnedContent;
+    const fullContext = [...activeContext, ...pinnedContent];
 
     // 3. Send to Gemini
     const response = await this.geminiService.generateContent(

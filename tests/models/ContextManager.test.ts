@@ -245,18 +245,20 @@ describe("ContextManager", () => {
       const tab1 = new TabContext(1, "https://a.com", "A", mockTabService);
       const tab2 = new TabContext(2, "https://b.com", "B", mockTabService);
       
-      vi.spyOn(tab1, 'readContent').mockResolvedValue("Content A");
-      vi.spyOn(tab2, 'readContent').mockResolvedValue("Content B");
+      vi.spyOn(tab1, 'readContent').mockResolvedValue({ type: "text", text: "Content A" });
+      vi.spyOn(tab2, 'readContent').mockResolvedValue({ type: "text", text: "Content B" });
       
       await contextManager.addTab(tab1);
       await contextManager.addTab(tab2);
 
       const content = await contextManager.getAllContent();
 
-      expect(content).toContain("--- Pinned Tab: A (https://a.com) ---");
-      expect(content).toContain("Content A");
-      expect(content).toContain("--- Pinned Tab: B (https://b.com) ---");
-      expect(content).toContain("Content B");
+      expect(content).toEqual(expect.arrayContaining([
+        { type: "text", text: expect.stringContaining("--- Pinned Tab: A (https://a.com) ---") },
+        { type: "text", text: "Content A" },
+        { type: "text", text: expect.stringContaining("--- Pinned Tab: B (https://b.com) ---") },
+        { type: "text", text: "Content B" }
+      ]));
       
       expect(tab1.readContent).toHaveBeenCalled();
       expect(tab2.readContent).toHaveBeenCalled();
@@ -266,16 +268,18 @@ describe("ContextManager", () => {
         const tab1 = new TabContext(1, "https://good.com", "Good", mockTabService);
         const tab2 = new TabContext(2, "https://bad.com", "Bad", mockTabService);
         
-        vi.spyOn(tab1, 'readContent').mockResolvedValue("Good Content");
-        vi.spyOn(tab2, 'readContent').mockResolvedValue(CONTEXT_MESSAGES.TAB_NOT_FOUND);
+        vi.spyOn(tab1, 'readContent').mockResolvedValue({ type: "text", text: "Good Content" });
+        vi.spyOn(tab2, 'readContent').mockResolvedValue({ type: "text", text: CONTEXT_MESSAGES.TAB_NOT_FOUND });
         
         await contextManager.addTab(tab1);
         await contextManager.addTab(tab2);
   
         const content = await contextManager.getAllContent();
   
-        expect(content).toContain("Good Content");
-        expect(content).toContain(CONTEXT_MESSAGES.TAB_NOT_FOUND);
+        expect(content).toEqual(expect.arrayContaining([
+          { type: "text", text: "Good Content" },
+          { type: "text", text: CONTEXT_MESSAGES.TAB_NOT_FOUND }
+        ]));
       });
   });
 
@@ -290,17 +294,19 @@ describe("ContextManager", () => {
 
       const content = await contextManager.getActiveTabContent();
 
-      expect(content).toContain("Current tab URL: https://active.com");
-      expect(content).toContain("Active Content");
+      expect(content).toEqual(expect.arrayContaining([
+        { type: "text", text: expect.stringContaining("Current tab URL: https://active.com") },
+        { type: "text", text: "Active Content" }
+      ]));
       
       // Verify we passed the ID to getTab
       expect(mockTabService.getTab).toHaveBeenCalledWith(99);
     });
     
-    it("should return empty string if no active tab found", async () => {
+    it("should return empty array if no active tab found", async () => {
          vi.mocked(mockTabService.query).mockResolvedValue([]);
          const content = await contextManager.getActiveTabContent();
-         expect(content).toBe("");
+         expect(content).toEqual([]);
     });
 
     it("should return warning message if active tab is restricted", async () => {
@@ -310,8 +316,10 @@ describe("ContextManager", () => {
         
         const content = await contextManager.getActiveTabContent();
         
-        expect(content).toContain("Current tab URL: chrome://settings");
-        expect(content).toContain(CONTEXT_MESSAGES.RESTRICTED_URL);
+        expect(content).toEqual(expect.arrayContaining([
+          { type: "text", text: expect.stringContaining("Current tab URL: chrome://settings") },
+          { type: "text", text: expect.stringContaining(CONTEXT_MESSAGES.RESTRICTED_URL) }
+        ]));
     });
 
     it("should not extract active tab content if it's already pinned", async () => {
@@ -328,9 +336,59 @@ describe("ContextManager", () => {
 
       const content = await contextManager.getActiveTabContent();
 
-      expect(content).toContain(`Current tab URL: ${activeTab.url}`);
-      expect(content).toContain("(Content included in pinned tabs below)");
+      expect(content).toEqual([{
+        type: "text",
+        text: expect.stringContaining(`Current tab URL: ${activeTab.url}`)
+      }]);
+      expect(content[0].type === "text" && (content[0] as any).text).toContain("(Content included in pinned tabs)");
       expect(mockTabService.executeScript).not.toHaveBeenCalled();
+    });
+
+    it("should handle YouTube context in getAllContent", async () => {
+        const url = "https://www.youtube.com/watch?v=123";
+        const tab = new TabContext(1, url, "Video", mockTabService);
+        await contextManager.addTab(tab);
+
+        const content = await contextManager.getAllContent();
+        
+        expect(content).toEqual([
+            { type: "text", text: expect.stringContaining("--- Pinned Tab: Video (https://www.youtube.com/watch?v=123) ---") },
+            { type: "file_data", mimeType: "video/mp4", fileUri: url }
+        ]);
+    });
+
+    it("should handle mixed contexts in getAllContent", async () => {
+        const tab1 = new TabContext(1, "https://example.com", "Text Site", mockTabService);
+        const tab2 = new TabContext(2, "https://www.youtube.com/watch?v=123", "Video Site", mockTabService);
+        
+        vi.spyOn(tab1, 'readContent').mockResolvedValue({ type: "text", text: "Text Content" });
+        // tab2 will use YouTubeStrategy automatically
+        
+        await contextManager.addTab(tab1);
+        await contextManager.addTab(tab2);
+
+        const content = await contextManager.getAllContent();
+        
+        expect(content).toEqual([
+            { type: "text", text: expect.stringContaining("--- Pinned Tab: Text Site") },
+            { type: "text", text: "Text Content" },
+            { type: "text", text: expect.stringContaining("--- Pinned Tab: Video Site") },
+            { type: "file_data", mimeType: "video/mp4", fileUri: "https://www.youtube.com/watch?v=123" }
+        ]);
+    });
+
+    it("should handle YouTube active tab in getActiveTabContent", async () => {
+        const url = "https://www.youtube.com/watch?v=active";
+        const activeTab = { id: 99, url, title: "Active Video" } as ChromeTab;
+        vi.mocked(mockTabService.query).mockResolvedValueOnce([activeTab]);
+        vi.mocked(mockTabService.getTab).mockResolvedValue(activeTab);
+
+        const content = await contextManager.getActiveTabContent();
+
+        expect(content).toEqual([
+            { type: "text", text: expect.stringContaining(`Current tab URL: ${url}`) },
+            { type: "file_data", mimeType: "video/mp4", fileUri: url }
+        ]);
     });
   });
 

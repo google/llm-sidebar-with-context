@@ -17,67 +17,49 @@
 import { MAX_CONTEXT_LENGTH, CONTEXT_MESSAGES } from "../constants";
 import { isRestrictedURL } from "../utils";
 import { ITabService, TimeoutError } from "../services/tabService";
+import { ContentPart } from "../types";
+import { IContentStrategy } from "../strategies/IContentStrategy";
+import { YouTubeStrategy } from "../strategies/YouTubeStrategy";
+import { DefaultWebPageStrategy } from "../strategies/DefaultWebPageStrategy";
 
 export class TabContext {
+  private strategies: IContentStrategy[];
+
   constructor(
     public readonly tabId: number,
     public url: string,
     public title: string,
     private tabService: ITabService
-  ) {}
+  ) {
+    this.strategies = [
+      new YouTubeStrategy(),
+      new DefaultWebPageStrategy(this.tabService),
+    ];
+  }
 
   /**
-   * Reads the text content of the tab.
-   * @returns The content of the tab or an error message if inaccessible.
+   * Reads the content of the tab using the appropriate strategy.
+   * @returns The content part (text or file data) or an error message as text.
    */
-  async readContent(): Promise<string> {
+  async readContent(): Promise<ContentPart> {
     if (isRestrictedURL(this.url)) {
       console.warn(`Cannot extract content from restricted URL: ${this.url}`);
-      return `${CONTEXT_MESSAGES.RESTRICTED_URL}: ${this.url}`;
+      return { type: "text", text: `${CONTEXT_MESSAGES.RESTRICTED_URL}: ${this.url}` };
     }
 
-    const tab = await this.tabService.getTab(this.tabId);
+    const strategy = this.strategies.find((s) => s.canHandle(this.url));
 
-    if (!tab) {
-      console.error(`Tab not found or accessible: ${this.tabId} (${this.url})`);
-      return `${CONTEXT_MESSAGES.TAB_NOT_FOUND}: ${this.url}`;
-    }
-
-    if (tab.discarded) {
-      return `${CONTEXT_MESSAGES.TAB_DISCARDED}: ${this.url}`;
-    }
-
-    const id = tab.id ?? this.tabId;
-    let warningPrefix = "";
-
-    // 3. Handle 'loading' state
-    if (tab.status === "loading") {
-      try {
-        await this.tabService.waitForTabComplete(id, 2000);
-      } catch (error) {
-        if (error instanceof TimeoutError) {
-           // Timeout occurred, proceed with best-effort extraction
-           warningPrefix = `${CONTEXT_MESSAGES.LOADING_WARNING} `;
-        } else {
-           // Re-throw other errors
-           throw error; 
-        }
-      }
+    if (!strategy) {
+      // Should not happen as DefaultWebPageStrategy handles everything
+      return { type: "text", text: `${CONTEXT_MESSAGES.ERROR_PREFIX} No strategy found for ${this.url}` };
     }
 
     try {
-      const result = await this.tabService.executeScript(id, () => document.body.innerText);
-
-      if (!result || result.trim().length === 0) {
-        return CONTEXT_MESSAGES.NO_CONTENT_WARNING;
-      }
-
-      const truncated = result.substring(0, MAX_CONTEXT_LENGTH);
-      return warningPrefix ? `${warningPrefix}${truncated}` : truncated;
+      return await strategy.getContent(this.tabId, this.url);
     } catch (error: unknown) {
-      console.error(`Failed to execute script for tab ${this.url}:`, error);
+      console.error(`Failed to extract content for tab ${this.url}:`, error);
       const errorMessage = error instanceof Error ? error.message : String(error);
-      return `${CONTEXT_MESSAGES.ERROR_PREFIX} ${this.url}: ${errorMessage})`;
+      return { type: "text", text: `${CONTEXT_MESSAGES.ERROR_PREFIX} ${this.url}: ${errorMessage})` };
     }
   }
 }

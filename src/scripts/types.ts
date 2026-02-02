@@ -74,6 +74,10 @@ export interface CurrentTabInfoMessage {
   tab: TabInfo;
 }
 
+export type ContentPart =
+  | { type: "text"; text: string }
+  | { type: "file_data"; mimeType: string; fileUri: string };
+
 export type ExtensionMessage =
   | ChatMessageRequest
   | GetContextRequest

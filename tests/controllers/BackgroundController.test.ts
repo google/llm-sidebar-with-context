@@ -177,8 +177,8 @@ describe("BackgroundController", () => {
       vi.mocked(mockGeminiService.generateContent).mockResolvedValue({
         reply: "Hello from Gemini",
       });
-      vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue("Active Content");
-      vi.mocked(mockContextManager.getAllContent).mockResolvedValue("Pinned Content");
+      vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([{ type: "text", text: "Active Content" }]);
+      vi.mocked(mockContextManager.getAllContent).mockResolvedValue([{ type: "text", text: "Pinned Content" }]);
       vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
 
       const response = await controller.handleMessage({
@@ -203,8 +203,8 @@ describe("BackgroundController", () => {
 
     it("should handle CHAT_MESSAGE with composed context", async () => {
         vi.mocked(mockSyncStorage.get).mockResolvedValue("fake-key");
-        vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue("Active Content");
-        vi.mocked(mockContextManager.getAllContent).mockResolvedValue("Pinned Content");
+        vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([{ type: "text", text: "Active Content" }]);
+        vi.mocked(mockContextManager.getAllContent).mockResolvedValue([{ type: "text", text: "Pinned Content" }]);
         vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
         vi.mocked(mockGeminiService.generateContent).mockResolvedValue({ reply: "Responded" });
     
@@ -217,7 +217,10 @@ describe("BackgroundController", () => {
     
         expect(mockGeminiService.generateContent).toHaveBeenCalledWith(
           "fake-key",
-          "Active ContentPinned Content",
+          [
+            { type: "text", text: "Active Content" },
+            { type: "text", text: "Pinned Content" }
+          ],
           expect.any(Array),
           "gemini-pro"
         );
@@ -225,8 +228,8 @@ describe("BackgroundController", () => {
 
     it("should respect includeCurrentTab=false in CHAT_MESSAGE", async () => {
         vi.mocked(mockSyncStorage.get).mockResolvedValue("fake-key");
-        vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue("Active Content");
-        vi.mocked(mockContextManager.getAllContent).mockResolvedValue("Pinned Content");
+        vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([{ type: "text", text: "Active Content" }]);
+        vi.mocked(mockContextManager.getAllContent).mockResolvedValue([{ type: "text", text: "Pinned Content" }]);
         vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
         vi.mocked(mockGeminiService.generateContent).mockResolvedValue({ reply: "Responded" });
     
@@ -239,7 +242,7 @@ describe("BackgroundController", () => {
     
         expect(mockGeminiService.generateContent).toHaveBeenCalledWith(
           "fake-key",
-          "Pinned Content", // Active content should be excluded
+          [{ type: "text", text: "Pinned Content" }], // Active content should be excluded
           expect.any(Array),
           "gemini-pro"
         );
@@ -251,8 +254,8 @@ describe("BackgroundController", () => {
         vi.mocked(mockGeminiService.generateContent).mockResolvedValue({
           error: "Safety concerns",
         });
-        vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue("");
-        vi.mocked(mockContextManager.getAllContent).mockResolvedValue("");
+        vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([]);
+        vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
         vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
     
         const response = await controller.handleMessage({

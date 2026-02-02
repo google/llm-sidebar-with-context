@@ -33,7 +33,7 @@ describe("GeminiService", () => {
 
   it("should format request correctly and return reply", async () => {
     const history: ChatMessage[] = [{ role: "user", text: "Hello" }];
-    const context = "User is on example.com";
+    const context = [{ type: "text" as const, text: "User is on example.com" }];
     const apiKey = "test-api-key";
 
     const mockResponse = {
@@ -71,10 +71,70 @@ describe("GeminiService", () => {
     });
 
     const body = JSON.parse((options as RequestInit).body as string);
-    // Context should be injected into the first user message (preprended)
-    expect(body.contents[0].parts[0].text).toContain("Context: User is on example.com");
+    // Context should be injected into the last user message (prepended)
+    expect(body.contents[0].parts[0].text).toBe("User is on example.com");
     // Original message should be at index 1
-    expect(body.contents[0].parts[1].text).toContain("Hello");
+    expect(body.contents[0].parts[1].text).toBe("Hello");
+  });
+
+  it("should handle multimodal context (e.g. YouTube)", async () => {
+    const history: ChatMessage[] = [{ role: "user", text: "Summary?" }];
+    const context = [
+        { type: "text" as const, text: "YouTube Video Header" },
+        { type: "file_data" as const, mimeType: "video/mp4", fileUri: "https://youtube.com/watch?v=123" }
+    ];
+    const apiKey = "test-api-key";
+
+    vi.mocked(fetch).mockResolvedValue({
+      json: async () => ({
+        candidates: [{ content: { parts: [{ text: "Video summary" }] } }]
+      }),
+    } as Response);
+
+    await geminiService.generateContent(apiKey, context, history);
+
+    const [, options] = vi.mocked(fetch).mock.calls[0];
+    const body = JSON.parse((options as RequestInit).body as string);
+
+    expect(body.contents[0].parts).toHaveLength(3);
+    expect(body.contents[0].parts[0]).toEqual({ text: "YouTube Video Header" });
+    expect(body.contents[0].parts[1]).toEqual({
+        file_data: {
+            mime_type: "video/mp4",
+            file_uri: "https://youtube.com/watch?v=123"
+        }
+    });
+    expect(body.contents[0].parts[2]).toEqual({ text: "Summary?" });
+  });
+
+  it("should handle complex multimodal context (2 text + 2 YouTube)", async () => {
+    const history: ChatMessage[] = [{ role: "user", text: "Final prompt" }];
+    const context = [
+        { type: "text" as const, text: "Text Context 1" },
+        { type: "file_data" as const, mimeType: "video/mp4", fileUri: "https://youtube.com/v1" },
+        { type: "text" as const, text: "Text Context 2" },
+        { type: "file_data" as const, mimeType: "video/mp4", fileUri: "https://youtube.com/v2" }
+    ];
+    const apiKey = "test-api-key";
+
+    vi.mocked(fetch).mockResolvedValue({
+      json: async () => ({
+        candidates: [{ content: { parts: [{ text: "Response" }] } }]
+      }),
+    } as Response);
+
+    await geminiService.generateContent(apiKey, context, history);
+
+    const [, options] = vi.mocked(fetch).mock.calls[0];
+    const body = JSON.parse((options as RequestInit).body as string);
+
+    // 4 context parts + 1 original user message part = 5 parts
+    expect(body.contents[0].parts).toHaveLength(5);
+    expect(body.contents[0].parts[0]).toEqual({ text: "Text Context 1" });
+    expect(body.contents[0].parts[1]).toEqual({ file_data: { mime_type: "video/mp4", file_uri: "https://youtube.com/v1" } });
+    expect(body.contents[0].parts[2]).toEqual({ text: "Text Context 2" });
+    expect(body.contents[0].parts[3]).toEqual({ file_data: { mime_type: "video/mp4", file_uri: "https://youtube.com/v2" } });
+    expect(body.contents[0].parts[4]).toEqual({ text: "Final prompt" });
   });
 
   it("should handle API errors", async () => {
@@ -90,7 +150,7 @@ describe("GeminiService", () => {
 
     const result = await geminiService.generateContent(
       "bad-key",
-      "",
+      [],
       [{ role: "user", text: "Hi" }]
     );
 
@@ -102,7 +162,7 @@ describe("GeminiService", () => {
 
     const result = await geminiService.generateContent(
       "key",
-      "",
+      [],
       [{ role: "user", text: "Hi" }]
     );
 
@@ -117,7 +177,7 @@ describe("GeminiService", () => {
 
     const result = await geminiService.generateContent(
       "key",
-      "",
+      [],
       [{ role: "user", text: "Hi" }]
     );
 
@@ -127,7 +187,7 @@ describe("GeminiService", () => {
   it("should return error if API key is empty", async () => {
     const result = await geminiService.generateContent(
       "", 
-      "Context", 
+      [{ type: "text", text: "Context" }], 
       [{ role: "user", text: "Hi" }]
     );
     expect(result.error).toBe("API key is required");
@@ -137,7 +197,7 @@ describe("GeminiService", () => {
   it("should return error if history is empty", async () => {
     const result = await geminiService.generateContent(
       "key", 
-      "Context", 
+      [{ type: "text", text: "Context" }], 
       []
     );
     expect(result.error).toBe("Chat history cannot be empty");
@@ -147,7 +207,7 @@ describe("GeminiService", () => {
   it("should return error if the last message is not from user", async () => {
     const result = await geminiService.generateContent(
       "key", 
-      "Context", 
+      [{ type: "text", text: "Context" }], 
       [{ role: "user", text: "Hi" }, { role: "model", text: "Hello" }]
     );
     expect(result.error).toBe("The last message must be from the user");

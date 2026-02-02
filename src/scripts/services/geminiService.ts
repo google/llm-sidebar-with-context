@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ChatMessage, GeminiResponse } from "../types";
+import { ChatMessage, GeminiResponse, ContentPart } from "../types";
 
 interface GeminiApiResponse {
   candidates?: Array<{
@@ -32,7 +32,7 @@ interface GeminiApiResponse {
 export interface IGeminiService {
   generateContent(
     apiKey: string,
-    context: string,
+    context: ContentPart[],
     history: ChatMessage[],
     model?: string
   ): Promise<GeminiResponse>;
@@ -41,7 +41,7 @@ export interface IGeminiService {
 export class GeminiService implements IGeminiService {
   async generateContent(
     apiKey: string,
-    context: string,
+    context: ContentPart[],
     history: ChatMessage[],
     model: string = "gemini-2.5-flash-lite"
   ): Promise<GeminiResponse> {
@@ -57,21 +57,37 @@ export class GeminiService implements IGeminiService {
       }
 
       // Map history to Gemini API format
-      const contents = history.map((msg) => ({
+      // Type is explicit: array of objects with role and parts array
+      const contents: { role: string; parts: any[] }[] = history.map((msg) => ({
         role: msg.role,
         parts: [{ text: msg.text }],
       }));
 
-      // Inject context as the first part of the last user message
+      // Inject context parts into the last user message
       if (contents.length > 0) {
         const lastMessage = contents[contents.length - 1];
-        if (lastMessage.role === "user") {
-          lastMessage.parts.unshift({ text: "Context: " + context });
+        if (lastMessage.role === "user" && context.length > 0) {
+             // Map ContentPart[] to Gemini API Part format
+             const contextParts = context.map(part => {
+                 if (part.type === 'text') {
+                     return { text: part.text };
+                 } else {
+                     return {
+                         file_data: {
+                             mime_type: part.mimeType,
+                             file_uri: part.fileUri
+                         }
+                     };
+                 }
+             });
+             
+             // Prepend context parts to the existing message parts
+             lastMessage.parts = [...contextParts, ...lastMessage.parts];
         }
       }
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
         {
           method: "POST",
           headers: {

@@ -17,7 +17,7 @@
 import { StorageKeys, MAX_PINNED_TABS } from "../constants";
 import { TabContext } from "./TabContext";
 import { isRestrictedURL } from "../utils";
-import { TabInfo } from "../types";
+import { TabInfo, ContentPart } from "../types";
 import { ILocalStorageService } from "../services/storageService";
 import { ITabService } from "../services/tabService";
 
@@ -80,20 +80,22 @@ export class ContextManager {
   /**
    * Fetches the combined content of all pinned tabs.
    */
-  async getAllContent(): Promise<string> {
-    const contents = await Promise.all(
-      this.pinnedTabs.map(async (tab) => {
-        const content = await tab.readContent();
-        return `\n\n--- Pinned Tab: ${tab.title} (${tab.url}) ---\n${content}`;
-      })
-    );
-    return contents.join("");
+  async getAllContent(): Promise<ContentPart[]> {
+    const allParts: ContentPart[] = [];
+
+    for (const tab of this.pinnedTabs) {
+      const header = `\n\n--- Pinned Tab: ${tab.title} (${tab.url}) ---`;
+      allParts.push({ type: "text", text: header });
+      allParts.push(await tab.readContent());
+    }
+
+    return allParts;
   }
   
   /**
    * Fetches content of the currently active tab.
    */
-  async getActiveTabContent(): Promise<string> {
+  async getActiveTabContent(): Promise<ContentPart[]> {
       const [activeTab] = await this.tabService.query({
           active: true,
           currentWindow: true,
@@ -102,14 +104,18 @@ export class ContextManager {
       if (activeTab && activeTab.url && activeTab.id !== undefined) {
           // De-duplication: If active tab is already pinned, don't re-extract.
           if (this.isTabPinned(activeTab.id)) {
-              return `Current tab URL: ${activeTab.url}\n(Content included in pinned tabs below)`;
+               return [{ type: "text", text: `Current tab URL: ${activeTab.url}\n(Content included in pinned tabs)` }];
           }
 
           const tempContext = new TabContext(activeTab.id, activeTab.url, activeTab.title || "", this.tabService);
-          const content = await tempContext.readContent();
-          return `Current tab URL: ${activeTab.url}\nContent: ${content}`;
+          const header = `Current tab URL: ${activeTab.url}`;
+          
+          return [
+              { type: "text", text: header },
+              await tempContext.readContent()
+          ];
       }
-      return "";
+      return [];
   }
 
   async load(): Promise<void> {
