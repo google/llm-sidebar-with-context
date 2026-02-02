@@ -19,6 +19,7 @@ import { SidebarController } from '../../src/scripts/controllers/SidebarControll
 import { ISyncStorageService } from '../../src/scripts/services/storageService';
 import { IMessageService } from '../../src/scripts/services/messageService';
 import { MessageTypes } from '../../src/scripts/constants';
+import { ExtensionMessage, ExtensionResponse } from '../../src/scripts/types';
 import fs from 'fs';
 import path from 'path';
 
@@ -58,7 +59,11 @@ describe('Sidebar Integration: Message Handling', () => {
   });
 
   it('should send a success response when receiving CURRENT_TAB_INFO to prevent port closure errors', () => {
-    let capturedListener: any;
+    let capturedListener: (
+      message: ExtensionMessage,
+      sender: unknown,
+      sendResponse: (response?: ExtensionResponse) => void,
+    ) => void;
     vi.mocked(mockMessageService.onMessage).mockImplementation((listener) => {
       capturedListener = listener;
     });
@@ -87,7 +92,11 @@ describe('Sidebar Integration: Message Handling', () => {
   });
 
   it('should send a success response when receiving CHECK_PINNED_TABS to prevent port closure errors', () => {
-    let capturedListener: any;
+    let capturedListener: (
+      message: ExtensionMessage,
+      sender: unknown,
+      sendResponse: (response?: ExtensionResponse) => void,
+    ) => void;
     vi.mocked(mockMessageService.onMessage).mockImplementation((listener) => {
       capturedListener = listener;
     });

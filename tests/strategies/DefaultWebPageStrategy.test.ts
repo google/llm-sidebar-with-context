@@ -19,6 +19,7 @@ import { DefaultWebPageStrategy } from '../../src/scripts/strategies/DefaultWebP
 import {
   ITabService,
   TimeoutError,
+  ChromeTab,
 } from '../../src/scripts/services/tabService';
 import {
   MAX_CONTEXT_LENGTH,
@@ -51,9 +52,8 @@ describe('DefaultWebPageStrategy', () => {
       active: true,
       windowId: 1,
       url,
-    } as any);
+    } as ChromeTab);
     vi.mocked(mockTabService.executeScript).mockResolvedValue('Content');
-
     const content = await strategy.getContent(tabId, url);
 
     expect(mockTabService.getTab).toHaveBeenCalledWith(tabId);
@@ -69,7 +69,7 @@ describe('DefaultWebPageStrategy', () => {
       active: true,
       windowId: 1,
       url,
-    } as any);
+    } as ChromeTab);
     vi.mocked(mockTabService.waitForTabComplete).mockResolvedValue(undefined);
     vi.mocked(mockTabService.executeScript).mockResolvedValue('Final content');
 
@@ -97,7 +97,7 @@ describe('DefaultWebPageStrategy', () => {
       active: true,
       windowId: 1,
       url,
-    } as any);
+    } as ChromeTab);
 
     const content = await strategy.getContent(tabId, url);
 
@@ -116,7 +116,7 @@ describe('DefaultWebPageStrategy', () => {
       active: true,
       windowId: 1,
       url,
-    } as any);
+    } as ChromeTab);
     vi.mocked(mockTabService.waitForTabComplete).mockRejectedValue(
       new TimeoutError('Timeout'),
     );
@@ -141,7 +141,7 @@ describe('DefaultWebPageStrategy', () => {
       active: true,
       windowId: 1,
       url,
-    } as any);
+    } as ChromeTab);
     vi.mocked(mockTabService.executeScript).mockRejectedValue(
       new Error('Script failed'),
     );
@@ -163,7 +163,7 @@ describe('DefaultWebPageStrategy', () => {
       active: true,
       windowId: 1,
       url,
-    } as any);
+    } as ChromeTab);
     vi.mocked(mockTabService.executeScript).mockResolvedValue('   ');
 
     const content = await strategy.getContent(tabId, url);
@@ -182,7 +182,7 @@ describe('DefaultWebPageStrategy', () => {
       active: true,
       windowId: 1,
       url,
-    } as any);
+    } as ChromeTab);
     vi.mocked(mockTabService.executeScript).mockResolvedValue(longContent);
 
     const content = await strategy.getContent(tabId, url);

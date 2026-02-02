@@ -18,6 +18,7 @@ import { marked } from 'marked';
 import { MessageTypes, StorageKeys, RestrictedURLs } from '../constants';
 import {
   ExtensionMessage,
+  ExtensionResponse,
   TabInfo,
   GeminiResponse,
   GetContextResponse,
@@ -170,7 +171,7 @@ export class SidebarController {
       (
         request: ExtensionMessage,
         _sender: unknown,
-        sendResponse: (response?: any) => void,
+        sendResponse: (response?: ExtensionResponse) => void,
       ) => {
         if (request.type === MessageTypes.CURRENT_TAB_INFO) {
           this.updateCurrentTabInfo(request.tab);

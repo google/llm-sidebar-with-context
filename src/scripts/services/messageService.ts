@@ -28,8 +28,8 @@ export interface IMessageService {
   onMessage(
     listener: (
       message: ExtensionMessage,
-      sender: any,
-      sendResponse: (response?: any) => void,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response?: unknown) => void,
     ) => boolean | void,
   ): void;
 }
@@ -50,8 +50,8 @@ export class ChromeMessageService implements IMessageService {
   onMessage(
     listener: (
       message: ExtensionMessage,
-      sender: any,
-      sendResponse: (response?: any) => void,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response?: unknown) => void,
     ) => boolean | void,
   ): void {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

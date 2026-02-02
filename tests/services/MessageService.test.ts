@@ -17,6 +17,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ChromeMessageService } from '../../src/scripts/services/messageService';
 import { MessageTypes } from '../../src/scripts/constants';
+import { ExtensionMessage } from '../../src/scripts/types';
 
 describe('ChromeMessageService', () => {
   let service: ChromeMessageService;
@@ -62,7 +63,9 @@ describe('ChromeMessageService', () => {
 
     it('should reject when chrome.runtime.lastError is set', async () => {
       mockSendMessage.mockImplementation((message, callback) => {
-        (chrome.runtime as any).lastError = { message: 'Connection failed' };
+        (
+          chrome.runtime as unknown as { lastError: { message: string } }
+        ).lastError = { message: 'Connection failed' };
         callback(undefined);
       });
 
@@ -79,7 +82,9 @@ describe('ChromeMessageService', () => {
       });
 
       const message = { type: MessageTypes.PING }; // Hypothetical void message
-      const response = await service.sendMessage(message as any);
+      const response = await service.sendMessage(
+        message as unknown as ExtensionMessage,
+      );
 
       expect(response).toBeUndefined();
     });
@@ -106,7 +111,11 @@ describe('ChromeMessageService', () => {
     });
 
     it('should trigger the listener when a message is received', () => {
-      let registeredListener: any;
+      let registeredListener: (
+        message: unknown,
+        sender: unknown,
+        sendResponse: unknown,
+      ) => void;
       mockOnMessageAddListener.mockImplementation((cb) => {
         registeredListener = cb;
       });

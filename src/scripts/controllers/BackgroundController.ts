@@ -60,8 +60,8 @@ export class BackgroundController {
     this.messageService.onMessage(
       (
         request: ExtensionMessage,
-        sender: any,
-        sendResponse: (response?: any) => void,
+        sender: chrome.runtime.MessageSender,
+        sendResponse: (response?: ExtensionResponse) => void,
       ) => {
         this.handleMessage(request).then(sendResponse);
         return true; // Keep the message channel open for async response
@@ -128,11 +128,12 @@ export class BackgroundController {
           },
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       // Ignore error if sidebar is closed (receiving end does not exist)
       if (
-        error.message &&
-        !error.message.includes('Receiving end does not exist.')
+        err.message &&
+        !err.message.includes('Receiving end does not exist.')
       ) {
         console.error('Error sending current tab info:', error);
       }
@@ -246,12 +247,13 @@ export class BackgroundController {
       }
 
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       const isAbort =
-        error.name === 'AbortError' ||
-        (error.message &&
-          typeof error.message === 'string' &&
-          error.message.toLowerCase().includes('aborted'));
+        err.name === 'AbortError' ||
+        (err.message &&
+          typeof err.message === 'string' &&
+          err.message.toLowerCase().includes('aborted'));
 
       if (isAbort) {
         // Remove the user's message from history so it can be restored to the input

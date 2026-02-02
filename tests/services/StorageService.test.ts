@@ -66,7 +66,9 @@ describe('StorageServices', () => {
 
     it('should reject if runtime.lastError is set during get()', async () => {
       mockLocalStorage.get.mockImplementation((keys, callback) => {
-        (chrome.runtime as any).lastError = { message: 'Read failed' };
+        (
+          chrome.runtime as unknown as { lastError: { message: string } }
+        ).lastError = { message: 'Read failed' };
         callback({});
       });
 
@@ -89,7 +91,9 @@ describe('StorageServices', () => {
 
     it('should reject if runtime.lastError is set during set()', async () => {
       mockLocalStorage.set.mockImplementation((data, callback) => {
-        (chrome.runtime as any).lastError = { message: 'Quota exceeded' };
+        (
+          chrome.runtime as unknown as { lastError: { message: string } }
+        ).lastError = { message: 'Quota exceeded' };
         callback();
       });
 
@@ -137,7 +141,9 @@ describe('StorageServices', () => {
 
     it('should reject if runtime.lastError is set during get()', async () => {
       mockSyncStorage.get.mockImplementation((keys, callback) => {
-        (chrome.runtime as any).lastError = { message: 'Sync read failed' };
+        (
+          chrome.runtime as unknown as { lastError: { message: string } }
+        ).lastError = { message: 'Sync read failed' };
         callback({});
       });
 
@@ -160,7 +166,9 @@ describe('StorageServices', () => {
 
     it('should reject if runtime.lastError is set during set()', async () => {
       mockSyncStorage.set.mockImplementation((data, callback) => {
-        (chrome.runtime as any).lastError = { message: 'Sync quota exceeded' };
+        (
+          chrome.runtime as unknown as { lastError: { message: string } }
+        ).lastError = { message: 'Sync quota exceeded' };
         callback();
       });
 

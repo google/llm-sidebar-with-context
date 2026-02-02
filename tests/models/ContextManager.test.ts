@@ -291,7 +291,8 @@ describe('ContextManager', () => {
       vi.mocked(mockLocalStorageService.get).mockResolvedValue(storedData);
       // Mock getTab to return valid tabs for all 7
       vi.mocked(mockTabService.getTab).mockImplementation(
-        async (id) => ({ id, url: 'u', title: 't', active: false }) as any,
+        async (id) =>
+          ({ id, url: 'u', title: 't', active: false }) as ChromeTab,
       );
 
       await contextManager.load();
@@ -513,9 +514,9 @@ describe('ContextManager', () => {
           text: expect.stringContaining(`Current tab URL: ${activeTab.url}`),
         },
       ]);
-      expect(content[0].type === 'text' && (content[0] as any).text).toContain(
-        '(Content included in pinned tabs)',
-      );
+      expect(
+        content[0].type === 'text' && (content[0] as { text: string }).text,
+      ).toContain('(Content included in pinned tabs)');
       expect(mockTabService.executeScript).not.toHaveBeenCalled();
     });
 

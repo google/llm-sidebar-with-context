@@ -19,6 +19,7 @@ import { SidebarController } from '../../src/scripts/controllers/SidebarControll
 import { ISyncStorageService } from '../../src/scripts/services/storageService';
 import { IMessageService } from '../../src/scripts/services/messageService';
 import { MessageTypes, StorageKeys } from '../../src/scripts/constants';
+import { ExtensionMessage, ExtensionResponse } from '../../src/scripts/types';
 import fs from 'fs';
 import path from 'path';
 
@@ -202,7 +203,11 @@ describe('SidebarController', () => {
   });
 
   describe('Tab Context Updates', () => {
-    let messageListener: any;
+    let messageListener: (
+      message: ExtensionMessage,
+      sender: unknown,
+      sendResponse: (response?: ExtensionResponse) => void,
+    ) => void;
 
     beforeEach(() => {
       vi.mocked(mockMessageService.onMessage).mockImplementation((listener) => {
@@ -288,7 +293,7 @@ describe('SidebarController', () => {
   describe('Pinned Tabs', () => {
     it('should display pinned tabs from background', async () => {
       vi.mocked(mockMessageService.sendMessage).mockImplementation(
-        async (msg: any) => {
+        async (msg: ExtensionMessage) => {
           if (msg.type === MessageTypes.GET_CONTEXT) {
             return {
               pinnedContexts: [
@@ -316,7 +321,7 @@ describe('SidebarController', () => {
 
     it('should unpin a tab when x button is clicked', async () => {
       vi.mocked(mockMessageService.sendMessage).mockImplementation(
-        async (msg: any) => {
+        async (msg: ExtensionMessage) => {
           if (msg.type === MessageTypes.GET_CONTEXT) {
             return {
               pinnedContexts: [
@@ -435,13 +440,13 @@ describe('SidebarController', () => {
       promptInput.value = 'Long running task';
 
       // Create a promise to control when sendMessage resolves
-      let resolveMessage: (val: any) => void;
-      const messagePromise = new Promise((resolve) => {
+      let resolveMessage: (val: ExtensionResponse) => void;
+      const messagePromise = new Promise<ExtensionResponse>((resolve) => {
         resolveMessage = resolve;
       });
 
       vi.mocked(mockMessageService.sendMessage).mockImplementation(
-        async (msg: any) => {
+        async (msg: ExtensionMessage) => {
           if (msg.type === MessageTypes.CHAT_MESSAGE) {
             return messagePromise;
           }
@@ -536,7 +541,7 @@ describe('SidebarController', () => {
       };
       vi.mocked(mockSyncStorage.get).mockResolvedValue('test-api-key');
       vi.mocked(mockMessageService.sendMessage).mockImplementation(
-        async (msg: any) => {
+        async (msg: ExtensionMessage) => {
           if (msg.type === MessageTypes.GET_CONTEXT) {
             return { pinnedContexts: [], tab: currentTab };
           }
@@ -569,7 +574,7 @@ describe('SidebarController', () => {
 
       vi.mocked(mockSyncStorage.get).mockResolvedValue('test-api-key');
       vi.mocked(mockMessageService.sendMessage).mockImplementation(
-        async (msg: any) => {
+        async (msg: ExtensionMessage) => {
           if (msg.type === MessageTypes.GET_CONTEXT) {
             return { pinnedContexts, tab: currentTab };
           }
@@ -602,7 +607,7 @@ describe('SidebarController', () => {
 
       vi.mocked(mockSyncStorage.get).mockResolvedValue('test-api-key');
       vi.mocked(mockMessageService.sendMessage).mockImplementation(
-        async (msg: any) => {
+        async (msg: ExtensionMessage) => {
           if (msg.type === MessageTypes.GET_CONTEXT) {
             return { pinnedContexts: [], tab: currentTab };
           }
@@ -628,7 +633,7 @@ describe('SidebarController', () => {
         url: 'https://google.com',
       };
       vi.mocked(mockMessageService.sendMessage).mockImplementation(
-        async (msg: any) => {
+        async (msg: ExtensionMessage) => {
           if (msg.type === MessageTypes.GET_CONTEXT) {
             return { pinnedContexts: [], tab: currentTab };
           }
@@ -664,7 +669,7 @@ describe('SidebarController', () => {
         url: 'https://google.com',
       };
       vi.mocked(mockMessageService.sendMessage).mockImplementation(
-        async (msg: any) => {
+        async (msg: ExtensionMessage) => {
           if (msg.type === MessageTypes.GET_CONTEXT) {
             return { pinnedContexts: [], tab: currentTab };
           }
@@ -700,7 +705,7 @@ describe('SidebarController', () => {
   describe('History Rehydration Error Handling', () => {
     it('should display a system message if history loading throws an error', async () => {
       vi.mocked(mockMessageService.sendMessage).mockImplementation(
-        async (msg: any) => {
+        async (msg: ExtensionMessage) => {
           if (msg.type === MessageTypes.GET_HISTORY) {
             throw new Error('Storage failure');
           }
@@ -721,7 +726,7 @@ describe('SidebarController', () => {
   describe('Sharing Toggle', () => {
     beforeEach(() => {
       vi.mocked(mockMessageService.sendMessage).mockImplementation(
-        async (msg: any) => {
+        async (msg: ExtensionMessage) => {
           if (msg.type === MessageTypes.GET_CONTEXT) {
             return {
               pinnedContexts: [],
@@ -798,7 +803,7 @@ describe('SidebarController', () => {
 
     it('should handle the case where no active tab is found (no toggle rendered)', async () => {
       vi.mocked(mockMessageService.sendMessage).mockImplementation(
-        async (msg: any) => {
+        async (msg: ExtensionMessage) => {
           if (msg.type === MessageTypes.GET_CONTEXT) {
             return { pinnedContexts: [], tab: null };
           }

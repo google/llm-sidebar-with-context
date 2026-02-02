@@ -60,7 +60,13 @@ export class GeminiService implements IGeminiService {
 
       // Map history to Gemini API format
       // Type is explicit: array of objects with role and parts array
-      const contents: { role: string; parts: any[] }[] = history.map((msg) => ({
+      const contents: {
+        role: string;
+        parts: (
+          | { text: string }
+          | { file_data: { mime_type: string; file_uri: string } }
+        )[];
+      }[] = history.map((msg) => ({
         role: msg.role,
         parts: [{ text: msg.text }],
       }));

@@ -61,7 +61,7 @@ describe('ChromeTabService', () => {
         active: true,
         windowId: 1,
         extraProperty: 'should be ignored',
-      } as any;
+      } as unknown as chrome.tabs.Tab;
       mockTabs.query.mockResolvedValue([rawTab]);
 
       const result = await service.query({ active: true });
@@ -87,7 +87,7 @@ describe('ChromeTabService', () => {
         active: true,
         windowId: 1,
         discarded: true,
-      } as any;
+      } as unknown as chrome.tabs.Tab;
       mockTabs.get.mockResolvedValue(rawTab);
 
       const result = await service.getTab(123);
@@ -136,7 +136,11 @@ describe('ChromeTabService', () => {
 
   describe('create', () => {
     it('should create a tab and map it', async () => {
-      const rawTab = { id: 456, active: true, windowId: 1 } as any;
+      const rawTab = {
+        id: 456,
+        active: true,
+        windowId: 1,
+      } as unknown as chrome.tabs.Tab;
       mockTabs.create.mockResolvedValue(rawTab);
 
       const result = await service.create({ url: 'https://google.com' });

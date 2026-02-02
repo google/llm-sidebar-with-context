@@ -17,12 +17,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BackgroundController } from '../../src/scripts/controllers/BackgroundController';
 import { ISyncStorageService } from '../../src/scripts/services/storageService';
-import { ITabService } from '../../src/scripts/services/tabService';
+import { ITabService, ChromeTab } from '../../src/scripts/services/tabService';
 import { IGeminiService } from '../../src/scripts/services/geminiService';
 import { IMessageService } from '../../src/scripts/services/messageService';
 import { ChatHistory } from '../../src/scripts/models/ChatHistory';
 import { ContextManager } from '../../src/scripts/models/ContextManager';
 import { MessageTypes, StorageKeys } from '../../src/scripts/constants';
+import {
+  GetContextResponse,
+  CheckPinnedTabsResponse,
+} from '../../src/scripts/types';
 
 describe('BackgroundController', () => {
   let controller: BackgroundController;
@@ -102,7 +106,7 @@ describe('BackgroundController', () => {
   describe('start()', () => {
     it('should register event listeners and broadcast initial tab info', async () => {
       vi.mocked(mockTabService.query).mockResolvedValue([
-        { id: 1, url: 'https://start.com', title: 'Start Page' } as any,
+        { id: 1, url: 'https://start.com', title: 'Start Page' } as ChromeTab,
       ]);
 
       await controller.start();
@@ -123,7 +127,10 @@ describe('BackgroundController', () => {
       controller.start();
       const activationListener = vi.mocked(chrome.tabs.onActivated.addListener)
         .mock.calls[0][0];
-      activationListener({ tabId: 1, windowId: 1 } as any);
+      activationListener({
+        tabId: 1,
+        windowId: 1,
+      } as chrome.tabs.TabActiveInfo);
       expect(mockTabService.query).toHaveBeenCalledWith({
         active: true,
         currentWindow: true,
@@ -136,8 +143,8 @@ describe('BackgroundController', () => {
         .calls[0][0];
       updateListener(
         1,
-        { url: 'https://new.com' } as any,
-        { active: true } as any,
+        { url: 'https://new.com' } as chrome.tabs.TabChangeInfo,
+        { active: true } as ChromeTab,
       );
       expect(mockTabService.query).toHaveBeenCalled();
     });
@@ -146,7 +153,11 @@ describe('BackgroundController', () => {
       controller.start();
       const updateListener = vi.mocked(chrome.tabs.onUpdated.addListener).mock
         .calls[0][0];
-      updateListener(1, { title: 'New Title' } as any, { active: true } as any);
+      updateListener(
+        1,
+        { title: 'New Title' } as chrome.tabs.TabChangeInfo,
+        { active: true } as ChromeTab,
+      );
       expect(mockTabService.query).toHaveBeenCalled();
     });
 
@@ -159,8 +170,13 @@ describe('BackgroundController', () => {
 
       await updateListener(
         101,
-        { url: 'https://new.com' } as any,
-        { id: 101, url: 'https://new.com', title: 'New', active: true } as any,
+        { url: 'https://new.com' } as chrome.tabs.TabChangeInfo,
+        {
+          id: 101,
+          url: 'https://new.com',
+          title: 'New',
+          active: true,
+        } as ChromeTab,
       );
 
       expect(mockContextManager.updateTabMetadata).toHaveBeenCalledWith(
@@ -179,8 +195,8 @@ describe('BackgroundController', () => {
         .calls[0][0];
       updateListener(
         1,
-        { url: 'https://bg.com' } as any,
-        { active: false } as any,
+        { url: 'https://bg.com' } as chrome.tabs.TabChangeInfo,
+        { active: false } as ChromeTab,
       );
       expect(mockTabService.query).toHaveBeenCalledTimes(1);
     });
@@ -190,7 +206,7 @@ describe('BackgroundController', () => {
       const removedListener = vi.mocked(chrome.tabs.onRemoved.addListener).mock
         .calls[0][0];
 
-      await removedListener(123, {} as any);
+      await removedListener(123, {} as chrome.tabs.TabRemoveInfo);
 
       expect(mockContextManager.removeTab).toHaveBeenCalledWith(123);
       expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
@@ -449,7 +465,7 @@ describe('BackgroundController', () => {
 
     it('should handle PIN_TAB failure for restricted URLs', async () => {
       vi.mocked(mockTabService.query).mockResolvedValue([
-        { id: 1, url: 'chrome://settings', title: 'Settings' } as any,
+        { id: 1, url: 'chrome://settings', title: 'Settings' } as ChromeTab,
       ]);
 
       const response = await controller.handleMessage({
@@ -467,7 +483,7 @@ describe('BackgroundController', () => {
       );
       // Ensure mockTabService.query returns a valid tab so handlePinTab proceeds to call addTab
       vi.mocked(mockTabService.query).mockResolvedValue([
-        { id: 101, url: 'https://pin.com', title: 'Pin Me' } as any,
+        { id: 101, url: 'https://pin.com', title: 'Pin Me' } as ChromeTab,
       ]);
 
       const response = await controller.handleMessage({
@@ -482,7 +498,7 @@ describe('BackgroundController', () => {
 
     it('should handle PIN_TAB successfully', async () => {
       vi.mocked(mockTabService.query).mockResolvedValue([
-        { id: 101, url: 'https://pin.com', title: 'Pin Me' } as any,
+        { id: 101, url: 'https://pin.com', title: 'Pin Me' } as ChromeTab,
       ]);
       const response = await controller.handleMessage({
         type: MessageTypes.PIN_TAB,
@@ -505,13 +521,13 @@ describe('BackgroundController', () => {
 
     it('should handle GET_CONTEXT correctly', async () => {
       vi.mocked(mockTabService.query).mockResolvedValue([
-        { id: 1, url: 'https://a.com', title: 'A' } as any,
+        { id: 1, url: 'https://a.com', title: 'A' } as ChromeTab,
       ]);
       vi.mocked(mockContextManager.getPinnedTabs).mockReturnValue([]);
 
       const response = (await controller.handleMessage({
         type: MessageTypes.GET_CONTEXT,
-      })) as any;
+      })) as GetContextResponse;
 
       expect(response.tab).toEqual({ id: 1, url: 'https://a.com', title: 'A' });
       expect(response.pinnedContexts).toEqual([]);
@@ -521,7 +537,7 @@ describe('BackgroundController', () => {
       vi.mocked(mockContextManager.getPinnedTabs).mockReturnValue([]);
       const response = (await controller.handleMessage({
         type: MessageTypes.CHECK_PINNED_TABS,
-      })) as any;
+      })) as CheckPinnedTabsResponse;
       expect(response.success).toBe(true);
       expect(response.pinnedContexts).toEqual([]);
     });
@@ -563,7 +579,7 @@ describe('BackgroundController', () => {
 
     it('should handle unknown message types gracefully', async () => {
       const response = await controller.handleMessage({
-        type: 'UNKNOWN_TYPE' as any,
+        type: 'UNKNOWN_TYPE' as unknown as keyof typeof MessageTypes,
       });
 
       expect(response).toEqual({ error: 'Unknown message type: UNKNOWN_TYPE' });

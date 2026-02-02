@@ -16,7 +16,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TabContext } from '../../src/scripts/models/TabContext';
-import { ITabService } from '../../src/scripts/services/tabService';
+import { ITabService, ChromeTab } from '../../src/scripts/services/tabService';
 import { CONTEXT_MESSAGES } from '../../src/scripts/constants';
 
 describe('TabContext', () => {
@@ -69,7 +69,7 @@ describe('TabContext', () => {
       id: 123,
       status: 'complete',
       url,
-    } as any);
+    } as ChromeTab);
     vi.mocked(mockTabService.executeScript).mockResolvedValue(
       'Regular Content',
     );
@@ -98,7 +98,7 @@ describe('TabContext', () => {
       windowId: 1,
       url: 'https://real-site.com',
       status: 'complete',
-    } as any);
+    } as ChromeTab);
     vi.mocked(mockTabService.executeScript).mockResolvedValue('Site Content');
 
     const content = await tabContext.readContent();
