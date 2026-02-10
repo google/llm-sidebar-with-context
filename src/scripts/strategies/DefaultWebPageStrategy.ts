@@ -80,7 +80,7 @@ export class DefaultWebPageStrategy implements IContentStrategy {
       if (errorMessage.includes('ExtensionsSettings policy')) {
         return {
           type: 'text',
-          text: CONTEXT_MESSAGES.RESTRICTED_URL,
+          text: CONTEXT_MESSAGES.EXTENSION_POLICY_ERROR,
         };
       }
 

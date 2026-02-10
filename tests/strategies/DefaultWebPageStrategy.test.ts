@@ -215,7 +215,7 @@ describe('DefaultWebPageStrategy', () => {
 
     expect(content).toEqual({
       type: 'text',
-      text: CONTEXT_MESSAGES.RESTRICTED_URL,
+      text: CONTEXT_MESSAGES.EXTENSION_POLICY_ERROR,
     });
     expect(consoleSpy).not.toHaveBeenCalled();
 
