@@ -20,6 +20,7 @@ import { ITabService } from '../services/tabService';
 import { ContentPart } from '../types';
 import { IContentStrategy } from '../strategies/IContentStrategy';
 import { YouTubeStrategy } from '../strategies/YouTubeStrategy';
+import { GoogleDocsStrategy } from '../strategies/GoogleDocsStrategy';
 import { DefaultWebPageStrategy } from '../strategies/DefaultWebPageStrategy';
 
 export class TabContext {
@@ -33,6 +34,7 @@ export class TabContext {
   ) {
     this.strategies = [
       new YouTubeStrategy(),
+      new GoogleDocsStrategy(this.tabService),
       new DefaultWebPageStrategy(this.tabService),
     ];
   }
