@@ -193,4 +193,32 @@ describe('DefaultWebPageStrategy', () => {
       expect(content.text).toBe('A'.repeat(MAX_CONTEXT_LENGTH));
     }
   });
+
+  it('should return a restricted URL message and suppress console error for ExtensionsSettings policy error', async () => {
+    const tabId = 123;
+    const url = 'https://example.com';
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    vi.mocked(mockTabService.getTab).mockResolvedValue({
+      id: tabId,
+      active: true,
+      windowId: 1,
+      url,
+    } as ChromeTab);
+    vi.mocked(mockTabService.executeScript).mockRejectedValue(
+      new Error(
+        'This page cannot be scripted due to an ExtensionsSettings policy',
+      ),
+    );
+
+    const content = await strategy.getContent(tabId, url);
+
+    expect(content).toEqual({
+      type: 'text',
+      text: CONTEXT_MESSAGES.RESTRICTED_URL,
+    });
+    expect(consoleSpy).not.toHaveBeenCalled();
+
+    consoleSpy.mockRestore();
+  });
 });

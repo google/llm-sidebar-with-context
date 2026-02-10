@@ -74,9 +74,17 @@ export class DefaultWebPageStrategy implements IContentStrategy {
         text: warningPrefix ? `${warningPrefix}${truncated}` : truncated,
       };
     } catch (error: unknown) {
-      console.error(`Failed to execute script for tab ${url}:`, error);
       const errorMessage =
         error instanceof Error ? error.message : String(error);
+
+      if (errorMessage.includes('ExtensionsSettings policy')) {
+        return {
+          type: 'text',
+          text: CONTEXT_MESSAGES.RESTRICTED_URL,
+        };
+      }
+
+      console.error(`Failed to execute script for tab ${url}:`, error);
       return {
         type: 'text',
         text: `${CONTEXT_MESSAGES.ERROR_PREFIX} ${url}: ${errorMessage})`,
