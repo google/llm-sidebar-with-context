@@ -15,6 +15,7 @@
  */
 
 import { ChatMessage, GeminiResponse, ContentPart } from '../types';
+import { isAbortError } from '../utils';
 
 interface GeminiApiResponse {
   candidates?: Array<{
@@ -119,6 +120,9 @@ export class GeminiService implements IGeminiService {
         return { error: 'Unknown error from Gemini API.' };
       }
     } catch (error: unknown) {
+      if (isAbortError(error)) {
+        return { aborted: true };
+      }
       const message = error instanceof Error ? error.message : String(error);
       return { error: message };
     }

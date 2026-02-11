@@ -24,3 +24,22 @@ import { RestrictedURLs } from './constants';
 export function isRestrictedURL(url: string): boolean {
   return RestrictedURLs.some((prefix) => url.startsWith(prefix));
 }
+
+/**
+ * Checks if an error is an AbortError.
+ * @param error - The error to check.
+ * @returns True if the error is an AbortError.
+ */
+export function isAbortError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    return true;
+  }
+  if (
+    error instanceof Error &&
+    (error.name === 'AbortError' ||
+      error.message.toLowerCase().includes('aborted'))
+  ) {
+    return true;
+  }
+  return false;
+}

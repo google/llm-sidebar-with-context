@@ -244,6 +244,10 @@ export class BackgroundController {
           role: 'model',
           text: response.reply,
         });
+      } else if (response.aborted) {
+        // If aborted, we need to clean up the user message from history
+        await this.chatHistory.removeLastMessage();
+        return { aborted: true };
       }
 
       return response;

@@ -253,4 +253,20 @@ describe('GeminiService', () => {
     expect(result.error).toBe('The last message must be from the user');
     expect(fetch).not.toHaveBeenCalled();
   });
+
+  it('should return { aborted: true } if fetch is aborted', async () => {
+    // Simulate an AbortError from fetch
+    vi.mocked(fetch).mockRejectedValue(
+      new DOMException('The user aborted a request.', 'AbortError'),
+    );
+
+    const result = await geminiService.generateContent(
+      'key',
+      [],
+      [{ role: 'user', text: 'Hi' }],
+    );
+
+    expect(result).toEqual({ aborted: true });
+    expect(result.error).toBeUndefined();
+  });
 });

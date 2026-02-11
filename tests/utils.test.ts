@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { isRestrictedURL } from '../src/scripts/utils';
+import { isRestrictedURL, isAbortError } from '../src/scripts/utils';
 
 describe('Utils', () => {
   describe('isRestrictedURL', () => {
@@ -42,6 +42,39 @@ describe('Utils', () => {
     it('should allow normal http/https URLs', () => {
       expect(isRestrictedURL('https://www.google.com')).toBe(false);
       expect(isRestrictedURL('http://localhost:3000')).toBe(false);
+    });
+  });
+
+  describe('isAbortError', () => {
+    it('should return true for DOMException with name "AbortError"', () => {
+      const error = new DOMException('Aborted', 'AbortError');
+      expect(isAbortError(error)).toBe(true);
+    });
+
+    it('should return true for Error with name "AbortError"', () => {
+      const error = new Error('Aborted');
+      error.name = 'AbortError';
+      expect(isAbortError(error)).toBe(true);
+    });
+
+    it('should return true for Error with message containing "aborted"', () => {
+      const error = new Error('The user aborted a request.');
+      expect(isAbortError(error)).toBe(true);
+    });
+
+    it('should return true for case-insensitive "aborted" message', () => {
+      const error = new Error('Request Aborted by user');
+      expect(isAbortError(error)).toBe(true);
+    });
+
+    it('should return false for other errors', () => {
+      const error = new Error('Network Error');
+      expect(isAbortError(error)).toBe(false);
+    });
+
+    it('should return false for non-error objects', () => {
+      expect(isAbortError('string error')).toBe(false);
+      expect(isAbortError({ random: 'object' })).toBe(false);
     });
   });
 });
