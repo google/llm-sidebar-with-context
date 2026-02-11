@@ -261,8 +261,8 @@ export class SidebarController {
           <h2>Quick Tips</h2>
           <ul>
             <li><strong>Select Model:</strong> Choose the best model for your task.</li>
-            <li><strong>Pin Context:</strong> Click the ${ICONS.PIN} icon to let the Model see multiple tabs at once.</li>
-            <li><strong>Control Privacy:</strong> Click the ${ICONS.EYE} icon to toggle sharing for your current tab.</li>
+            <li><strong>Pin Tabs:</strong> Click the ${ICONS.PIN} icon to pin the current tab as context. You can pin multiple tabs.</li>
+            <li><strong>Control Privacy:</strong> Click the ${ICONS.EYE} icon to toggle auto-sharing of your current tab.</li>
           </ul>
         </div>
 
