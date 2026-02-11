@@ -50,11 +50,11 @@ export class SidebarController {
   private messagesDiv: HTMLDivElement;
   private apiKeyInput: HTMLInputElement;
   private saveApiKeyButton: HTMLButtonElement;
-  private apiKeyContainer: HTMLDivElement;
+  private settingsPanel: HTMLDivElement;
   private pinnedTabsDiv: HTMLDivElement;
   private currentTabDiv: HTMLDivElement;
   private modelSelect: HTMLSelectElement;
-  private editApiKeyButton: HTMLButtonElement;
+  private toggleSettingsButton: HTMLButtonElement;
   private newChatButton: HTMLButtonElement;
 
   private pinnedContexts: TabInfo[] = [];
@@ -81,8 +81,8 @@ export class SidebarController {
     this.saveApiKeyButton = document.getElementById(
       'save-api-key-button',
     ) as HTMLButtonElement;
-    this.apiKeyContainer = document.getElementById(
-      'api-key-container',
+    this.settingsPanel = document.getElementById(
+      'settings-panel',
     ) as HTMLDivElement;
     this.pinnedTabsDiv = document.getElementById(
       'pinned-tabs',
@@ -93,8 +93,8 @@ export class SidebarController {
     this.modelSelect = document.getElementById(
       'model-select',
     ) as HTMLSelectElement;
-    this.editApiKeyButton = document.getElementById(
-      'edit-api-key-button',
+    this.toggleSettingsButton = document.getElementById(
+      'toggle-settings-button',
     ) as HTMLButtonElement;
     this.newChatButton = document.getElementById(
       'new-chat-button',
@@ -127,9 +127,9 @@ export class SidebarController {
     });
 
     this.saveApiKeyButton.addEventListener('click', () => this.saveApiKey());
-    this.editApiKeyButton.addEventListener('click', () => {
-      const isHidden = this.apiKeyContainer.style.display === 'none';
-      this.apiKeyContainer.style.display = isHidden ? 'flex' : 'none';
+    this.toggleSettingsButton.addEventListener('click', () => {
+      const isHidden = this.settingsPanel.style.display === 'none';
+      this.settingsPanel.style.display = isHidden ? 'flex' : 'none';
     });
 
     this.newChatButton.addEventListener('click', async () => {
@@ -195,10 +195,10 @@ export class SidebarController {
     );
 
     if (apiKey) {
-      this.apiKeyContainer.style.display = 'none';
+      this.settingsPanel.style.display = 'none';
       this.apiKeyInput.value = apiKey;
     } else {
-      this.apiKeyContainer.style.display = 'flex';
+      this.settingsPanel.style.display = 'flex';
     }
 
     if (selectedModel) {
@@ -266,7 +266,7 @@ export class SidebarController {
         apiKey: apiKey,
       });
       if (response && response.success) {
-        this.apiKeyContainer.style.display = 'none';
+        this.settingsPanel.style.display = 'none';
       } else {
         alert('Failed to save API Key.');
       }

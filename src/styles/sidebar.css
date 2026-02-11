@@ -259,7 +259,7 @@ body {
   gap: 6px;
 }
 
-#edit-api-key-button,
+#toggle-settings-button,
 #new-chat-button,
 #save-api-key-button {
   background-color: #333; /* Button Base Gray */
@@ -272,14 +272,14 @@ body {
   transition: background-color 0.2s;
 }
 
-#edit-api-key-button:hover,
+#toggle-settings-button:hover,
 #new-chat-button:hover,
 #save-api-key-button:hover {
   background-color: #444; /* Hover Gray */
 }
 
-/* API Key Input Area */
-#api-key-container {
+/* Settings Panel Area */
+#settings-panel {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -325,6 +325,33 @@ body {
 
 #api-key-input:focus {
   border-color: #007fd4;
+}
+
+#legal-panel {
+  margin-top: 4px;
+}
+
+#legal-panel hr {
+  border: 0;
+  border-top: 1px solid #333;
+  margin: 8px 0;
+}
+
+.legal-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.legal-links a {
+  font-size: 10px;
+  color: #bbb;
+  text-decoration: none;
+}
+
+.legal-links a:hover {
+  color: #fff;
+  text-decoration: underline;
 }
 
 /* Chat Input Bar */

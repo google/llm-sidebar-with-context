@@ -74,7 +74,7 @@ describe('SidebarController', () => {
 
       await controller.start();
 
-      const container = document.getElementById('api-key-container');
+      const container = document.getElementById('settings-panel');
       expect(container?.style.display).toBe('none');
     });
 
@@ -83,7 +83,7 @@ describe('SidebarController', () => {
 
       await controller.start();
 
-      const container = document.getElementById('api-key-container');
+      const container = document.getElementById('settings-panel');
       expect(container?.style.display).toBe('flex');
     });
 
@@ -114,21 +114,21 @@ describe('SidebarController', () => {
   });
 
   describe('API Key Management', () => {
-    it("should toggle API key visibility when 'Key' button is clicked", async () => {
+    it("should toggle settings visibility when 'Settings' button is clicked", async () => {
       vi.mocked(mockSyncStorage.get).mockResolvedValue('fake-key');
       await controller.start();
 
       const container = document.getElementById(
-        'api-key-container',
+        'settings-panel',
       ) as HTMLElement;
-      const keyButton = document.getElementById(
-        'edit-api-key-button',
+      const settingsButton = document.getElementById(
+        'toggle-settings-button',
       ) as HTMLButtonElement;
 
       expect(container.style.display).toBe('none');
-      keyButton.click();
+      settingsButton.click();
       expect(container.style.display).toBe('flex');
-      keyButton.click();
+      settingsButton.click();
       expect(container.style.display).toBe('none');
     });
 
