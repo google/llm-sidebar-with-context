@@ -123,6 +123,92 @@ body {
   padding: 0 12px; /* Align text with other messages */
 }
 
+/* --- Welcome Message --- */
+
+.welcome-container {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  color: #bbb;
+  gap: 20px;
+  margin: 0 auto;
+  max-width: 400px;
+}
+
+.welcome-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.welcome-header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.welcome-logo {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-logo svg {
+  width: 100%;
+  height: 100%;
+}
+
+.welcome-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.welcome-section h2 {
+  font-size: 11px;
+  font-weight: 700;
+  color: #007fd4;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.welcome-section ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.welcome-section li {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #ccc;
+  margin-bottom: 8px;
+}
+
+.welcome-section li strong {
+  color: #fff;
+  font-weight: 500;
+}
+
+.welcome-section li svg {
+  display: inline-block;
+  vertical-align: text-bottom;
+  width: 14px;
+  height: 14px;
+  margin: 0 2px;
+  color: #d4d4d4;
+}
+
 /* --- Bottom Panel (Modern High Density) --- */
 
 .bottom-panel {

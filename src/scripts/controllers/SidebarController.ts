@@ -31,17 +31,7 @@ import {
   ILocalStorageService,
 } from '../services/storageService';
 import { IMessageService } from '../services/messageService';
-
-const ICONS = {
-  PIN: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pin"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>`,
-  PINNED: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`,
-  RESTRICTED: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-slash"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>`,
-  EYE: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
-  EYE_OFF: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye-off"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`,
-  CLOSE: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
-  STOP: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-square"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
-  SEND: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`,
-};
+import { ICONS } from '../../../third_party/lucide/lucideIcons';
 
 export class SidebarController {
   private promptForm: HTMLFormElement;
@@ -139,6 +129,7 @@ export class SidebarController {
       });
       if (response && response.success) {
         this.displayPinnedTabs([]); // Clear pinned tabs in UI
+        this.showWelcomeMessage();
       }
     });
 
@@ -240,9 +231,15 @@ export class SidebarController {
           type: MessageTypes.GET_HISTORY,
         });
       if (response && response.success && response.history) {
+        if (response.history.length === 0) {
+          this.showWelcomeMessage();
+          return;
+        }
         for (const msg of response.history) {
           await this.appendMessage(msg.role, msg.text);
         }
+      } else {
+        this.showWelcomeMessage();
       }
     } catch (error) {
       console.error('Failed to load history:', error);
@@ -251,6 +248,34 @@ export class SidebarController {
         'System: Failed to load chat history. Try starting a new chat.',
       );
     }
+  }
+
+  private showWelcomeMessage() {
+    this.messagesDiv.innerHTML = `
+      <div class="welcome-container">
+        <div class="welcome-header">
+          <h1>Welcome to LLM Sidebar with Context</h1>
+        </div>
+
+        <div class="welcome-section">
+          <h2>Quick Tips</h2>
+          <ul>
+            <li><strong>Select Model:</strong> Choose the best model for your task.</li>
+            <li><strong>Pin Context:</strong> Click the ${ICONS.PIN} icon to let the Model see multiple tabs at once.</li>
+            <li><strong>Control Privacy:</strong> Click the ${ICONS.EYE} icon to toggle sharing for your current tab.</li>
+          </ul>
+        </div>
+
+        <div class="welcome-section">
+          <h2>Try asking</h2>
+          <ul>
+            <li>"Summarize news from multiple tabs"</li>
+            <li>"Explain this code snippet"</li>
+            <li>"Review my doc"</li>
+          </ul>
+        </div>
+      </div>
+    `;
   }
 
   private async saveApiKey() {
@@ -279,6 +304,12 @@ export class SidebarController {
   private async sendMessage() {
     const message = this.promptInput.value;
     if (message.trim() === '' || this.isGenerating) return;
+
+    // Remove welcome message if it exists
+    const welcome = this.messagesDiv.querySelector('.welcome-container');
+    if (welcome) {
+      this.messagesDiv.innerHTML = '';
+    }
 
     this.isGenerating = true;
     this.submitButton.innerHTML = ICONS.STOP;
@@ -310,6 +341,10 @@ export class SidebarController {
         const lastMessage = this.messagesDiv.lastElementChild;
         if (lastMessage && lastMessage.classList.contains('user')) {
           lastMessage.remove();
+        }
+        // If we removed the only message, show welcome back
+        if (this.messagesDiv.children.length === 0) {
+          this.showWelcomeMessage();
         }
       } else if (response && response.reply) {
         this.appendMessage('model', response.reply);

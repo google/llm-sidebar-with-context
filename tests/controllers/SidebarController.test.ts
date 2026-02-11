@@ -820,4 +820,90 @@ describe('SidebarController', () => {
       expect(toggleButton).toBeNull();
     });
   });
+
+  describe('Welcome Message', () => {
+    it('should show welcome message if history is empty on start', async () => {
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(
+        async (msg: ExtensionMessage) => {
+          if (msg.type === MessageTypes.GET_HISTORY) {
+            return { success: true, history: [] };
+          }
+          return { success: true };
+        },
+      );
+
+      await controller.start();
+
+      const messagesDiv = document.getElementById('messages') as HTMLDivElement;
+      expect(messagesDiv.querySelector('.welcome-container')).not.toBeNull();
+      expect(messagesDiv.textContent).toContain(
+        'Welcome to LLM Sidebar with Context',
+      );
+    });
+
+    it('should show welcome message after clicking New Chat', async () => {
+      // Start with some history
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(
+        async (msg: ExtensionMessage) => {
+          if (msg.type === MessageTypes.GET_HISTORY) {
+            return {
+              success: true,
+              history: [{ role: 'user', text: 'Hello' }],
+            };
+          }
+          if (msg.type === MessageTypes.CLEAR_CHAT) {
+            return { success: true };
+          }
+          return { success: true };
+        },
+      );
+
+      await controller.start();
+
+      const messagesDiv = document.getElementById('messages') as HTMLDivElement;
+      expect(messagesDiv.textContent).toContain('Hello');
+      expect(messagesDiv.querySelector('.welcome-container')).toBeNull();
+
+      const newChatButton = document.getElementById(
+        'new-chat-button',
+      ) as HTMLButtonElement;
+      await newChatButton.click();
+
+      expect(messagesDiv.querySelector('.welcome-container')).not.toBeNull();
+      expect(messagesDiv.textContent).not.toContain('Hello');
+    });
+
+    it('should hide welcome message when a prompt is sent', async () => {
+      // Start with empty history (welcome shown)
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(
+        async (msg: ExtensionMessage) => {
+          if (msg.type === MessageTypes.GET_HISTORY) {
+            return { success: true, history: [] };
+          }
+          if (msg.type === MessageTypes.CHAT_MESSAGE) {
+            return { reply: 'Response' };
+          }
+          return { success: true };
+        },
+      );
+
+      await controller.start();
+
+      const messagesDiv = document.getElementById('messages') as HTMLDivElement;
+      expect(messagesDiv.querySelector('.welcome-container')).not.toBeNull();
+
+      const promptInput = document.getElementById(
+        'prompt-input',
+      ) as HTMLInputElement;
+      const promptForm = document.getElementById(
+        'prompt-form',
+      ) as HTMLFormElement;
+
+      promptInput.value = 'First prompt';
+      promptForm.dispatchEvent(new Event('submit'));
+
+      expect(messagesDiv.querySelector('.welcome-container')).toBeNull();
+      expect(messagesDiv.textContent).toContain('First prompt');
+    });
+  });
 });
