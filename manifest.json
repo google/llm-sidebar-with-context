@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "LLM Sidebar with Context",
   "version": "1.0",
-  "description": "A Chrome extension that allows users to chat with an LLM in a sidebar, with the ability to pin open tabs as context.",
+  "description": "Simple, context-aware AI sidebar for Chrome, Edge, Brave & Vivaldi. Free and open source.",
   "permissions": ["activeTab", "scripting", "storage", "tabs", "sidePanel"],
   "host_permissions": ["<all_urls>"],
   "action": {
