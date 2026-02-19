@@ -1,12 +1,18 @@
 # LLM Sidebar with Context
 
+This Chrome Extension allows you to interact with Gemini models in a sidebar, using multiple browser tabs as context for your conversations.
+
+## 📦 Installation
+
+<a href="https://chromewebstore.google.com/detail/llm-sidebar-with-context/hecgmgkofmopdcjlbaegcaanaadhomhb">
+  <img src="./assets/promotional_images/chrome_web_store_badge.png" width="206" alt="Available in the Chrome Web Store">
+</a>
+
+## 🎬 Usage Examples
+
 <div align="center">
   <img src="./assets/promotional_images/promotional_images_slideshow.webp" width="800" alt="LLM Sidebar Demo Slideshow">
 </div>
-
-This Chrome Extension allows you to interact with Gemini models in a sidebar, using multiple browser tabs as context for your conversations.
-
-**Disclaimer:** This project is not an official Google project. It is not supported by Google and Google specifically disclaims all warranties as to its quality, merchantability, or fitness for a particular purpose.
 
 ## 🚀 Features
 
@@ -27,9 +33,7 @@ This Chrome Extension allows you to interact with Gemini models in a sidebar, us
   - Chat history is stored locally (`chrome.storage.local`).
 - **Markdown Support:** Responses are rendered with full Markdown support.
 
-## 📦 Installation
-
-This extension is currently available for manual installation.
+## 🛠️ Build Manually (Development)
 
 1.  **Clone the repository:**
 
@@ -112,6 +116,10 @@ LICENSE_URL="https://example.com/license"
 ## 🤝 Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
+
+## 📄 Disclaimer
+
+This project is not an official Google project. It is not supported by Google and Google specifically disclaims all warranties as to its quality, merchantability, or fitness for a particular purpose.
 
 ## 📄 License
 
