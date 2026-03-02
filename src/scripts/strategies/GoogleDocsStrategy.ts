@@ -19,6 +19,96 @@ import { ContentPart } from '../types';
 import { ITabService, TimeoutError } from '../services/tabService';
 import { CONTEXT_MESSAGES, MAX_CONTEXT_LENGTH } from '../constants';
 
+/**
+ * Extraction logic for Google Docs content.
+ * Extracted as a standalone function for testability and because it needs to be serialized for executeScript.
+ */
+export function extractGoogleDocsContent(): {
+  content: string | null;
+  debug?: string;
+} {
+  try {
+    console.log('Gemini: Starting Google Docs extraction via script tags...');
+
+    const scripts = Array.from(document.querySelectorAll('script'));
+    const modelChunksScripts = scripts.filter((s) =>
+      s.innerText.trim().startsWith('DOCS_modelChunk ='),
+    );
+
+    if (modelChunksScripts.length === 0) {
+      console.warn('Gemini: No DOCS_modelChunk scripts found.');
+      return {
+        content: null,
+        debug: 'No DOCS_modelChunk scripts found',
+      };
+    }
+
+    console.log(
+      `Gemini: Found ${modelChunksScripts.length} model chunks. Parsing...`,
+    );
+
+    type ChunkItem = {
+      index: number;
+      text: string;
+    };
+
+    const chunks: ChunkItem[] = [];
+
+    modelChunksScripts.forEach((script, i) => {
+      try {
+        const text = script.innerText.trim();
+        // Remove "DOCS_modelChunk =" prefix
+        let jsonStr = text.substring('DOCS_modelChunk ='.length).trim();
+
+        // Heuristic: The JSON object ends before the next DOCS_ variable assignment or function call.
+        // We split by "; DOCS_" to handle the following statements (e.g. DOCS_warmStartDocumentLoader)
+        const parts = jsonStr.split('; DOCS_');
+        if (parts.length > 0) {
+          jsonStr = parts[0];
+        }
+
+        // Remove potential trailing semicolon if the split didn't catch it
+        if (jsonStr.endsWith(';')) {
+          jsonStr = jsonStr.slice(0, -1);
+        }
+
+        const json = JSON.parse(jsonStr);
+        if (json && json.chunk && Array.isArray(json.chunk)) {
+          json.chunk.forEach((c: { ty?: string; s?: string; ibi?: number }) => {
+            if (c.s) {
+              chunks.push({
+                index: c.ibi ?? 0,
+                text: c.s,
+              });
+            }
+          });
+        }
+      } catch (e) {
+        console.warn(`Gemini: Failed to parse chunk ${i}`, e);
+      }
+    });
+
+    if (chunks.length === 0) {
+      console.warn('Gemini: Found scripts but failed to parse content.');
+      return {
+        content: null,
+        debug: 'Found scripts but failed to parse content',
+      };
+    }
+
+    // Sort chunks by index (ibi) to ensure correct order
+    chunks.sort((a, b) => a.index - b.index);
+
+    const fullText = chunks.map((c) => c.text).join('');
+    console.log(`Gemini: Content extracted! Length: ${fullText.length}`);
+
+    return { content: fullText };
+  } catch (e) {
+    console.error('Gemini: Extraction error', e);
+    return { content: null, debug: `Extraction error: ${String(e)}` };
+  }
+}
+
 export class GoogleDocsStrategy implements IContentStrategy {
   constructor(private tabService: ITabService) {}
 
@@ -60,99 +150,10 @@ export class GoogleDocsStrategy implements IContentStrategy {
     }
 
     try {
-      // Define the extraction function inline to ensure it serializes correctly
-      // as a standalone function for executeScript.
-      const extractContentFn = function (): {
-        content: string | null;
-        debug?: string;
-      } {
-        try {
-          console.log(
-            'Gemini: Starting Google Docs extraction via script tags...',
-          );
-
-          const scripts = Array.from(document.querySelectorAll('script'));
-          const modelChunksScripts = scripts.filter((s) =>
-            s.innerText.trim().startsWith('DOCS_modelChunk ='),
-          );
-
-          if (modelChunksScripts.length === 0) {
-            console.warn('Gemini: No DOCS_modelChunk scripts found.');
-            return {
-              content: null,
-              debug: 'No DOCS_modelChunk scripts found',
-            };
-          }
-
-          console.log(
-            `Gemini: Found ${modelChunksScripts.length} model chunks. Parsing...`,
-          );
-
-          type ChunkItem = {
-            index: number;
-            text: string;
-          };
-
-          const chunks: ChunkItem[] = [];
-
-          modelChunksScripts.forEach((script, i) => {
-            try {
-              const text = script.innerText.trim();
-              // Remove "DOCS_modelChunk =" prefix
-              let jsonStr = text.substring('DOCS_modelChunk ='.length).trim();
-
-              // Heuristic: The JSON object ends before the next DOCS_ variable assignment or function call.
-              // We split by "; DOCS_" to handle the following statements (e.g. DOCS_warmStartDocumentLoader)
-              const parts = jsonStr.split('; DOCS_');
-              if (parts.length > 0) {
-                jsonStr = parts[0];
-              }
-
-              // Remove potential trailing semicolon if the split didn't catch it
-              if (jsonStr.endsWith(';')) {
-                jsonStr = jsonStr.slice(0, -1);
-              }
-
-              const json = JSON.parse(jsonStr);
-              if (json && json.chunk && Array.isArray(json.chunk)) {
-                json.chunk.forEach(
-                  (c: { ty?: string; s?: string; ibi?: number }) => {
-                    if (c.s) {
-                      chunks.push({
-                        index: c.ibi ?? 0,
-                        text: c.s,
-                      });
-                    }
-                  },
-                );
-              }
-            } catch (e) {
-              console.warn(`Gemini: Failed to parse chunk ${i}`, e);
-            }
-          });
-
-          if (chunks.length === 0) {
-            console.warn('Gemini: Found scripts but failed to parse content.');
-            return {
-              content: null,
-              debug: 'Found scripts but failed to parse content',
-            };
-          }
-
-          // Sort chunks by index (ibi) to ensure correct order
-          chunks.sort((a, b) => a.index - b.index);
-
-          const fullText = chunks.map((c) => c.text).join('');
-          console.log(`Gemini: Content extracted! Length: ${fullText.length}`);
-
-          return { content: fullText };
-        } catch (e) {
-          console.error('Gemini: Extraction error', e);
-          return { content: null, debug: `Extraction error: ${String(e)}` };
-        }
-      };
-
-      const result = await this.tabService.executeScript(id, extractContentFn);
+      const result = await this.tabService.executeScript(
+        id,
+        extractGoogleDocsContent,
+      );
 
       if (!result || !result.content || result.content.trim().length === 0) {
         const debugMsg = result?.debug

@@ -15,12 +15,104 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GoogleDocsStrategy } from '../../src/scripts/strategies/GoogleDocsStrategy';
+import {
+  GoogleDocsStrategy,
+  extractGoogleDocsContent,
+} from '../../src/scripts/strategies/GoogleDocsStrategy';
 import {
   ITabService,
   TimeoutError,
 } from '../../src/scripts/services/tabService';
 import { CONTEXT_MESSAGES } from '../../src/scripts/constants';
+
+describe('extractGoogleDocsContent', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('should return null and debug info if no scripts are found', () => {
+    const result = extractGoogleDocsContent();
+    expect(result.content).toBeNull();
+    expect(result.debug).toBe('No DOCS_modelChunk scripts found');
+  });
+
+  it('should extract content from a single script tag', () => {
+    const script = document.createElement('script');
+    script.innerText =
+      'DOCS_modelChunk = {"chunk": [{"s": "Hello World", "ibi": 1}]};';
+    document.body.appendChild(script);
+
+    const result = extractGoogleDocsContent();
+    expect(result.content).toBe('Hello World');
+  });
+
+  it('should extract and sort content from multiple script tags', () => {
+    const script2 = document.createElement('script');
+    script2.innerText =
+      'DOCS_modelChunk = {"chunk": [{"s": " World", "ibi": 2}]};';
+    document.body.appendChild(script2);
+
+    const script1 = document.createElement('script');
+    script1.innerText =
+      'DOCS_modelChunk = {"chunk": [{"s": "Hello", "ibi": 1}]};';
+    document.body.appendChild(script1);
+
+    const result = extractGoogleDocsContent();
+    expect(result.content).toBe('Hello World');
+  });
+
+  it('should handle scripts with extra DOCS_ assignments', () => {
+    const script = document.createElement('script');
+    script.innerText =
+      'DOCS_modelChunk = {"chunk": [{"s": "Hello", "ibi": 1}]}; DOCS_warmStartDocumentLoader();';
+    document.body.appendChild(script);
+
+    const result = extractGoogleDocsContent();
+    expect(result.content).toBe('Hello');
+  });
+
+  it('should handle malformed JSON in one chunk but still parse others', () => {
+    const script1 = document.createElement('script');
+    script1.innerText = 'DOCS_modelChunk = { invalid json };';
+    document.body.appendChild(script1);
+
+    const script2 = document.createElement('script');
+    script2.innerText =
+      'DOCS_modelChunk = {"chunk": [{"s": "Valid", "ibi": 1}]};';
+    document.body.appendChild(script2);
+
+    const result = extractGoogleDocsContent();
+    expect(result.content).toBe('Valid');
+  });
+
+  it('should return null if scripts are found but no content is extracted', () => {
+    const script = document.createElement('script');
+    script.innerText = 'DOCS_modelChunk = {"chunk": []};';
+    document.body.appendChild(script);
+
+    const result = extractGoogleDocsContent();
+    expect(result.content).toBeNull();
+    expect(result.debug).toBe('Found scripts but failed to parse content');
+  });
+
+  it('should handle script tags without innerText safely', () => {
+    const script = document.createElement('script');
+    document.body.appendChild(script);
+
+    const result = extractGoogleDocsContent();
+    expect(result.content).toBeNull();
+  });
+
+  it('should handle unexpected errors during extraction', () => {
+    vi.spyOn(document, 'querySelectorAll').mockImplementationOnce(() => {
+      throw new Error('DOM Error');
+    });
+
+    const result = extractGoogleDocsContent();
+    expect(result.content).toBeNull();
+    expect(result.debug).toBe('Extraction error: Error: DOM Error');
+  });
+});
 
 describe('GoogleDocsStrategy', () => {
   let strategy: GoogleDocsStrategy;
@@ -138,6 +230,25 @@ describe('GoogleDocsStrategy', () => {
         type: 'text',
         text: `${CONTEXT_MESSAGES.LOADING_WARNING} Document Content`,
       });
+    });
+
+    it('should handle non-timeout errors during tab completion', async () => {
+      vi.mocked(mockTabService.getTab).mockResolvedValue({
+        id: tabId,
+        url,
+        active: true,
+        discarded: false,
+        windowId: 1,
+        status: 'loading',
+      });
+
+      vi.mocked(mockTabService.waitForTabComplete).mockRejectedValue(
+        new Error('Unexpected Error'),
+      );
+
+      await expect(strategy.getContent(tabId, url)).rejects.toThrow(
+        'Unexpected Error',
+      );
     });
 
     it('should execute script and return content', async () => {
