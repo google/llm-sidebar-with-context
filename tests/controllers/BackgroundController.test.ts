@@ -213,9 +213,144 @@ describe('BackgroundController', () => {
         type: MessageTypes.CHECK_PINNED_TABS,
       });
     });
+
+    it('should open the side panel when the user clicks the extension icon', () => {
+      controller.start();
+      const clickListener = vi.mocked(chrome.action.onClicked.addListener).mock
+        .calls[0][0];
+
+      clickListener({ windowId: 456 } as chrome.tabs.Tab);
+
+      expect(chrome.sidePanel.open).toHaveBeenCalledWith({ windowId: 456 });
+    });
+
+    it('should log a developer error if the active tab information cannot be retrieved', async () => {
+      vi.mocked(mockTabService.query).mockRejectedValue(
+        new Error('Query failed'),
+      );
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      await controller.start();
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Error sending current tab info:',
+        expect.any(Error),
+      );
+    });
+
+    it('should ignore errors when the sidebar is closed and cannot receive tab updates', async () => {
+      vi.mocked(mockTabService.query).mockResolvedValue([
+        { id: 1, url: 'https://test.com', title: 'Test' } as ChromeTab,
+      ]);
+      vi.mocked(mockMessageService.sendMessage).mockRejectedValue(
+        new Error(
+          'Could not establish connection. Receiving end does not exist.',
+        ),
+      );
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      await controller.start();
+
+      expect(consoleSpy).not.toHaveBeenCalled();
+    });
+
+    it('should update the pinned tab name in the sidebar when its title changes, even if it is a background tab', async () => {
+      vi.mocked(mockContextManager.isTabPinned).mockReturnValue(true);
+      vi.mocked(mockTabService.query).mockResolvedValue([
+        { id: 1, url: 'https://active.com', title: 'Active' } as ChromeTab,
+      ]);
+
+      await controller.start();
+      vi.mocked(mockTabService.query).mockClear();
+      vi.mocked(mockMessageService.sendMessage).mockClear();
+
+      const updateListener = vi.mocked(chrome.tabs.onUpdated.addListener).mock
+        .calls[0][0];
+
+      await updateListener(
+        101,
+        { title: 'New Title' } as chrome.tabs.TabChangeInfo,
+        {
+          id: 101,
+          url: 'https://pinned.com',
+          title: 'New Title',
+          active: false,
+        } as ChromeTab,
+      );
+
+      expect(mockContextManager.updateTabMetadata).toHaveBeenCalledWith(
+        101,
+        'https://pinned.com',
+        'New Title',
+      );
+      expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+        type: MessageTypes.CHECK_PINNED_TABS,
+      });
+      // Should not broadcast current tab info as tab is not active
+      expect(mockMessageService.sendMessage).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: MessageTypes.CURRENT_TAB_INFO }),
+      );
+    });
   });
 
   describe('handleMessage', () => {
+    it('should return an error response if an unknown command is received from the UI', async () => {
+      const response = await controller.handleMessage({
+        type: 'UNKNOWN_TYPE' as unknown as keyof typeof MessageTypes,
+      });
+
+      expect(response).toEqual({ error: 'Unknown message type: UNKNOWN_TYPE' });
+    });
+
+    it('should stop generation if the user cancels before context gathering begins', async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue('fake-api-key');
+
+      // Simulate abort happening immediately after adding message
+      vi.mocked(mockChatHistory.addMessage).mockImplementationOnce(async () => {
+        await controller.handleMessage({ type: MessageTypes.STOP_GENERATION });
+      });
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.CHAT_MESSAGE,
+        message: 'Prompt',
+        model: 'gemini-pro',
+        includeCurrentTab: true,
+      });
+
+      expect(response).toEqual({ aborted: true });
+      expect(mockChatHistory.removeLastMessage).toHaveBeenCalled();
+      expect(mockContextManager.getActiveTabContent).not.toHaveBeenCalled();
+    });
+
+    it('should stop generation if the user cancels during context gathering', async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue('fake-api-key');
+
+      // Simulate abort happening during active tab context extraction
+      vi.mocked(mockContextManager.getActiveTabContent).mockImplementationOnce(
+        async () => {
+          await controller.handleMessage({
+            type: MessageTypes.STOP_GENERATION,
+          });
+          return [];
+        },
+      );
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.CHAT_MESSAGE,
+        message: 'Prompt',
+        model: 'gemini-pro',
+        includeCurrentTab: true,
+      });
+
+      expect(response).toEqual({ aborted: true });
+      expect(mockChatHistory.removeLastMessage).toHaveBeenCalled();
+      expect(mockGeminiService.generateContent).not.toHaveBeenCalled();
+    });
+
     it('should handle CHAT_MESSAGE correctly', async () => {
       vi.mocked(mockSyncStorage.get).mockResolvedValue('fake-api-key');
       vi.mocked(mockGeminiService.generateContent).mockResolvedValue({
