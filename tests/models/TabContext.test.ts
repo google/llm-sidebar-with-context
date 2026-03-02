@@ -26,6 +26,7 @@ describe('TabContext', () => {
     mockTabService = {
       query: vi.fn(),
       executeScript: vi.fn(),
+      executeScriptFile: vi.fn(),
       create: vi.fn(),
       waitForTabComplete: vi.fn(),
       getTab: vi.fn(),
@@ -105,5 +106,36 @@ describe('TabContext', () => {
 
     expect(content).toEqual({ type: 'text', text: 'Site Content' });
     expect(mockTabService.getTab).toHaveBeenCalled();
+  });
+
+  it('should return an error if no strategy can handle the URL', async () => {
+    const url = 'https://example.com';
+    const tabContext = new TabContext(123, url, 'Example', mockTabService);
+
+    // Manually empty strategies to trigger fallback
+    // @ts-expect-error - accessing private property for testing
+    tabContext.strategies = [];
+
+    const content = await tabContext.readContent();
+
+    expect(content).toEqual({
+      type: 'text',
+      text: `${CONTEXT_MESSAGES.ERROR_PREFIX} No strategy found for ${url}`,
+    });
+  });
+
+  it('should catch unexpected errors during content extraction', async () => {
+    const url = 'https://example.com';
+    vi.mocked(mockTabService.getTab).mockRejectedValue(
+      new Error('Fatal Error'),
+    );
+
+    const tabContext = new TabContext(123, url, 'Example', mockTabService);
+    const content = await tabContext.readContent();
+
+    expect(content).toEqual({
+      type: 'text',
+      text: `${CONTEXT_MESSAGES.ERROR_PREFIX} ${url}: Fatal Error)`,
+    });
   });
 });
