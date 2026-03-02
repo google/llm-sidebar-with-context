@@ -75,6 +75,7 @@ async function build() {
   const entryPoints = [
     path.join(srcDir, 'scripts/background.ts'),
     path.join(srcDir, 'scripts/sidebar.ts'),
+    path.join(srcDir, 'scripts/webExtraction.ts'),
   ];
 
   await esbuild.build({

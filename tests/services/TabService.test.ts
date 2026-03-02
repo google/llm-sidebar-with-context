@@ -134,6 +134,20 @@ describe('ChromeTabService', () => {
     });
   });
 
+  describe('executeScriptFile', () => {
+    it('should inject script files into a tab', async () => {
+      mockScripting.executeScript.mockResolvedValue([]);
+
+      const files = ['script1.js', 'script2.js'];
+      await service.executeScriptFile(123, files);
+
+      expect(mockScripting.executeScript).toHaveBeenCalledWith({
+        target: { tabId: 123 },
+        files,
+      });
+    });
+  });
+
   describe('create', () => {
     it('should create a tab and map it', async () => {
       const rawTab = {

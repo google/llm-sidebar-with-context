@@ -36,6 +36,11 @@ export interface ITabService {
   executeScript<T>(tabId: number, func: () => T): Promise<T | null>;
 
   /**
+   * Injects one or more script files into a tab.
+   */
+  executeScriptFile(tabId: number, files: string[]): Promise<void>;
+
+  /**
    * Creates a new tab.
    */
   create(createProperties: chrome.tabs.CreateProperties): Promise<ChromeTab>;
@@ -91,6 +96,13 @@ export class ChromeTabService implements ITabService {
       func,
     });
     return (result.result as T) ?? null;
+  }
+
+  async executeScriptFile(tabId: number, files: string[]): Promise<void> {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files,
+    });
   }
 
   async create(

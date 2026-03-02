@@ -58,3 +58,16 @@ export const CONTEXT_MESSAGES = {
     '(Tab is suspended to save memory. Click it to reload content)',
   ERROR_PREFIX: '(Could not extract content from',
 };
+
+export const NOISE_SELECTORS = [
+  'nav',
+  'footer',
+  'script',
+  'style',
+  'noscript',
+  '.ad',
+  '.ads',
+  '.social-share',
+  '#sidebar',
+  '.cookie-consent',
+];

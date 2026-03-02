@@ -35,6 +35,7 @@ describe('ContextManager', () => {
     mockTabService = {
       query: vi.fn(),
       executeScript: vi.fn(),
+      executeScriptFile: vi.fn(),
       create: vi.fn(),
       waitForTabComplete: vi.fn(),
       getTab: vi.fn(),

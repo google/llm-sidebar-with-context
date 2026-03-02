@@ -25,12 +25,14 @@
   },
   "homepage": "https://github.com/google/llm-sidebar-with-context#readme",
   "dependencies": {
-    "marked": "^17.0.1"
+    "marked": "^17.0.1",
+    "turndown": "^7.2.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/chrome": "^0.1.35",
     "@types/node": "^25.0.10",
+    "@types/turndown": "^5.0.6",
     "@vitest/coverage-v8": "^4.0.18",
     "dotenv": "^17.2.4",
     "esbuild": "^0.27.2",

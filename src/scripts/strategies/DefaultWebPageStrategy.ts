@@ -19,6 +19,12 @@ import { ContentPart } from '../types';
 import { ITabService, TimeoutError } from '../services/tabService';
 import { MAX_CONTEXT_LENGTH, CONTEXT_MESSAGES } from '../constants';
 
+declare global {
+  interface Window {
+    extractPageContent: (noiseSelectors?: string[]) => string;
+  }
+}
+
 export class DefaultWebPageStrategy implements IContentStrategy {
   constructor(private tabService: ITabService) {}
 
@@ -59,9 +65,13 @@ export class DefaultWebPageStrategy implements IContentStrategy {
     }
 
     try {
-      const result = await this.tabService.executeScript(
-        id,
-        () => document.body.innerText,
+      // Inject the extraction script (bundled with Turndown and cleaning logic)
+      await this.tabService.executeScriptFile(id, [
+        'src/scripts/webExtraction.js',
+      ]);
+
+      const result = await this.tabService.executeScript(id, () =>
+        window.extractPageContent(),
       );
 
       if (!result || result.trim().length === 0) {

@@ -35,6 +35,7 @@ describe('DefaultWebPageStrategy', () => {
       getTab: vi.fn(),
       waitForTabComplete: vi.fn(),
       executeScript: vi.fn(),
+      executeScriptFile: vi.fn(),
     } as unknown as ITabService;
     strategy = new DefaultWebPageStrategy(mockTabService);
   });
@@ -57,7 +58,32 @@ describe('DefaultWebPageStrategy', () => {
     const content = await strategy.getContent(tabId, url);
 
     expect(mockTabService.getTab).toHaveBeenCalledWith(tabId);
+    expect(mockTabService.executeScriptFile).toHaveBeenCalledWith(tabId, [
+      'src/scripts/webExtraction.js',
+    ]);
     expect(content).toEqual({ type: 'text', text: 'Content' });
+  });
+
+  it('should return cleaned Markdown content from the content engine', async () => {
+    const tabId = 123;
+    const url = 'https://example.com';
+    vi.mocked(mockTabService.getTab).mockResolvedValue({
+      id: tabId,
+      status: 'complete',
+      active: true,
+      windowId: 1,
+      url,
+    } as ChromeTab);
+    vi.mocked(mockTabService.executeScript).mockResolvedValue(
+      '# Extracted Title\n\nThis is clean markdown.',
+    );
+
+    const content = await strategy.getContent(tabId, url);
+
+    expect(content).toEqual({
+      type: 'text',
+      text: '# Extracted Title\n\nThis is clean markdown.',
+    });
   });
 
   it('should wait for loading tabs to complete and then extract content', async () => {
@@ -152,6 +178,28 @@ describe('DefaultWebPageStrategy', () => {
     if (content.type === 'text') {
       expect(content.text).toContain(CONTEXT_MESSAGES.ERROR_PREFIX);
       expect(content.text).toContain('Script failed');
+    }
+  });
+
+  it('should return an error message if executeScriptFile fails', async () => {
+    const tabId = 123;
+    const url = 'https://example.com';
+    vi.mocked(mockTabService.getTab).mockResolvedValue({
+      id: tabId,
+      active: true,
+      windowId: 1,
+      url,
+    } as ChromeTab);
+    vi.mocked(mockTabService.executeScriptFile).mockRejectedValue(
+      new Error('File injection failed'),
+    );
+
+    const content = await strategy.getContent(tabId, url);
+
+    expect(content.type).toBe('text');
+    if (content.type === 'text') {
+      expect(content.text).toContain(CONTEXT_MESSAGES.ERROR_PREFIX);
+      expect(content.text).toContain('File injection failed');
     }
   });
 
