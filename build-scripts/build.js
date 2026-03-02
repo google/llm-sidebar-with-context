@@ -72,14 +72,16 @@ async function build() {
   );
 
   // 5. Bundle scripts
-  const entryPoints = [
+  const esmEntryPoints = [
     path.join(srcDir, 'scripts/background.ts'),
     path.join(srcDir, 'scripts/sidebar.ts'),
-    path.join(srcDir, 'scripts/webExtraction.ts'),
   ];
 
+  const iifeEntryPoints = [path.join(srcDir, 'scripts/webExtraction.ts')];
+
+  // ESM Build (Background, Sidebar)
   await esbuild.build({
-    entryPoints: entryPoints,
+    entryPoints: esmEntryPoints,
     bundle: true,
     outdir: path.join(distDir, 'src/scripts'),
     format: 'esm',
@@ -95,6 +97,17 @@ async function build() {
       ),
       'process.env.LICENSE_URL': JSON.stringify(process.env.LICENSE_URL),
     },
+  });
+
+  // IIFE Build (Web Extraction)
+  await esbuild.build({
+    entryPoints: iifeEntryPoints,
+    bundle: true,
+    outdir: path.join(distDir, 'src/scripts'),
+    format: 'iife',
+    platform: 'browser',
+    target: ['es2022'],
+    sourcemap: true,
   });
 
   console.log('Build complete! Output in dist/');
