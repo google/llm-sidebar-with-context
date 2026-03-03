@@ -151,7 +151,13 @@ body {
   color: var(--text-dim);
 }
 
+.response-duration {
+  font-style: italic;
+  opacity: 0.8;
+}
+
 .copy-button {
+  margin-left: auto;
   background: none;
   border: none;
   color: var(--text-dim);

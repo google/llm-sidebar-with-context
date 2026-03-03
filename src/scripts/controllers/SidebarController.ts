@@ -319,6 +319,11 @@ export class SidebarController {
     this.promptInput.value = '';
 
     const thinkingMessageElement = this.appendThinkingMessage();
+    const startTime = Date.now();
+    const timerInterval = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      thinkingMessageElement.textContent = `Waiting for model response... (${elapsed.toFixed(1)}s)`;
+    }, 100);
 
     try {
       const response = await this.messageService.sendMessage<GeminiResponse>({
@@ -328,7 +333,9 @@ export class SidebarController {
         includeCurrentTab: this.isCurrentTabShared,
       });
 
+      clearInterval(timerInterval);
       thinkingMessageElement.remove();
+      const duration = (Date.now() - startTime) / 1000;
 
       if (
         response &&
@@ -347,11 +354,12 @@ export class SidebarController {
           this.showWelcomeMessage();
         }
       } else if (response && response.reply) {
-        this.appendMessage('model', response.reply);
+        this.appendMessage('model', response.reply, duration);
       } else if (response && response.error) {
         this.appendMessage('error', `Error: ${response.error}`);
       }
     } catch (error) {
+      clearInterval(timerInterval);
       thinkingMessageElement.remove();
       this.appendMessage('error', `Error: ${error}`);
     } finally {
@@ -374,13 +382,13 @@ export class SidebarController {
   private appendThinkingMessage(): HTMLDivElement {
     const thinkingMessageElement = document.createElement('div');
     thinkingMessageElement.classList.add('message', 'thinking');
-    thinkingMessageElement.textContent = 'Waiting for model response...';
+    thinkingMessageElement.textContent = 'Waiting for model response... (0.0s)';
     this.messagesDiv.appendChild(thinkingMessageElement);
     this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
     return thinkingMessageElement;
   }
 
-  private async appendMessage(sender: string, text: string) {
+  private async appendMessage(sender: string, text: string, duration?: number) {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', sender);
     if (sender === 'model') {
@@ -388,6 +396,13 @@ export class SidebarController {
 
       const footer = document.createElement('div');
       footer.className = 'message-footer';
+
+      if (typeof duration === 'number') {
+        const durationSpan = document.createElement('span');
+        durationSpan.className = 'response-duration';
+        durationSpan.textContent = `${duration.toFixed(1)}s`;
+        footer.appendChild(durationSpan);
+      }
 
       const copyBtn = document.createElement('button');
       copyBtn.className = 'copy-button';

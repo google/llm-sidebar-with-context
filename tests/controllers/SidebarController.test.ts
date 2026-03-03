@@ -997,4 +997,96 @@ describe('SidebarController', () => {
       expect(messagesDiv.textContent).toContain('First prompt');
     });
   });
+
+  describe('Response Timer', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should show live timer updates in thinking message', async () => {
+      const promptInput = document.getElementById(
+        'prompt-input',
+      ) as HTMLInputElement;
+      const promptForm = document.getElementById(
+        'prompt-form',
+      ) as HTMLFormElement;
+      const messagesDiv = document.getElementById('messages') as HTMLDivElement;
+
+      promptInput.value = 'Hello';
+
+      let resolveMessage: (val: ExtensionResponse) => void;
+      const messagePromise = new Promise<ExtensionResponse>((resolve) => {
+        resolveMessage = resolve;
+      });
+
+      vi.mocked(mockMessageService.sendMessage).mockReturnValue(messagePromise);
+
+      promptForm.dispatchEvent(new Event('submit'));
+
+      // Advance time by 1.5 seconds
+      await vi.advanceTimersByTimeAsync(1500);
+
+      const thinkingMsg = messagesDiv.querySelector('.message.thinking');
+      // Allow for small variations in timing (1.4s, 1.5s, or 1.6s)
+      expect(thinkingMsg?.textContent).toMatch(
+        /Waiting for model response... \(1\.[4-6]s\)/,
+      );
+
+      // Resolve message
+      resolveMessage!({ reply: 'Response' });
+
+      await vi.waitFor(() => {
+        expect(messagesDiv.querySelector('.message.thinking')).toBeNull();
+      });
+    });
+
+    it('should display final duration in message footer', async () => {
+      const promptInput = document.getElementById(
+        'prompt-input',
+      ) as HTMLInputElement;
+      const promptForm = document.getElementById(
+        'prompt-form',
+      ) as HTMLFormElement;
+      const messagesDiv = document.getElementById('messages') as HTMLDivElement;
+
+      promptInput.value = 'Hello';
+
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(async () => {
+        await vi.advanceTimersByTimeAsync(2300);
+        return { reply: 'Response' };
+      });
+
+      promptForm.dispatchEvent(new Event('submit'));
+
+      await vi.waitFor(() => {
+        const durationSpan = messagesDiv.querySelector('.response-duration');
+        // Allow for small variations in timing (2.2s, 2.3s, or 2.4s)
+        expect(durationSpan?.textContent).toMatch(/2\.[234]s/);
+      });
+    });
+
+    it('should not display duration for history messages', async () => {
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(
+        async (msg: ExtensionMessage) => {
+          if (msg.type === MessageTypes.GET_HISTORY) {
+            return {
+              success: true,
+              history: [{ role: 'model', text: 'Old message' }],
+            } as GetHistoryResponse;
+          }
+          return { success: true } as SuccessResponse;
+        },
+      );
+
+      await controller.start();
+
+      const messagesDiv = document.getElementById('messages') as HTMLDivElement;
+      const durationSpan = messagesDiv.querySelector('.response-duration');
+      expect(durationSpan).toBeNull();
+    });
+  });
 });
