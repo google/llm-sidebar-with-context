@@ -31,6 +31,7 @@ export class TabContext {
     public url: string,
     public title: string,
     private tabService: ITabService,
+    public favIconUrl?: string,
   ) {
     this.strategies = [
       new YouTubeStrategy(),

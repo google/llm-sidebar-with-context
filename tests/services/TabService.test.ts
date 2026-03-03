@@ -60,6 +60,7 @@ describe('ChromeTabService', () => {
         status: 'complete',
         active: true,
         windowId: 1,
+        favIconUrl: 'https://example.com/favicon.ico',
         extraProperty: 'should be ignored',
       } as unknown as chrome.tabs.Tab;
       mockTabs.query.mockResolvedValue([rawTab]);
@@ -75,6 +76,7 @@ describe('ChromeTabService', () => {
         active: true,
         discarded: false,
         windowId: 1,
+        favIconUrl: 'https://example.com/favicon.ico',
       });
     });
   });

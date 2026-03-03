@@ -654,4 +654,75 @@ describe('ContextManager', () => {
       expect(contextManager.getPinnedTabs()).toHaveLength(0);
     });
   });
+
+  describe('Favicon Handling', () => {
+    it('should maintain favIconUrl through metadata updates and persistence', async () => {
+      const tabId = 1;
+      const initialFavIcon = 'https://initial.com/icon.png';
+      const updatedFavIcon = 'https://updated.com/icon.png';
+      const tab = new TabContext(
+        tabId,
+        'https://example.com',
+        'Example',
+        mockTabService,
+        initialFavIcon,
+      );
+
+      await contextManager.addTab(tab);
+
+      // Verify it was saved with favicon
+      expect(mockLocalStorageService.set).toHaveBeenLastCalledWith(
+        StorageKeys.PINNED_CONTEXTS,
+        expect.arrayContaining([
+          expect.objectContaining({ id: tabId, favIconUrl: initialFavIcon }),
+        ]),
+      );
+
+      // Update metadata with new favicon
+      await contextManager.updateTabMetadata(
+        tabId,
+        'https://example.com/new',
+        'New Title',
+        updatedFavIcon,
+      );
+
+      expect(contextManager.getPinnedTabs()[0].favIconUrl).toBe(updatedFavIcon);
+      expect(mockLocalStorageService.set).toHaveBeenLastCalledWith(
+        StorageKeys.PINNED_CONTEXTS,
+        expect.arrayContaining([
+          expect.objectContaining({ id: tabId, favIconUrl: updatedFavIcon }),
+        ]),
+      );
+    });
+
+    it('should rehydrate favIconUrl from storage and then from TabService if available', async () => {
+      const storedData = [
+        {
+          id: 101,
+          url: 'https://saved.com',
+          title: 'Saved',
+          favIconUrl: 'https://saved.com/icon.png',
+        },
+      ];
+      vi.mocked(mockLocalStorageService.get).mockResolvedValue(storedData);
+
+      // Mock TabService finding the tab WITH a potentially newer favicon
+      vi.mocked(mockTabService.getTab).mockResolvedValue({
+        id: 101,
+        url: 'https://saved.com',
+        title: 'Saved',
+        status: 'complete',
+        active: false,
+        windowId: 1,
+        discarded: false,
+        favIconUrl: 'https://new.com/icon.png',
+      });
+
+      await contextManager.load();
+
+      const pinned = contextManager.getPinnedTabs();
+      expect(pinned).toHaveLength(1);
+      expect(pinned[0].favIconUrl).toBe('https://new.com/icon.png');
+    });
+  });
 });

@@ -70,6 +70,7 @@ export interface ChromeTab {
   active: boolean;
   discarded: boolean;
   windowId: number;
+  favIconUrl?: string;
 }
 
 /**
@@ -154,6 +155,7 @@ export class ChromeTabService implements ITabService {
       active: tab.active,
       discarded: tab.discarded || false,
       windowId: tab.windowId,
+      favIconUrl: tab.favIconUrl,
     };
   }
 }

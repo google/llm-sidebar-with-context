@@ -224,7 +224,12 @@ describe('SidebarController', () => {
       messageListener(
         {
           type: MessageTypes.CURRENT_TAB_INFO,
-          tab: { id: 1, title: 'First Page', url: 'https://a.com' },
+          tab: {
+            id: 1,
+            title: 'First Page',
+            url: 'https://a.com',
+            favIconUrl: 'https://a.com/favicon.ico',
+          },
         },
         {},
         vi.fn(),
@@ -232,6 +237,31 @@ describe('SidebarController', () => {
 
       const div = document.getElementById('current-tab');
       expect(div?.textContent).toContain('First Page');
+      const img = div?.querySelector('img.favicon') as HTMLImageElement;
+      expect(img).toBeTruthy();
+      expect(img.src).toBe('https://a.com/favicon.ico');
+      expect(img.alt).toBe('First Page');
+    });
+
+    it('should NOT render favicon for current tab if favIconUrl is missing', () => {
+      messageListener(
+        {
+          type: MessageTypes.CURRENT_TAB_INFO,
+          tab: {
+            id: 1,
+            title: 'No Favicon Page',
+            url: 'https://b.com',
+            // favIconUrl missing
+          },
+        },
+        {},
+        vi.fn(),
+      );
+
+      const div = document.getElementById('current-tab');
+      expect(div?.textContent).toContain('No Favicon Page');
+      const img = div?.querySelector('img.favicon');
+      expect(img).toBeNull();
     });
 
     it('should update title correctly when switching tabs', () => {
@@ -291,21 +321,19 @@ describe('SidebarController', () => {
   });
 
   describe('Pinned Tabs', () => {
-    it('should display pinned tabs from background', async () => {
+    it('should display pinned tabs with and without favicons', async () => {
       vi.mocked(mockMessageService.sendMessage).mockImplementation(
         async (msg: ExtensionMessage) => {
           if (msg.type === MessageTypes.GET_CONTEXT) {
             return {
               pinnedContexts: [
-                { id: 101, title: 'Pinned 1', url: 'https://p1.com' },
-              ],
-            };
-          }
-          if (msg.type === MessageTypes.CHECK_PINNED_TABS) {
-            return {
-              success: true,
-              pinnedContexts: [
-                { id: 101, title: 'Pinned 1', url: 'https://p1.com' },
+                {
+                  id: 101,
+                  title: 'With Icon',
+                  url: 'https://p1.com',
+                  favIconUrl: 'https://p1.com/icon.png',
+                },
+                { id: 102, title: 'No Icon', url: 'https://p2.com' },
               ],
             };
           }
@@ -316,7 +344,20 @@ describe('SidebarController', () => {
       await controller.start();
 
       const pinnedDiv = document.getElementById('pinned-tabs');
-      expect(pinnedDiv?.textContent).toContain('Pinned 1');
+      const items = pinnedDiv?.querySelectorAll('li');
+      expect(items?.length).toBe(2);
+
+      // Item 1: With Icon
+      expect(items?.[0].textContent).toContain('With Icon');
+      const img1 = items?.[0].querySelector('img.favicon') as HTMLImageElement;
+      expect(img1).toBeTruthy();
+      expect(img1.src).toBe('https://p1.com/icon.png');
+      expect(img1.alt).toBe('With Icon');
+
+      // Item 2: No Icon
+      expect(items?.[1].textContent).toContain('No Icon');
+      const img2 = items?.[1].querySelector('img.favicon');
+      expect(img2).toBeNull();
     });
 
     it('should unpin a tab when x button is clicked', async () => {

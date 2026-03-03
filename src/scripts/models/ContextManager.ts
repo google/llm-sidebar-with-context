@@ -63,11 +63,15 @@ export class ContextManager {
     tabId: number,
     url: string,
     title: string,
+    favIconUrl?: string,
   ): Promise<void> {
     const tab = this.pinnedTabs.find((t) => t.tabId === tabId);
     if (tab) {
       tab.url = url;
       tab.title = title;
+      if (favIconUrl) {
+        tab.favIconUrl = favIconUrl;
+      }
       await this.save();
     }
   }
@@ -147,6 +151,7 @@ export class ContextManager {
                 tab.url || s.url,
                 tab.title || s.title || 'Untitled',
                 this.tabService,
+                tab.favIconUrl || s.favIconUrl,
               ),
             );
           }
@@ -165,6 +170,7 @@ export class ContextManager {
       id: t.tabId,
       title: t.title,
       url: t.url,
+      favIconUrl: t.favIconUrl,
     }));
     await this.localStorageService.set(StorageKeys.PINNED_CONTEXTS, infos);
   }

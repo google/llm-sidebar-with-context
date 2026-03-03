@@ -84,6 +84,7 @@ export class BackgroundController {
             tabId,
             tab.url || '',
             tab.title || 'Untitled',
+            tab.favIconUrl,
           );
           this.messageService
             .sendMessage({ type: MessageTypes.CHECK_PINNED_TABS })
@@ -125,6 +126,7 @@ export class BackgroundController {
             id: tab.id,
             title: tab.title || 'Untitled',
             url: tab.url,
+            favIconUrl: tab.favIconUrl,
           },
         });
       }
@@ -282,13 +284,19 @@ export class BackgroundController {
         id: context.tabId,
         url: context.url,
         title: context.title,
+        favIconUrl: context.favIconUrl,
       }));
 
     return {
       pinnedContexts: pinnedContexts,
       tab:
         tab && tab.url && tab.id
-          ? { id: tab.id, title: tab.title || 'Untitled', url: tab.url }
+          ? {
+              id: tab.id,
+              title: tab.title || 'Untitled',
+              url: tab.url,
+              favIconUrl: tab.favIconUrl,
+            }
           : null,
     };
   }
@@ -318,6 +326,7 @@ export class BackgroundController {
         tab.url,
         tab.title || 'Untitled',
         this.tabService,
+        tab.favIconUrl,
       );
       await this.contextManager.addTab(newContext);
       return { success: true };
@@ -339,6 +348,7 @@ export class BackgroundController {
         id: context.tabId,
         url: context.url,
         title: context.title,
+        favIconUrl: context.favIconUrl,
       }));
     return { success: true, pinnedContexts };
   }

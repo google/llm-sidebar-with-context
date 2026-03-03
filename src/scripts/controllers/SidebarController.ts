@@ -439,11 +439,14 @@ export class SidebarController {
     const ul = document.createElement('ul');
     this.pinnedContexts.forEach((context) => {
       const li = document.createElement('li');
+      const faviconHtml = context.favIconUrl
+        ? `<img src="${context.favIconUrl}" class="favicon" alt="${context.title}" />`
+        : '';
       const buttons = `
         <button class="icon-button unpin-button" data-id="${context.id}" title="Unpin this tab">
           ${ICONS.CLOSE}
         </button>`;
-      li.innerHTML = `<span>${context.title}</span>${buttons}`;
+      li.innerHTML = `${faviconHtml}<span>${context.title}</span>${buttons}`;
       ul.appendChild(li);
     });
     this.pinnedTabsDiv.appendChild(ul);
@@ -515,6 +518,10 @@ export class SidebarController {
       </button>
     `;
 
-    this.currentTabDiv.innerHTML = `${shareButtonHtml}<span>Current: ${tab.title}</span>${pinButtonHtml}`;
+    const faviconHtml = tab.favIconUrl
+      ? `<img src="${tab.favIconUrl}" class="favicon" alt="${tab.title}" />`
+      : '';
+
+    this.currentTabDiv.innerHTML = `${shareButtonHtml}${faviconHtml}<span>Current: ${tab.title}</span>${pinButtonHtml}`;
   }
 }

@@ -106,7 +106,12 @@ describe('BackgroundController', () => {
   describe('start()', () => {
     it('should register event listeners and broadcast initial tab info', async () => {
       vi.mocked(mockTabService.query).mockResolvedValue([
-        { id: 1, url: 'https://start.com', title: 'Start Page' } as ChromeTab,
+        {
+          id: 1,
+          url: 'https://start.com',
+          title: 'Start Page',
+          favIconUrl: 'https://start.com/icon.png',
+        } as ChromeTab,
       ]);
 
       await controller.start();
@@ -119,7 +124,12 @@ describe('BackgroundController', () => {
 
       expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
         type: MessageTypes.CURRENT_TAB_INFO,
-        tab: { id: 1, title: 'Start Page', url: 'https://start.com' },
+        tab: {
+          id: 1,
+          title: 'Start Page',
+          url: 'https://start.com',
+          favIconUrl: 'https://start.com/icon.png',
+        },
       });
     });
 
@@ -183,6 +193,7 @@ describe('BackgroundController', () => {
         101,
         'https://new.com',
         'New',
+        undefined, // favIconUrl is undefined in this mock tab
       );
       expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
         type: MessageTypes.CHECK_PINNED_TABS,
@@ -286,6 +297,7 @@ describe('BackgroundController', () => {
         101,
         'https://pinned.com',
         'New Title',
+        undefined, // favIconUrl is undefined in this mock tab
       );
       expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
         type: MessageTypes.CHECK_PINNED_TABS,
@@ -654,18 +666,44 @@ describe('BackgroundController', () => {
       expect(mockContextManager.removeTab).toHaveBeenCalledWith(101);
     });
 
-    it('should handle GET_CONTEXT correctly', async () => {
+    it('should handle GET_CONTEXT correctly with mixed favicons', async () => {
       vi.mocked(mockTabService.query).mockResolvedValue([
-        { id: 1, url: 'https://a.com', title: 'A' } as ChromeTab,
+        {
+          id: 1,
+          url: 'https://a.com',
+          title: 'A',
+          favIconUrl: 'https://a.com/favicon.ico',
+        } as ChromeTab,
       ]);
-      vi.mocked(mockContextManager.getPinnedTabs).mockReturnValue([]);
+      vi.mocked(mockContextManager.getPinnedTabs).mockReturnValue([
+        {
+          tabId: 101,
+          url: 'https://p1.com',
+          title: 'P1',
+          favIconUrl: 'https://p1.com/icon.png',
+        },
+        { tabId: 102, url: 'https://p2.com', title: 'P2' },
+      ] as unknown as TabContext[]);
 
       const response = (await controller.handleMessage({
         type: MessageTypes.GET_CONTEXT,
       })) as GetContextResponse;
 
-      expect(response.tab).toEqual({ id: 1, url: 'https://a.com', title: 'A' });
-      expect(response.pinnedContexts).toEqual([]);
+      expect(response.tab).toEqual({
+        id: 1,
+        url: 'https://a.com',
+        title: 'A',
+        favIconUrl: 'https://a.com/favicon.ico',
+      });
+      expect(response.pinnedContexts).toEqual([
+        {
+          id: 101,
+          url: 'https://p1.com',
+          title: 'P1',
+          favIconUrl: 'https://p1.com/icon.png',
+        },
+        { id: 102, url: 'https://p2.com', title: 'P2', favIconUrl: undefined },
+      ]);
     });
 
     it('should handle CHECK_PINNED_TABS correctly', async () => {

@@ -20,6 +20,7 @@ export interface TabInfo {
   id: number;
   title: string;
   url: string;
+  favIconUrl?: string;
 }
 
 export interface ChatMessage {
