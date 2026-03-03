@@ -89,6 +89,15 @@ body {
   margin-right: 5px; /* Subtle left alignment */
 }
 
+.message.model a {
+  color: #4dadff; /* Brighter Blue for Links */
+  text-decoration: none;
+}
+
+.message.model a:hover {
+  text-decoration: underline;
+}
+
 .message.model pre {
   background-color: #1e1e1e; /* Code Block Background */
   padding: 10px;
