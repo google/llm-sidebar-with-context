@@ -419,6 +419,56 @@ describe('SidebarController', () => {
       await vi.waitFor(() => {
         expect(messagesDiv.innerHTML).toContain('Hi User');
       });
+
+      const modelMsg = messagesDiv.querySelector('.message.model');
+      expect(modelMsg?.querySelector('.message-footer')).toBeTruthy();
+      expect(modelMsg?.querySelector('.copy-button')).toBeTruthy();
+    });
+
+    it('should copy text to clipboard and show success state when copy button is clicked', async () => {
+      vi.useFakeTimers();
+      // Mock clipboard API
+      const mockClipboard = {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      };
+      Object.assign(navigator, { clipboard: mockClipboard });
+
+      const promptInput = document.getElementById(
+        'prompt-input',
+      ) as HTMLInputElement;
+      const promptForm = document.getElementById(
+        'prompt-form',
+      ) as HTMLFormElement;
+      const messagesDiv = document.getElementById('messages') as HTMLDivElement;
+
+      promptInput.value = 'Hello';
+      vi.mocked(mockMessageService.sendMessage).mockResolvedValue({
+        reply: 'Response to copy',
+      });
+
+      promptForm.dispatchEvent(new Event('submit'));
+
+      await vi.waitFor(() => {
+        expect(messagesDiv.textContent).toContain('Response to copy');
+      });
+
+      const copyBtn = messagesDiv.querySelector(
+        '.copy-button',
+      ) as HTMLButtonElement;
+      expect(copyBtn).toBeTruthy();
+
+      await copyBtn.click();
+
+      expect(mockClipboard.writeText).toHaveBeenCalledWith('Response to copy');
+      expect(copyBtn.classList.contains('success')).toBe(true);
+      expect(copyBtn.textContent).toContain('Copied markdown to clipboard');
+
+      // Verify it resets after timeout
+      vi.advanceTimersByTime(2100);
+      expect(copyBtn.classList.contains('success')).toBe(false);
+      expect(copyBtn.textContent).not.toContain('Copied markdown to clipboard');
+
+      vi.useRealTimers();
     });
 
     it('should display error message if backend returns an error', async () => {

@@ -385,11 +385,39 @@ export class SidebarController {
     messageElement.classList.add('message', sender);
     if (sender === 'model') {
       messageElement.innerHTML = await marked.parse(text);
+
+      const footer = document.createElement('div');
+      footer.className = 'message-footer';
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'copy-button';
+      copyBtn.title = 'Copy markdown to clipboard';
+      copyBtn.innerHTML = ICONS.COPY;
+      copyBtn.onclick = () => this.copyToClipboard(text, copyBtn);
+      footer.appendChild(copyBtn);
+
+      messageElement.appendChild(footer);
     } else {
       messageElement.textContent = text;
     }
     this.messagesDiv.appendChild(messageElement);
     this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
+  }
+
+  private async copyToClipboard(text: string, button: HTMLButtonElement) {
+    try {
+      await navigator.clipboard.writeText(text);
+      button.innerHTML = `${ICONS.CHECK}<span>Copied markdown to clipboard</span>`;
+      button.classList.add('success');
+      button.title = 'Copied markdown to clipboard';
+      setTimeout(() => {
+        button.innerHTML = ICONS.COPY;
+        button.classList.remove('success');
+        button.title = 'Copy markdown to clipboard';
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy!', err);
+    }
   }
 
   private async pinCurrentTab() {

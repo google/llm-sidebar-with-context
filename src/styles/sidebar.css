@@ -98,6 +98,44 @@ body {
   text-decoration: underline;
 }
 
+.message-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 10px;
+  color: #888;
+}
+
+.copy-button {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.copy-button:hover {
+  background-color: #333;
+  color: #fff;
+}
+
+.copy-button.success {
+  color: #4caf50;
+}
+
+.copy-button span {
+  margin-left: 6px;
+  font-weight: 500;
+}
+
 .message.model pre {
   background-color: #1e1e1e; /* Code Block Background */
   padding: 10px;
