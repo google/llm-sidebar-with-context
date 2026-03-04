@@ -15,7 +15,12 @@
  */
 
 import { marked } from 'marked';
-import { MessageTypes, StorageKeys, RestrictedURLs } from '../constants';
+import {
+  MessageTypes,
+  StorageKeys,
+  RestrictedURLs,
+  Themes,
+} from '../constants';
 import {
   ExtensionMessage,
   ExtensionResponse,
@@ -44,6 +49,7 @@ export class SidebarController {
   private pinnedTabsDiv: HTMLDivElement;
   private currentTabDiv: HTMLDivElement;
   private modelSelect: HTMLSelectElement;
+  private themeSelect: HTMLSelectElement;
   private toggleSettingsButton: HTMLButtonElement;
   private newChatButton: HTMLButtonElement;
 
@@ -83,6 +89,9 @@ export class SidebarController {
     this.modelSelect = document.getElementById(
       'model-select',
     ) as HTMLSelectElement;
+    this.themeSelect = document.getElementById(
+      'theme-select',
+    ) as HTMLSelectElement;
     this.toggleSettingsButton = document.getElementById(
       'toggle-settings-button',
     ) as HTMLButtonElement;
@@ -119,7 +128,7 @@ export class SidebarController {
     this.saveApiKeyButton.addEventListener('click', () => this.saveApiKey());
     this.toggleSettingsButton.addEventListener('click', () => {
       const isHidden = this.settingsPanel.style.display === 'none';
-      this.settingsPanel.style.display = isHidden ? 'flex' : 'none';
+      this.toggleSettings(isHidden);
     });
 
     this.newChatButton.addEventListener('click', async () => {
@@ -138,6 +147,13 @@ export class SidebarController {
         StorageKeys.SELECTED_MODEL,
         this.modelSelect.value,
       );
+    });
+
+    this.themeSelect.addEventListener('change', async () => {
+      const selectedTheme = this.themeSelect.value;
+      this.applyTheme(selectedTheme);
+      await this.syncStorageService.set(StorageKeys.THEME, selectedTheme);
+      this.showThemeSaveFeedback();
     });
 
     this.promptForm.addEventListener('submit', (e) => {
@@ -177,7 +193,7 @@ export class SidebarController {
   }
 
   public async start() {
-    // Load API Key and Selected Model
+    // Load API Key, Selected Model, and Theme
     const apiKey = await this.syncStorageService.get<string>(
       StorageKeys.API_KEY,
     );
@@ -186,15 +202,23 @@ export class SidebarController {
     );
 
     if (apiKey) {
-      this.settingsPanel.style.display = 'none';
+      this.toggleSettings(false);
       this.apiKeyInput.value = apiKey;
     } else {
-      this.settingsPanel.style.display = 'flex';
+      this.toggleSettings(true);
     }
 
     if (selectedModel) {
       this.modelSelect.value = selectedModel;
     }
+
+    const theme = await this.syncStorageService.get<string>(StorageKeys.THEME);
+    const validThemes = Object.values(Themes);
+    const effectiveTheme =
+      theme && validThemes.includes(theme) ? theme : Themes.SYSTEM;
+
+    this.themeSelect.value = effectiveTheme;
+    this.applyTheme(effectiveTheme);
 
     // Load Sharing Preference
     const storedSharing = await this.localStorageService.get<boolean>(
@@ -222,6 +246,31 @@ export class SidebarController {
 
     // Rehydrate History
     await this.loadHistory();
+  }
+
+  private toggleSettings(show: boolean) {
+    this.settingsPanel.style.display = show ? 'flex' : 'none';
+    const topControls = document.getElementById('top-controls');
+    if (topControls) {
+      topControls.style.display = show ? 'block' : 'none';
+    }
+  }
+
+  private applyTheme(theme: string) {
+    if (theme === Themes.SYSTEM) {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }
+
+  private showThemeSaveFeedback() {
+    const status = document.getElementById('theme-status');
+    if (status) {
+      status.innerHTML = ICONS.CHECK;
+      status.classList.add('visible');
+      setTimeout(() => status.classList.remove('visible'), 2000);
+    }
   }
 
   private async loadHistory() {
@@ -291,7 +340,7 @@ export class SidebarController {
         apiKey: apiKey,
       });
       if (response && response.success) {
-        this.settingsPanel.style.display = 'none';
+        this.toggleSettings(false);
       } else {
         alert('Failed to save API Key.');
       }

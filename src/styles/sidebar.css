@@ -15,47 +15,132 @@
  */
 
 :root {
-  /* Colors - Backgrounds */
-  --bg-main: #1e1e1e;
-  --bg-surface: #252526;
-  --bg-alt: #333333;
-  --bg-hover: #444444;
+  /* --- Palette Definitions --- */
 
-  /* Colors - Text */
-  --text-bright: #ffffff;
-  --text-main: #d4d4d4;
-  --text-muted: #bbbbbb;
-  --text-dim: #888888;
-  --text-disabled: #555555;
+  /* Dark Theme Palette */
+  --col-dark-bg: #131314;
+  --col-dark-surface: #1e1f20;
+  --col-dark-alt: #2d2f31;
+  --col-dark-hover: #3c3d3e;
+  --col-dark-text-bright: #ffffff;
+  --col-dark-text-main: #f5f5f5;
+  --col-dark-text-muted: #c4c7c5;
+  --col-dark-text-dim: #9aa0a6;
+  --col-dark-text-disabled: #70757a;
+  --col-dark-primary: #a8c7fa;
+  --col-dark-link: #a8c7fa;
+  --col-dark-success: #81c995;
+  --col-dark-error: #f28b82;
+  --col-dark-text-on-primary: #131314;
+  --col-dark-bg-chat-user: #004a77;
+  --col-dark-border-main: #2d2f31;
+  --col-dark-border-alt: #3c3d3e;
 
-  /* Colors - Accents */
-  --accent-primary: #007fd4;
-  --accent-link: #4dadff;
-  --accent-success: #4caf50;
-  --accent-error: #f44336;
+  /* Light Theme Palette */
+  --col-light-bg: #ffffff;
+  --col-light-surface: #f0f4f9;
+  --col-light-alt: #dee2e6;
+  --col-light-hover: #e9eef6;
+  --col-light-text-bright: #000000;
+  --col-light-text-main: #111111;
+  --col-light-text-muted: #3c4043;
+  --col-light-text-dim: #5f6368;
+  --col-light-text-disabled: #aaaaaa;
+  --col-light-primary: #0b57d0;
+  --col-light-link: #0b57d0;
+  --col-light-success: #188038;
+  --col-light-error: #d93025;
+  --col-light-text-on-primary: #ffffff;
+  --col-light-bg-chat-user: #d3e3fd;
+  --col-light-border-main: #d1dce5;
+  --col-light-border-alt: #c4d3e0;
 
-  /* Borders */
-  --border-main: #333333;
-  --border-alt: #444444;
-  --border-focus: var(--accent-primary);
-
-  /* Spacing */
+  /* --- Spacing & Sizes --- */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 12px;
   --spacing-lg: 16px;
   --spacing-xl: 24px;
 
-  /* Border Radius */
   --radius-sm: 3px;
   --radius-md: 4px;
   --radius-lg: 6px;
 
-  /* Font Sizes */
   --font-xs: 10px;
   --font-sm: 11px;
   --font-md: 13px;
   --font-lg: 18px;
+}
+
+/* --- Theme Mapping Logic --- */
+
+/* Dark Theme Mapping (Default) */
+:root,
+[data-theme='dark'] {
+  --bg-main: var(--col-dark-bg);
+  --bg-surface: var(--col-dark-surface);
+  --bg-alt: var(--col-dark-alt);
+  --bg-hover: var(--col-dark-hover);
+  --text-bright: var(--col-dark-text-bright);
+  --text-main: var(--col-dark-text-main);
+  --text-muted: var(--col-dark-text-muted);
+  --text-dim: var(--col-dark-text-dim);
+  --text-disabled: var(--col-dark-text-disabled);
+  --primary: var(--col-dark-primary);
+  --link: var(--col-dark-link);
+  --success: var(--col-dark-success);
+  --error: var(--col-dark-error);
+  --text-on-primary: var(--col-dark-text-on-primary);
+  --bg-chat-user: var(--col-dark-bg-chat-user);
+  --border-main: var(--col-dark-border-main);
+  --border-alt: var(--col-dark-border-alt);
+  --border-focus: var(--primary);
+}
+
+/* System Light Theme Mapping */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --bg-main: var(--col-light-bg);
+    --bg-surface: var(--col-light-surface);
+    --bg-alt: var(--col-light-alt);
+    --bg-hover: var(--col-light-hover);
+    --text-bright: var(--col-light-text-bright);
+    --text-main: var(--col-light-text-main);
+    --text-muted: var(--col-light-text-muted);
+    --text-dim: var(--col-light-text-dim);
+    --text-disabled: var(--col-light-text-disabled);
+    --primary: var(--col-light-primary);
+    --link: var(--col-light-link);
+    --success: var(--col-light-success);
+    --error: var(--col-light-error);
+    --text-on-primary: var(--col-light-text-on-primary);
+    --bg-chat-user: var(--col-light-bg-chat-user);
+    --border-main: var(--col-light-border-main);
+    --border-alt: var(--col-light-border-alt);
+    --border-focus: var(--primary);
+  }
+}
+
+/* Explicit Light Theme Mapping */
+[data-theme='light'] {
+  --bg-main: var(--col-light-bg);
+  --bg-surface: var(--col-light-surface);
+  --bg-alt: var(--col-light-alt);
+  --bg-hover: var(--col-light-hover);
+  --text-bright: var(--col-light-text-bright);
+  --text-main: var(--col-light-text-main);
+  --text-muted: var(--col-light-text-muted);
+  --text-dim: var(--col-light-text-dim);
+  --text-disabled: var(--col-light-text-disabled);
+  --primary: var(--col-light-primary);
+  --link: var(--col-light-link);
+  --success: var(--col-light-success);
+  --error: var(--col-light-error);
+  --text-on-primary: var(--col-light-text-on-primary);
+  --bg-chat-user: var(--col-light-bg-chat-user);
+  --border-main: var(--col-light-border-main);
+  --border-alt: var(--col-light-border-alt);
+  --border-focus: var(--primary);
 }
 
 html,
@@ -92,6 +177,54 @@ body {
   overflow: hidden;
 }
 
+/* --- Top Controls --- */
+
+#top-controls {
+  display: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-main);
+  flex-shrink: 0;
+}
+
+.theme-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.label-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theme-row label {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--success);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.status-icon.visible {
+  opacity: 1;
+}
+
+.status-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* --- Chat Section --- */
 
 #messages {
@@ -123,8 +256,8 @@ body {
 }
 
 .message.user {
-  background-color: var(--accent-primary);
-  color: var(--text-bright);
+  background-color: var(--bg-chat-user);
+  color: var(--text-main);
   margin-left: 5px; /* Subtle right alignment */
 }
 
@@ -134,7 +267,7 @@ body {
 }
 
 .message.model a {
-  color: var(--accent-link);
+  color: var(--link);
   text-decoration: none;
 }
 
@@ -178,7 +311,7 @@ body {
 }
 
 .copy-button.success {
-  color: var(--accent-success);
+  color: var(--success);
 }
 
 .copy-button span {
@@ -270,7 +403,7 @@ body {
 .welcome-section h2 {
   font-size: var(--font-sm);
   font-weight: 700;
-  color: var(--accent-primary);
+  color: var(--link);
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -288,7 +421,7 @@ body {
 .welcome-section li {
   font-size: var(--font-md);
   line-height: 1.5;
-  color: #cccccc;
+  color: var(--text-muted);
   margin-bottom: var(--spacing-sm);
 }
 
@@ -321,7 +454,7 @@ body {
 /* Pinned Contexts */
 #pinned-tabs-container {
   font-size: 12px;
-  color: #e0e0e0;
+  color: var(--text-main);
 }
 
 #current-tab,
@@ -371,7 +504,7 @@ body {
 }
 
 .icon-button.active {
-  color: var(--accent-primary);
+  color: var(--link);
 }
 
 .icon-button.disabled {
@@ -384,13 +517,8 @@ body {
   color: var(--text-disabled);
 }
 
-#current-tab button,
-#pinned-tabs button {
-  /* Inherits from .icon-button */
-}
-
 #current-tab button.pinned {
-  color: var(--accent-primary);
+  color: var(--link);
 }
 
 #current-tab button.restricted {
@@ -430,7 +558,8 @@ body {
   align-items: center;
 }
 
-#model-select {
+#model-select,
+#theme-select {
   background-color: var(--bg-main);
   color: var(--text-main);
   border: 1px solid var(--border-main);
@@ -440,7 +569,8 @@ body {
   outline: none;
 }
 
-#model-select:focus {
+#model-select:focus,
+#theme-select:focus {
   border-color: var(--border-focus);
 }
 
@@ -480,10 +610,11 @@ body {
   font-size: var(--font-sm);
   color: var(--text-muted);
   line-height: 1.4;
+  font-weight: 500;
 }
 
 .api-key-help a {
-  color: var(--accent-primary);
+  color: var(--link);
   text-decoration: none;
 }
 
@@ -586,7 +717,7 @@ body {
 }
 
 #send-button:hover {
-  color: var(--accent-primary);
+  color: var(--primary);
 }
 
 .feather-send {

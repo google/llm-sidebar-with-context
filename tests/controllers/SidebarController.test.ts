@@ -44,6 +44,7 @@ describe('SidebarController', () => {
   beforeEach(() => {
     // Reset DOM
     document.body.innerHTML = htmlContent;
+    document.documentElement.removeAttribute('data-theme');
 
     mockSyncStorage = {
       get: vi.fn(),
@@ -199,6 +200,112 @@ describe('SidebarController', () => {
 
       expect(alertSpy).toHaveBeenCalledWith('Failed to save API Key.');
       alertSpy.mockRestore();
+    });
+  });
+
+  describe('Theme Management', () => {
+    it('should default to system theme if none is found in storage', async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue(undefined);
+
+      await controller.start();
+
+      const select = document.getElementById(
+        'theme-select',
+      ) as HTMLSelectElement;
+      expect(select.value).toBe('system');
+      expect(document.documentElement.getAttribute('data-theme')).toBeNull();
+    });
+
+    it('should fallback to system theme if an invalid theme is found in storage', async () => {
+      vi.mocked(mockSyncStorage.get).mockImplementation(async (key) => {
+        if (key === StorageKeys.THEME) return 'ultra-dark-mode';
+        return undefined;
+      });
+
+      await controller.start();
+
+      const select = document.getElementById(
+        'theme-select',
+      ) as HTMLSelectElement;
+      expect(select.value).toBe('system');
+      expect(document.documentElement.getAttribute('data-theme')).toBeNull();
+    });
+
+    it('should load and apply light theme from storage', async () => {
+      vi.mocked(mockSyncStorage.get).mockImplementation(async (key) => {
+        if (key === StorageKeys.THEME) return 'light';
+        return undefined;
+      });
+
+      await controller.start();
+
+      const select = document.getElementById(
+        'theme-select',
+      ) as HTMLSelectElement;
+      expect(select.value).toBe('light');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    });
+
+    it('should save to storage and apply to DOM when dropdown is changed', async () => {
+      await controller.start();
+
+      const select = document.getElementById(
+        'theme-select',
+      ) as HTMLSelectElement;
+      select.value = 'dark';
+      select.dispatchEvent(new Event('change'));
+
+      expect(mockSyncStorage.set).toHaveBeenCalledWith(
+        StorageKeys.THEME,
+        'dark',
+      );
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    });
+
+    it('should show and then hide feedback icon when theme is changed', async () => {
+      vi.useFakeTimers();
+      await controller.start();
+
+      const select = document.getElementById(
+        'theme-select',
+      ) as HTMLSelectElement;
+      const status = document.getElementById('theme-status');
+
+      select.value = 'light';
+      select.dispatchEvent(new Event('change'));
+
+      await vi.waitFor(() => {
+        expect(status?.classList.contains('visible')).toBe(true);
+      });
+
+      vi.advanceTimersByTime(2100);
+      expect(status?.classList.contains('visible')).toBe(false);
+
+      vi.useRealTimers();
+    });
+
+    it('should hide theme picker when API key is successfully saved', async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue(undefined); // Start with settings visible
+      await controller.start();
+
+      const topControls = document.getElementById('top-controls');
+      const apiKeyInput = document.getElementById(
+        'api-key-input',
+      ) as HTMLInputElement;
+      const saveButton = document.getElementById(
+        'save-api-key-button',
+      ) as HTMLButtonElement;
+
+      expect(topControls?.style.display).toBe('block');
+
+      apiKeyInput.value = 'new-valid-key';
+      vi.mocked(mockMessageService.sendMessage).mockResolvedValue({
+        success: true,
+      });
+
+      await saveButton.click();
+
+      expect(topControls?.style.display).toBe('none');
     });
   });
 

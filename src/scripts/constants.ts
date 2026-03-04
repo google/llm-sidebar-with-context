@@ -31,12 +31,19 @@ export const MessageTypes = {
   STOP_GENERATION: 'stopGeneration',
 } as const;
 
+export const Themes = {
+  SYSTEM: 'system',
+  LIGHT: 'light',
+  DARK: 'dark',
+};
+
 export const StorageKeys = {
   API_KEY: 'geminiApiKey',
   PINNED_CONTEXTS: 'pinnedContexts',
   SELECTED_MODEL: 'selectedModel',
   CHAT_HISTORY: 'chatHistory',
   INCLUDE_CURRENT_TAB: 'includeCurrentTab',
+  THEME: 'theme',
 };
 
 export const RestrictedURLs = [
