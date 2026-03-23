@@ -24,6 +24,7 @@ function makeEpisode(
   summary: string,
   keywords: string[],
   createdAt: number,
+  overrides?: Partial<MemoryEpisodeRecord>,
 ): MemoryEpisodeRecord {
   return {
     id,
@@ -47,6 +48,7 @@ function makeEpisode(
       createdAt,
       revision: 1,
     },
+    ...overrides,
   };
 }
 
@@ -100,5 +102,116 @@ describe('RetrieverRankerService', () => {
 
     const ranked = service.retrieveAndRank(query, episodes);
     expect(ranked).toHaveLength(2);
+  });
+
+  it('should return diagnostics with retrieveAndRankWithDiagnostics', () => {
+    const now = Date.now();
+    const episodes = [
+      makeEpisode('e1', 'Redis caching', ['redis', 'cache'], now - 1000),
+    ];
+
+    const query: MemoryRetrievalQuery = {
+      requester: { agentId: 'a1', teamId: 't1' },
+      queryText: 'redis cache',
+      recentUserTurns: [],
+      maxResults: 6,
+    };
+
+    const { candidates, diagnostics } = service.retrieveAndRankWithDiagnostics(
+      query,
+      episodes,
+    );
+
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(diagnostics.queryKeywords).toContain('redis');
+    expect(diagnostics.queryKeywords).toContain('cache');
+    expect(diagnostics.candidateCount).toBe(1);
+    expect(diagnostics.aboveThresholdCount).toBeGreaterThan(0);
+    expect(diagnostics.scores.length).toBeGreaterThan(0);
+  });
+
+  it('should match substring keywords with partial weight', () => {
+    const now = Date.now();
+    const episodes = [
+      makeEpisode(
+        'e1',
+        'Discussed caching strategies',
+        ['caching', 'strategies'],
+        now - 1000,
+      ),
+    ];
+
+    const query: MemoryRetrievalQuery = {
+      requester: { agentId: 'a1', teamId: 't1' },
+      queryText: 'cache strategy',
+      recentUserTurns: [],
+      maxResults: 6,
+    };
+
+    const ranked = service.retrieveAndRank(query, episodes);
+    expect(ranked.length).toBeGreaterThan(0);
+    expect(ranked[0].episodeId).toBe('e1');
+  });
+
+  it('should use IDF weighting to prioritize rare keywords', () => {
+    const now = Date.now();
+    const episodes = [
+      makeEpisode(
+        'e1',
+        'Common topic A',
+        ['common', 'rare_specific'],
+        now - 1000,
+      ),
+      makeEpisode('e2', 'Common topic B', ['common', 'other'], now - 1000),
+      makeEpisode('e3', 'Common topic C', ['common', 'another'], now - 1000),
+    ];
+
+    const query: MemoryRetrievalQuery = {
+      requester: { agentId: 'a1', teamId: 't1' },
+      queryText: 'common rare_specific',
+      recentUserTurns: [],
+      maxResults: 6,
+    };
+
+    const ranked = service.retrieveAndRank(query, episodes);
+    expect(ranked[0].episodeId).toBe('e1');
+  });
+
+  it('should respect custom config thresholds', () => {
+    const now = Date.now();
+    const episodes = [makeEpisode('e1', 'A', ['redis', 'cache'], now - 1000)];
+
+    const query: MemoryRetrievalQuery = {
+      requester: { agentId: 'a1', teamId: 't1' },
+      queryText: 'redis cache',
+      recentUserTurns: [],
+      maxResults: 6,
+    };
+
+    const highThreshold = service.retrieveAndRank(query, episodes, {
+      minScoreThreshold: 10,
+    });
+    expect(highThreshold).toHaveLength(0);
+
+    const lowThreshold = service.retrieveAndRank(query, episodes, {
+      minScoreThreshold: 0.1,
+    });
+    expect(lowThreshold.length).toBeGreaterThan(0);
+  });
+
+  it('should return empty results for empty episodes', () => {
+    const query: MemoryRetrievalQuery = {
+      requester: { agentId: 'a1', teamId: 't1' },
+      queryText: 'anything',
+      recentUserTurns: [],
+      maxResults: 6,
+    };
+
+    const { candidates, diagnostics } = service.retrieveAndRankWithDiagnostics(
+      query,
+      [],
+    );
+    expect(candidates).toHaveLength(0);
+    expect(diagnostics.candidateCount).toBe(0);
   });
 });

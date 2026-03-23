@@ -32,6 +32,8 @@ import { RetrieverRankerService } from './domains/retrieverRanker/RetrieverRanke
 import { ConsolidatorService } from './domains/consolidator/ConsolidatorService';
 import { ForgettingPolicyService } from './domains/forgettingPolicy/ForgettingPolicyService';
 import { PromptAssemblerService } from './domains/promptAssembler/PromptAssemblerService';
+import { MemoryTelemetryService } from './domains/telemetry/MemoryTelemetryService';
+import { IMemoryTelemetryService } from './contracts/IMemoryTelemetryService';
 
 const DEFAULT_SCOPES: MemoryScope[] = ['agent', 'team', 'global'];
 
@@ -42,9 +44,14 @@ export class MemoryPipelineOrchestrator {
   private consolidatorService = new ConsolidatorService();
   private forgettingPolicyService = new ForgettingPolicyService();
   private promptAssemblerService = new PromptAssemblerService();
+  private telemetryService = new MemoryTelemetryService();
 
   constructor(private localStorageService: ILocalStorageService) {
     this.longTermMemoryService = new LongTermMemoryService(localStorageService);
+  }
+
+  getTelemetry(): IMemoryTelemetryService {
+    return this.telemetryService;
   }
 
   async load(): Promise<void> {
@@ -106,15 +113,33 @@ export class MemoryPipelineOrchestrator {
       return null;
     }
 
-    const ranked = this.retrieverRankerService.retrieveAndRank(
-      {
-        requester: DEFAULT_MEMORY_REQUESTER,
-        queryText: query,
-        recentUserTurns: workingContext.turns,
-        maxResults: MEMORY_RETRIEVAL_TOP_K,
-      },
-      episodes,
-    );
+    const { candidates: ranked, diagnostics } =
+      this.retrieverRankerService.retrieveAndRankWithDiagnostics(
+        {
+          requester: DEFAULT_MEMORY_REQUESTER,
+          queryText: query,
+          recentUserTurns: workingContext.turns,
+          maxResults: MEMORY_RETRIEVAL_TOP_K,
+        },
+        episodes,
+      );
+
+    const scores = diagnostics.scores;
+    this.telemetryService.record({
+      kind: 'retrieval',
+      timestamp: Date.now(),
+      queryKeywordCount: diagnostics.queryKeywords.length,
+      candidateCount: diagnostics.candidateCount,
+      aboveThresholdCount: diagnostics.aboveThresholdCount,
+      selectedCount: ranked.length,
+      scores,
+      avgScore:
+        scores.length > 0
+          ? scores.reduce((a, b) => a + b, 0) / scores.length
+          : 0,
+      maxScore: scores.length > 0 ? Math.max(...scores) : 0,
+      avgKeywordOverlap: diagnostics.avgKeywordOverlap,
+    });
 
     if (ranked.length === 0) {
       return null;
@@ -132,6 +157,16 @@ export class MemoryPipelineOrchestrator {
       memoryLines: filteredLines,
       maxChars: MEMORY_PROMPT_CHAR_BUDGET,
     });
+
+    if (assembled && assembled.type === 'text') {
+      this.telemetryService.record({
+        kind: 'assembly',
+        timestamp: Date.now(),
+        entriesIncluded: filteredLines.length,
+        totalChars: assembled.text.length,
+        budgetUsedRatio: assembled.text.length / MEMORY_PROMPT_CHAR_BUDGET,
+      });
+    }
 
     if (!assembled) {
       return null;
@@ -183,20 +218,64 @@ export class MemoryPipelineOrchestrator {
     scope: MemoryScope,
   ): Promise<void> {
     const episodes = this.longTermMemoryService.getEpisodes(scope);
-    this.consolidatorService.compact(episodes, {
+    const episodesBefore = episodes.length;
+
+    const compactionResult = this.consolidatorService.compact(episodes, {
       maxEpisodes: MEMORY_MAX_EPISODES,
       batchSize: MEMORY_COMPACTION_BATCH_SIZE,
       keepRecentRaw: MEMORY_RECENT_EPISODES_TO_KEEP_RAW,
     });
 
-    let nextEpisodes = episodes;
+    this.telemetryService.record({
+      kind: 'compaction',
+      timestamp: Date.now(),
+      triggered: compactionResult.compacted,
+      episodesCompacted: compactionResult.removedEpisodeIds.length,
+      episodesBefore,
+      episodesAfter: episodes.length,
+    });
+
+    const nextEpisodes = episodes;
     const forgetting = this.forgettingPolicyService.applyPolicy({
       scope,
       episodes: nextEpisodes,
     });
-    nextEpisodes = forgetting.retainedEpisodes;
 
-    await this.longTermMemoryService.updateEpisodes(scope, nextEpisodes);
+    this.telemetryService.record({
+      kind: 'forgetting',
+      timestamp: Date.now(),
+      episodesDropped: forgetting.droppedEpisodeIds.length,
+      episodesRetained: forgetting.retainedEpisodes.length,
+      lowestRetainedScore: this.computeLowestRetentionScore(
+        forgetting.retainedEpisodes,
+      ),
+    });
+
+    await this.longTermMemoryService.updateEpisodes(
+      scope,
+      forgetting.retainedEpisodes,
+    );
+  }
+
+  private computeLowestRetentionScore(episodes: MemoryEpisodeRecord[]): number {
+    if (episodes.length === 0) {
+      return 0;
+    }
+    const now = Date.now();
+    let lowest = Infinity;
+    for (const episode of episodes) {
+      const ageHours = Math.max(
+        1,
+        (now - episode.createdAt) / (1000 * 60 * 60),
+      );
+      const recency = 1 / (1 + Math.log10(ageHours + 1));
+      const access = Math.min(episode.accessCount, 20) / 25;
+      const score = recency + access;
+      if (score < lowest) {
+        lowest = score;
+      }
+    }
+    return lowest;
   }
 
   private buildTurnSummary(userText: string, modelText: string): string {

@@ -89,3 +89,17 @@ export interface PromptAssemblyInput {
   memoryLines: string[];
   maxChars: number;
 }
+
+export interface RetrieverConfig {
+  minScoreThreshold: number;
+  topK: number;
+  diversitySimilarityThreshold: number;
+}
+
+export interface RetrievalDiagnostics {
+  queryKeywords: string[];
+  candidateCount: number;
+  aboveThresholdCount: number;
+  scores: number[];
+  avgKeywordOverlap: number;
+}
