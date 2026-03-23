@@ -17,7 +17,7 @@ This Chrome Extension allows you to interact with Gemini models in a sidebar, us
 ## 🚀 Features
 
 - **Frontend Only:** This extension runs entirely in your browser. There is no middle-man server; your prompts are sent directly from your browser to the Google Gemini API.
-- **Context-Aware Chat:** Pin up to 6 tabs to use their content as context for your prompts.
+- **Infinite Context:** Pin unlimited tabs as context. An adaptive budget manager automatically summarizes or compresses overflow content to fit Gemini's context window, prioritizing passages relevant to your latest prompt before falling back to metadata-only context.
 - **Multimodal Support:**
   - **YouTube:** Summarize or answer questions about YouTube videos.
   - **Google Docs:** Extracts content directly from open Google Docs.
@@ -80,7 +80,7 @@ This Chrome Extension allows you to interact with Gemini models in a sidebar, us
 2.  **Pin Context:**
     - Navigate to a page you want to discuss.
     - Click the **Pin** icon next to the "Current Tab" to add it to your pinned context.
-    - You can pin up to 6 tabs.
+    - You can pin unlimited tabs. Content is automatically managed to fit the model's context window.
 3.  **Chat:** Type your prompt. The extension will send your message along with the content of all pinned tabs to Gemini.
 4.  **Manage Context:**
     - Toggle the **Eye** icon on the "Current Tab" to automatically include whichever tab you are looking at.

@@ -22,6 +22,7 @@ import { IGeminiService } from '../services/geminiService';
 import { ISyncStorageService } from '../services/storageService';
 import { ITabService } from '../services/tabService';
 import { IMessageService } from '../services/messageService';
+import { GeminiSummarizationService } from '../services/summarizationService';
 import { isRestrictedURL } from '../utils';
 import {
   ExtensionMessage,
@@ -44,7 +45,13 @@ export class BackgroundController {
     private tabService: ITabService,
     private geminiService: IGeminiService,
     private messageService: IMessageService,
-  ) {}
+  ) {
+    // Wire up summarization so ContextManager can compress overflowing tabs.
+    const summarizationService = new GeminiSummarizationService(() =>
+      this.getApiKey(),
+    );
+    this.contextManager.setSummarizationService(summarizationService);
+  }
 
   /**
    * Initializes listeners and starts the controller.
@@ -228,7 +235,10 @@ export class BackgroundController {
         throw new DOMException('Aborted', 'AbortError');
       }
 
-      const pinnedContent = await this.contextManager.getAllContent();
+      const pinnedContent = await this.contextManager.getAllContent(
+        this.abortController.signal,
+        message,
+      );
       const fullContext = [...activeContext, ...pinnedContent];
 
       // 3. Send to Gemini
