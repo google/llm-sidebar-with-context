@@ -22,7 +22,7 @@ import {
 import { ChatHistory } from '../models/ChatHistory';
 import { ContextManager } from '../models/ContextManager';
 import { TabContext } from '../models/TabContext';
-import { AgentMemory } from '../models/AgentMemory';
+import { MemoryPipelineOrchestrator } from '../memory/MemoryPipelineOrchestrator';
 import { IGeminiService } from '../services/geminiService';
 import { ISyncStorageService } from '../services/storageService';
 import { ITabService } from '../services/tabService';
@@ -44,7 +44,7 @@ export class BackgroundController {
 
   constructor(
     private chatHistory: ChatHistory,
-    private agentMemory: AgentMemory,
+    private memoryPipeline: MemoryPipelineOrchestrator,
     private contextManager: ContextManager,
     private syncStorageService: ISyncStorageService,
     private tabService: ITabService,
@@ -156,7 +156,7 @@ export class BackgroundController {
       // Just-In-Time Loading to handle Service Worker restarts
       await Promise.all([
         this.chatHistory.load(),
-        this.agentMemory.load(),
+        this.memoryPipeline.load(),
         this.contextManager.load(),
       ]);
 
@@ -232,7 +232,7 @@ export class BackgroundController {
       const recentHistory = this.chatHistory.getRecentMessages(
         MODEL_SHORT_TERM_HISTORY_WINDOW,
       );
-      const memoryContext = await this.agentMemory.buildContextPart(
+      const memoryContext = await this.memoryPipeline.buildContextPart(
         message,
         recentHistory,
       );
@@ -273,7 +273,7 @@ export class BackgroundController {
           text: response.reply,
         });
         try {
-          await this.agentMemory.recordTurn(message, response.reply);
+          await this.memoryPipeline.recordTurn(message, response.reply);
         } catch (memoryError) {
           console.error('Failed to persist agent memory:', memoryError);
         }
@@ -386,7 +386,7 @@ export class BackgroundController {
 
   private async handleClearChat(): Promise<SuccessResponse> {
     await this.chatHistory.clear();
-    await this.agentMemory.clear();
+    await this.memoryPipeline.clear();
     await this.contextManager.clear();
     return { success: true };
   }
