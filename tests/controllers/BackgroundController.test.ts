@@ -97,6 +97,7 @@ describe('BackgroundController', () => {
       clear: vi.fn(),
       isTabPinned: vi.fn(),
       updateTabMetadata: vi.fn(),
+      setSummarizationService: vi.fn(),
     } as unknown as ContextManager;
 
     controller = new BackgroundController(
@@ -397,6 +398,10 @@ describe('BackgroundController', () => {
 
       expect(response).toEqual({ reply: 'Hello from Gemini' });
       expect(mockGeminiService.generateContent).toHaveBeenCalled();
+      expect(mockContextManager.getAllContent).toHaveBeenCalledWith(
+        expect.any(AbortSignal),
+        'Hi',
+      );
       expect(mockChatHistory.addMessage).toHaveBeenCalledWith({
         role: 'user',
         text: 'Hi',
@@ -659,9 +664,9 @@ describe('BackgroundController', () => {
       });
     });
 
-    it('should return error message when pinning fails due to limit', async () => {
+    it('should return error message when pinning fails due to an error', async () => {
       vi.mocked(mockContextManager.addTab).mockRejectedValue(
-        new Error('You can only pin up to 6 tabs.'),
+        new Error('Cannot pin a tab with no URL.'),
       );
       // Ensure mockTabService.query returns a valid tab so handlePinTab proceeds to call addTab
       vi.mocked(mockTabService.query).mockResolvedValue([
@@ -674,7 +679,7 @@ describe('BackgroundController', () => {
 
       expect(response).toEqual({
         success: false,
-        message: 'You can only pin up to 6 tabs.',
+        message: 'Cannot pin a tab with no URL.',
       });
     });
 

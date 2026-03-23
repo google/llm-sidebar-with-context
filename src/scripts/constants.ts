@@ -116,6 +116,26 @@ export const MEMORY_STOPWORDS = [
   'your',
 ];
 
+/**
+ * Total context budget in characters for all pinned tabs combined.
+ * Gemini 2.5 supports ~1M tokens (~4M chars), but research shows
+ * degradation past ~650K tokens. We target a safe, high-quality range.
+ * With summarization, this effectively supports unlimited tabs.
+ */
+export const TOTAL_CONTEXT_BUDGET = 900000;
+
+/**
+ * Minimum characters allocated per tab before it's demoted to metadata-only.
+ */
+export const MIN_PER_TAB_BUDGET = 2000;
+
+/**
+ * Target length for LLM-generated summaries of overflowing tab content.
+ * Based on ACON (2025) findings that ~5K char summaries retain ~91% of
+ * critical information from typical web pages.
+ */
+export const SUMMARY_TARGET_LENGTH = 5000;
+
 export const MessageTypes = {
   CHAT_MESSAGE: 'chatMessage',
   GET_CONTEXT: 'getContext',
