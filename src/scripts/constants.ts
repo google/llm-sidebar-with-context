@@ -16,6 +16,98 @@
 
 export const MAX_CONTEXT_LENGTH = 250000;
 export const MAX_PINNED_TABS = 6;
+export const MODEL_SHORT_TERM_HISTORY_WINDOW = 12;
+
+export const MEMORY_MAX_EPISODES = 160;
+export const MEMORY_RECENT_EPISODES_TO_KEEP_RAW = 32;
+export const MEMORY_COMPACTION_BATCH_SIZE = 24;
+export const MEMORY_RETRIEVAL_TOP_K = 6;
+export const MEMORY_NEIGHBOR_EXPANSION_LIMIT = 3;
+export const MEMORY_PROMPT_CHAR_BUDGET = 12000;
+export const MEMORY_EPISODE_SUMMARY_MAX_CHARS = 900;
+export const MEMORY_MAX_KEYWORDS_PER_EPISODE = 16;
+export const MEMORY_MAX_QUERY_KEYWORDS = 12;
+export const MEMORY_MIN_KEYWORD_LENGTH = 3;
+
+export const MEMORY_STOPWORDS = [
+  'about',
+  'after',
+  'again',
+  'against',
+  'all',
+  'also',
+  'and',
+  'any',
+  'are',
+  'around',
+  'because',
+  'been',
+  'before',
+  'being',
+  'between',
+  'both',
+  'but',
+  'came',
+  'can',
+  'could',
+  'does',
+  'done',
+  'each',
+  'else',
+  'even',
+  'every',
+  'from',
+  'gave',
+  'give',
+  'given',
+  'good',
+  'have',
+  'having',
+  'here',
+  'into',
+  'just',
+  'kind',
+  'made',
+  'make',
+  'many',
+  'more',
+  'most',
+  'must',
+  'need',
+  'only',
+  'other',
+  'over',
+  'same',
+  'should',
+  'some',
+  'such',
+  'take',
+  'than',
+  'that',
+  'the',
+  'their',
+  'them',
+  'then',
+  'there',
+  'these',
+  'they',
+  'this',
+  'those',
+  'through',
+  'under',
+  'using',
+  'very',
+  'want',
+  'were',
+  'what',
+  'when',
+  'where',
+  'which',
+  'while',
+  'with',
+  'would',
+  'your',
+];
 
 export const MessageTypes = {
   CHAT_MESSAGE: 'chatMessage',
@@ -37,6 +129,7 @@ export const StorageKeys = {
   SELECTED_MODEL: 'selectedModel',
   CHAT_HISTORY: 'chatHistory',
   INCLUDE_CURRENT_TAB: 'includeCurrentTab',
+  AGENT_MEMORY: 'agentMemory',
 };
 
 export const RestrictedURLs = [

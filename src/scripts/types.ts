@@ -28,6 +28,23 @@ export interface ChatMessage {
   text: string;
 }
 
+export type MemoryEpisodeKind = 'turn' | 'summary';
+
+export interface MemoryEpisode {
+  id: string;
+  kind: MemoryEpisodeKind;
+  summary: string;
+  keywords: string[];
+  createdAt: number;
+  accessCount: number;
+  lastAccessedAt: number;
+}
+
+export interface MemoryState {
+  episodes: MemoryEpisode[];
+  updatedAt: number;
+}
+
 export interface ChatMessageRequest {
   type: typeof MessageTypes.CHAT_MESSAGE;
   message: string;
