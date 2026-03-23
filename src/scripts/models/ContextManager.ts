@@ -14,20 +14,33 @@
  * limitations under the License.
  */
 
-import { StorageKeys, MAX_PINNED_TABS } from '../constants';
+import { StorageKeys } from '../constants';
 import { TabContext } from './TabContext';
 import { isRestrictedURL } from '../utils';
 import { TabInfo, ContentPart } from '../types';
 import { ILocalStorageService } from '../services/storageService';
 import { ITabService } from '../services/tabService';
+import {
+  ContextBudgetManager,
+  TabContentEntry,
+  ISummarizationService,
+} from './ContextBudgetManager';
 
 export class ContextManager {
   private pinnedTabs: TabContext[] = [];
+  private budgetManager: ContextBudgetManager;
 
   constructor(
     private localStorageService: ILocalStorageService,
     private tabService: ITabService,
-  ) {}
+    summarizationService?: ISummarizationService,
+  ) {
+    this.budgetManager = new ContextBudgetManager(summarizationService);
+  }
+
+  setSummarizationService(service: ISummarizationService): void {
+    this.budgetManager = new ContextBudgetManager(service);
+  }
 
   async addTab(tab: TabContext): Promise<void> {
     if (!tab.url) {
@@ -39,9 +52,6 @@ export class ContextManager {
     if (this.isTabPinned(tab.tabId)) {
       // Idempotent: If already pinned, do nothing.
       return;
-    }
-    if (this.pinnedTabs.length >= MAX_PINNED_TABS) {
-      throw new Error(`You can only pin up to ${MAX_PINNED_TABS} tabs.`);
     }
     this.pinnedTabs.push(tab);
     await this.save();
@@ -86,18 +96,28 @@ export class ContextManager {
   }
 
   /**
-   * Fetches the combined content of all pinned tabs.
+   * Fetches the combined content of all pinned tabs with adaptive budget
+   * allocation. When total content exceeds the context budget, tabs are
+   * automatically tiered: full content -> summarized -> metadata only.
    */
-  async getAllContent(): Promise<ContentPart[]> {
-    const allParts: ContentPart[] = [];
-
+  async getAllContent(signal?: AbortSignal): Promise<ContentPart[]> {
+    // Extract raw content from all tabs.
+    const entries: TabContentEntry[] = [];
     for (const tab of this.pinnedTabs) {
-      const header = `\n\n--- Pinned Tab: ${tab.title} (${tab.url}) ---`;
-      allParts.push({ type: 'text', text: header });
-      allParts.push(await tab.readContent());
+      const content = await tab.readContent();
+      const charLength = content.type === 'text' ? content.text.length : 0;
+      entries.push({
+        tabId: tab.tabId,
+        title: tab.title,
+        url: tab.url,
+        content,
+        charLength,
+      });
     }
 
-    return allParts;
+    // Allocate budget across all tabs.
+    const allocations = await this.budgetManager.allocate(entries, signal);
+    return this.budgetManager.buildContextParts(allocations);
   }
 
   /**

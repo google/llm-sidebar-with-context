@@ -169,9 +169,9 @@ describe('ContextManager', () => {
       expect(contextManager.getPinnedTabs()).toHaveLength(0);
     });
 
-    it('should throw error if pinning more than MAX_PINNED_TABS', async () => {
-      // Pin 6 tabs (MAX_PINNED_TABS)
-      for (let i = 0; i < 6; i++) {
+    it('should allow pinning more than 6 tabs (no hard limit)', async () => {
+      // Pin 10 tabs — the old limit was 6, now unlimited
+      for (let i = 0; i < 10; i++) {
         const tab = new TabContext(
           i + 1,
           `https://example${i}.com`,
@@ -181,49 +181,22 @@ describe('ContextManager', () => {
         await contextManager.addTab(tab);
       }
 
-      // Try to pin 7th
-      const extraTab = new TabContext(
-        99,
-        'https://overflow.com',
-        'Overflow',
-        mockTabService,
-      );
-      await expect(contextManager.addTab(extraTab)).rejects.toThrow(
-        'You can only pin up to 6 tabs.',
-      );
-      expect(contextManager.isTabPinned(99)).toBe(false);
+      expect(contextManager.getPinnedTabs()).toHaveLength(10);
     });
 
-    it('should allow pinning after reaching limit, failing, and then removing an item', async () => {
-      // Pin 6 tabs
-      for (let i = 0; i < 6; i++) {
+    it('should allow pinning 20+ tabs without error', async () => {
+      for (let i = 0; i < 25; i++) {
         const tab = new TabContext(
           i + 1,
-          `https://example${i}.com`,
-          `Title ${i}`,
+          `https://site${i}.com`,
+          `Site ${i}`,
           mockTabService,
         );
         await contextManager.addTab(tab);
       }
 
-      // Try to pin 7th - should fail
-      const extraTab = new TabContext(
-        99,
-        'https://overflow.com',
-        'Overflow',
-        mockTabService,
-      );
-      await expect(contextManager.addTab(extraTab)).rejects.toThrow(
-        'You can only pin up to 6 tabs.',
-      );
-
-      // Remove one
-      await contextManager.removeTab(1);
-
-      // Now trying to add the same extraTab should succeed
-      await expect(contextManager.addTab(extraTab)).resolves.not.toThrow();
-      expect(contextManager.getPinnedTabs()).toHaveLength(6);
-      expect(contextManager.isTabPinned(99)).toBe(true);
+      expect(contextManager.getPinnedTabs()).toHaveLength(25);
+      expect(mockLocalStorageService.set).toHaveBeenCalledTimes(25);
     });
 
     it('should handle simultaneous addTab calls correctly (Concurrency)', async () => {
@@ -238,30 +211,23 @@ describe('ContextManager', () => {
         await contextManager.addTab(tab);
       }
 
-      // Try to add two tabs simultaneously
+      // Try to add two tabs simultaneously — both should succeed now
       const tabA = new TabContext(100, 'https://a.com', 'A', mockTabService);
       const tabB = new TabContext(101, 'https://b.com', 'B', mockTabService);
 
-      // In JS, these aren't truly parallel but test if the state remains consistent
       const results = await Promise.allSettled([
         contextManager.addTab(tabA),
         contextManager.addTab(tabB),
       ]);
 
       const fulfilled = results.filter((r) => r.status === 'fulfilled');
-      const rejected = results.filter((r) => r.status === 'rejected');
-
-      expect(fulfilled).toHaveLength(1);
-      expect(rejected).toHaveLength(1);
-      expect((rejected[0] as PromiseRejectedResult).reason.message).toContain(
-        'You can only pin up to 6 tabs.',
-      );
-      expect(contextManager.getPinnedTabs()).toHaveLength(6);
+      expect(fulfilled).toHaveLength(2);
+      expect(contextManager.getPinnedTabs()).toHaveLength(7);
     });
 
-    it('should be idempotent even when at the limit', async () => {
-      // Pin 6 tabs
-      for (let i = 0; i < 6; i++) {
+    it('should be idempotent even with many tabs pinned', async () => {
+      // Pin 10 tabs
+      for (let i = 0; i < 10; i++) {
         const tab = new TabContext(
           i + 1,
           `https://example${i}.com`,
@@ -279,36 +245,7 @@ describe('ContextManager', () => {
         mockTabService,
       );
       await expect(contextManager.addTab(existingTab)).resolves.not.toThrow();
-      expect(contextManager.getPinnedTabs()).toHaveLength(6);
-    });
-
-    it('should prevent adding items if storage already has limit exceeded (Legacy Data)', async () => {
-      // mock load() to populate the array with 7 items
-      const storedData = Array.from({ length: 7 }, (_, i) => ({
-        id: i + 1,
-        url: `https://site${i}.com`,
-        title: `Site ${i}`,
-      }));
-      vi.mocked(mockLocalStorageService.get).mockResolvedValue(storedData);
-      // Mock getTab to return valid tabs for all 7
-      vi.mocked(mockTabService.getTab).mockImplementation(
-        async (id) =>
-          ({ id, url: 'u', title: 't', active: false }) as ChromeTab,
-      );
-
-      await contextManager.load();
-      expect(contextManager.getPinnedTabs()).toHaveLength(7);
-
-      // Try to add an 8th tab
-      const newTab = new TabContext(
-        100,
-        'https://new.com',
-        'New',
-        mockTabService,
-      );
-      await expect(contextManager.addTab(newTab)).rejects.toThrow(
-        'You can only pin up to 6 tabs.',
-      );
+      expect(contextManager.getPinnedTabs()).toHaveLength(10);
     });
   });
 
@@ -369,16 +306,12 @@ describe('ContextManager', () => {
         expect.arrayContaining([
           {
             type: 'text',
-            text: expect.stringContaining(
-              '--- Pinned Tab: A (https://a.com) ---',
-            ),
+            text: expect.stringContaining('--- Pinned Tab: A (https://a.com)'),
           },
           { type: 'text', text: 'Content A' },
           {
             type: 'text',
-            text: expect.stringContaining(
-              '--- Pinned Tab: B (https://b.com) ---',
-            ),
+            text: expect.stringContaining('--- Pinned Tab: B (https://b.com)'),
           },
           { type: 'text', text: 'Content B' },
         ]),
@@ -417,6 +350,32 @@ describe('ContextManager', () => {
           { type: 'text', text: CONTEXT_MESSAGES.TAB_NOT_FOUND },
         ]),
       );
+    });
+
+    it('should handle many tabs within budget as full content', async () => {
+      const tabs: TabContext[] = [];
+      for (let i = 0; i < 15; i++) {
+        const tab = new TabContext(
+          i + 1,
+          `https://site${i}.com`,
+          `Site ${i}`,
+          mockTabService,
+        );
+        vi.spyOn(tab, 'readContent').mockResolvedValue({
+          type: 'text',
+          text: `Short content ${i}`,
+        });
+        tabs.push(tab);
+        await contextManager.addTab(tab);
+      }
+
+      const content = await contextManager.getAllContent();
+
+      // All tabs should be included (15 tabs × ~15 chars each = well within budget)
+      const headers = content.filter(
+        (p) => p.type === 'text' && p.text.includes('--- Pinned Tab:'),
+      );
+      expect(headers).toHaveLength(15);
     });
   });
 
@@ -532,7 +491,7 @@ describe('ContextManager', () => {
         {
           type: 'text',
           text: expect.stringContaining(
-            '--- Pinned Tab: Video (https://www.youtube.com/watch?v=123) ---',
+            '--- Pinned Tab: Video (https://www.youtube.com/watch?v=123)',
           ),
         },
         { type: 'file_data', mimeType: 'video/mp4', fileUri: url },
