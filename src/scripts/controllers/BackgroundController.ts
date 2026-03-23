@@ -237,6 +237,7 @@ export class BackgroundController {
 
       const pinnedContent = await this.contextManager.getAllContent(
         this.abortController.signal,
+        message,
       );
       const fullContext = [...activeContext, ...pinnedContent];
 

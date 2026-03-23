@@ -49,12 +49,24 @@ export interface BudgetAllocation {
   allocatedChars: number;
 }
 
+export interface CompressionOptions {
+  signal?: AbortSignal;
+  query?: string;
+}
+
 export interface ISummarizationService {
   summarize(
     text: string,
     targetLength: number,
     signal?: AbortSignal,
+    query?: string,
   ): Promise<string>;
+}
+
+interface ScoredSegment {
+  index: number;
+  text: string;
+  score: number;
 }
 
 /**
@@ -68,6 +80,10 @@ export interface ISummarizationService {
  *    (summarized via LLM) until budget fits.
  * 3. If still over budget, remaining overflow tabs become Tier 3
  *    (metadata only: title + URL).
+ *
+ * To keep the implementation simple and avoid a full retrieval stack,
+ * the fallback path uses query-aware extractive compression instead of
+ * naive head-only truncation.
  */
 export class ContextBudgetManager {
   constructor(private summarizationService?: ISummarizationService) {}
@@ -79,9 +95,11 @@ export class ContextBudgetManager {
    */
   async allocate(
     entries: TabContentEntry[],
-    signal?: AbortSignal,
+    options: CompressionOptions = {},
   ): Promise<BudgetAllocation[]> {
     if (entries.length === 0) return [];
+
+    const { signal, query } = options;
 
     // Phase 1: Check if everything fits within budget as-is.
     const totalChars = entries.reduce((sum, e) => sum + e.charLength, 0);
@@ -142,6 +160,7 @@ export class ContextBudgetManager {
             textContent,
             targetLen,
             signal,
+            query,
           );
           const summaryLength = summary.length;
           allocations.push({
@@ -154,32 +173,36 @@ export class ContextBudgetManager {
           });
           remainingBudget -= summaryLength;
         } catch {
-          // Summarization failed — fall back to truncation.
+          // Summarization failed — fall back to simple extractive compression.
           const budgetForThis = Math.min(remainingBudget, perTabBudget);
-          const truncated = textContent.substring(0, budgetForThis);
+          const compressed = this.compressText(
+            textContent,
+            budgetForThis,
+            query,
+          );
           allocations.push({
             tabId: entry.tabId,
             title: entry.title,
             url: entry.url,
             tier: 'full',
-            content: { type: 'text', text: truncated },
-            allocatedChars: truncated.length,
+            content: { type: 'text', text: compressed },
+            allocatedChars: compressed.length,
           });
-          remainingBudget -= truncated.length;
+          remainingBudget -= compressed.length;
         }
       } else if (remainingBudget >= MIN_PER_TAB_BUDGET && textContent) {
-        // No summarization service — truncate to fit.
+        // No summarization service — use simple extractive compression.
         const budgetForThis = Math.min(remainingBudget, perTabBudget);
-        const truncated = textContent.substring(0, budgetForThis);
+        const compressed = this.compressText(textContent, budgetForThis, query);
         allocations.push({
           tabId: entry.tabId,
           title: entry.title,
           url: entry.url,
           tier: 'full',
-          content: { type: 'text', text: truncated },
-          allocatedChars: truncated.length,
+          content: { type: 'text', text: compressed },
+          allocatedChars: compressed.length,
         });
-        remainingBudget -= truncated.length;
+        remainingBudget -= compressed.length;
       } else {
         // Tier 3: No budget left — metadata only.
         const metadataText = `[Tab: ${entry.title}] (${entry.url}) — content omitted due to context limit`;
@@ -221,5 +244,169 @@ export class ContextBudgetManager {
   private getTextContent(part: ContentPart): string | null {
     if (part.type === 'text') return part.text;
     return null;
+  }
+
+  private compressText(
+    text: string,
+    targetLength: number,
+    query?: string,
+  ): string {
+    if (text.length <= targetLength) {
+      return text;
+    }
+
+    const normalizedQueryTerms = this.getQueryTerms(query);
+    const segments = this.segmentText(text);
+
+    if (segments.length === 0) {
+      return this.truncateAtBoundary(text, targetLength);
+    }
+
+    const scoredSegments = segments.map((segment, index) => ({
+      index,
+      text: segment,
+      score: this.scoreSegment(segment, index, normalizedQueryTerms),
+    }));
+
+    const selected: ScoredSegment[] = [];
+    let totalLength = 0;
+
+    for (const segment of [...scoredSegments].sort(
+      (a, b) => b.score - a.score,
+    )) {
+      const segmentLength = segment.text.length + (selected.length > 0 ? 2 : 0);
+      if (segmentLength > targetLength) {
+        continue;
+      }
+      if (totalLength + segmentLength > targetLength) {
+        continue;
+      }
+      selected.push(segment);
+      totalLength += segmentLength;
+    }
+
+    if (selected.length === 0) {
+      return this.truncateAtBoundary(text, targetLength);
+    }
+
+    const compressed = selected
+      .sort((a, b) => a.index - b.index)
+      .map((segment) => segment.text)
+      .join('\n\n');
+
+    return this.truncateAtBoundary(compressed, targetLength);
+  }
+
+  private segmentText(text: string): string[] {
+    const blockSegments = text
+      .split(/\n\s*\n/g)
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+
+    if (blockSegments.length > 1) {
+      return blockSegments;
+    }
+
+    return text
+      .split(/(?<=[.!?])\s+(?=[A-Z0-9#*-])/g)
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+  }
+
+  private scoreSegment(
+    segment: string,
+    index: number,
+    queryTerms: string[],
+  ): number {
+    const lowerSegment = segment.toLowerCase();
+    let score = Math.max(0, 8 - index) * 2;
+
+    if (/^#{1,6}\s|^[A-Z][A-Z\s]{4,}$|^[-*•]\s|^\d+\.\s/m.test(segment)) {
+      score += 8;
+    }
+    if (/```|`[^`]+`/.test(segment)) {
+      score += 10;
+    }
+    if (/\b\d{4}\b|\b\d+(?:\.\d+)?%\b|\$\d|\b[A-Z]{2,10}-\d+\b/.test(segment)) {
+      score += 6;
+    }
+
+    for (const term of queryTerms) {
+      if (term.length < 3) continue;
+      if (lowerSegment.includes(term)) {
+        score += 15;
+      }
+    }
+
+    return score;
+  }
+
+  private getQueryTerms(query?: string): string[] {
+    if (!query) return [];
+
+    const stopWords = new Set([
+      'about',
+      'after',
+      'again',
+      'also',
+      'been',
+      'from',
+      'have',
+      'into',
+      'make',
+      'show',
+      'that',
+      'their',
+      'them',
+      'they',
+      'this',
+      'what',
+      'when',
+      'where',
+      'which',
+      'with',
+      'would',
+      'want',
+      'over',
+      'under',
+      'than',
+      'then',
+      'just',
+      'like',
+      'into',
+      'only',
+      'your',
+    ]);
+
+    return [
+      ...new Set(
+        query
+          .toLowerCase()
+          .split(/[^a-z0-9]+/g)
+          .filter((term) => term.length >= 3 && !stopWords.has(term)),
+      ),
+    ];
+  }
+
+  private truncateAtBoundary(text: string, targetLength: number): string {
+    if (text.length <= targetLength) {
+      return text;
+    }
+
+    const truncated = text.substring(0, targetLength);
+    const lastBoundary = Math.max(
+      truncated.lastIndexOf('\n\n'),
+      truncated.lastIndexOf('. '),
+      truncated.lastIndexOf('.\n'),
+      truncated.lastIndexOf('! '),
+      truncated.lastIndexOf('? '),
+    );
+
+    if (lastBoundary > targetLength * 0.6) {
+      const boundaryOffset = truncated[lastBoundary] === '\n' ? 0 : 1;
+      return truncated.substring(0, lastBoundary + boundaryOffset).trimEnd();
+    }
+
+    return truncated.trimEnd() + '…';
   }
 }

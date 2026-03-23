@@ -17,7 +17,7 @@ This Chrome Extension allows you to interact with Gemini models in a sidebar, us
 ## 🚀 Features
 
 - **Frontend Only:** This extension runs entirely in your browser. There is no middle-man server; your prompts are sent directly from your browser to the Google Gemini API.
-- **Infinite Context:** Pin unlimited tabs as context. An adaptive budget manager automatically summarizes or truncates overflow content to fit Gemini's context window.
+- **Infinite Context:** Pin unlimited tabs as context. An adaptive budget manager automatically summarizes or compresses overflow content to fit Gemini's context window, prioritizing passages relevant to your latest prompt before falling back to metadata-only context.
 - **Multimodal Support:**
   - **YouTube:** Summarize or answer questions about YouTube videos.
   - **Google Docs:** Extracts content directly from open Google Docs.

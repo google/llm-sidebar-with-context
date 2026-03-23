@@ -41,13 +41,14 @@ export class GeminiSummarizationService implements ISummarizationService {
     text: string,
     targetLength: number,
     signal?: AbortSignal,
+    query?: string,
   ): Promise<string> {
     const apiKey = await this.getApiKey();
     if (!apiKey) {
       throw new Error('No API key available for summarization');
     }
 
-    const prompt = `You are a context compression engine. Summarize the following web page content into approximately ${targetLength} characters. Preserve all key facts, data points, names, dates, code snippets, and arguments. Do NOT add commentary. Output only the summary.\n\n---\n${text.substring(0, 200000)}`;
+    const prompt = `You are a context compression engine. Summarize the following web page content into approximately ${targetLength} characters. Preserve all key facts, data points, names, dates, code snippets, and arguments. Prioritize details relevant to the user request when one is provided, but keep globally important facts even if they are not mentioned in the request. Do NOT add commentary. Output only the summary.\n\nUser request: ${query || 'No specific request provided.'}\n\n---\n${text.substring(0, 200000)}`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`,
@@ -85,6 +86,7 @@ export class TruncationSummarizationService implements ISummarizationService {
     text: string,
     targetLength: number,
     _signal?: AbortSignal,
+    _query?: string,
   ): Promise<string> {
     if (text.length <= targetLength) return text;
     // Truncate at a sentence boundary if possible.

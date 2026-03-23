@@ -89,7 +89,7 @@ describe('ContextBudgetManager', () => {
       // later entries with less than MIN_PER_TAB_BUDGET remaining.
       const numTabs = Math.ceil(TOTAL_CONTEXT_BUDGET / MIN_PER_TAB_BUDGET) + 5;
       const entries = Array.from({ length: numTabs }, (_, i) =>
-        makeEntry(i, TOTAL_CONTEXT_BUDGET),
+        makeEntry(i, MIN_PER_TAB_BUDGET * 2),
       );
 
       const allocations = await manager.allocate(entries);
@@ -119,6 +119,30 @@ describe('ContextBudgetManager', () => {
       const summarized = allocations.filter((a) => a.tier === 'summarized');
       expect(summarized.length).toBeGreaterThanOrEqual(1);
       expect(mockSummarizer.summarize).toHaveBeenCalled();
+    });
+
+    it('should pass the user query to the summarization service', async () => {
+      const mockSummarizer: ISummarizationService = {
+        summarize: vi.fn().mockResolvedValue('Query-aware summary.'),
+      };
+      const manager = new ContextBudgetManager(mockSummarizer);
+
+      const halfBudgetPlus = Math.floor(TOTAL_CONTEXT_BUDGET / 2) + 50000;
+      const entries = [
+        makeEntry(1, halfBudgetPlus),
+        makeEntry(2, halfBudgetPlus),
+      ];
+
+      await manager.allocate(entries, {
+        query: 'compare latency and memory tradeoffs',
+      });
+
+      expect(mockSummarizer.summarize).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Number),
+        undefined,
+        'compare latency and memory tradeoffs',
+      );
     });
 
     it('should fall back to truncation if summarization fails', async () => {
@@ -178,6 +202,39 @@ describe('ContextBudgetManager', () => {
 
       // With 100 tabs over budget, should have a mix of tiers
       expect(tiers.full + tiers.summarized + tiers.metadata).toBe(100);
+    });
+
+    it('should prefer query-relevant segments over blind prefix truncation', async () => {
+      const manager = new ContextBudgetManager();
+      const entries = [
+        {
+          tabId: 1,
+          title: 'Research Notes',
+          url: 'https://site1.com',
+          content: {
+            type: 'text' as const,
+            text:
+              'Intro filler. '.repeat(40000) +
+              '\n\nLatency dropped by 40% after enabling a compact memory cache for repeated user tasks.\n\n' +
+              'More filler. '.repeat(40000),
+          },
+          charLength: TOTAL_CONTEXT_BUDGET,
+        },
+        makeEntry(2, TOTAL_CONTEXT_BUDGET),
+      ];
+
+      const allocations = await manager.allocate(entries, {
+        query: 'What changed latency with memory cache?',
+      });
+
+      expect(allocations[0].content.type).toBe('text');
+      expect(
+        allocations.some(
+          (allocation) =>
+            allocation.content.type === 'text' &&
+            allocation.content.text.includes('Latency dropped by 40%'),
+        ),
+      ).toBe(true);
     });
   });
 
