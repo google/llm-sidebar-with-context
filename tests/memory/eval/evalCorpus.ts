@@ -23,6 +23,7 @@ const DAY = HOUR * 24;
 export const EVAL_CORPUS: EvalScenario[] = [
   {
     name: 'Exact keyword match — high relevance',
+    questionType: 'single-hop',
     seedEpisodes: [
       makeEvalEpisode({
         id: 'redis-1',
@@ -44,6 +45,7 @@ export const EVAL_CORPUS: EvalScenario[] = [
 
   {
     name: 'Partial keyword overlap — substring matching',
+    questionType: 'single-hop',
     seedEpisodes: [
       makeEvalEpisode({
         id: 'caching-1',
@@ -65,6 +67,7 @@ export const EVAL_CORPUS: EvalScenario[] = [
 
   {
     name: 'Recency bias — recent over old with same keywords',
+    questionType: 'temporal',
     seedEpisodes: [
       makeEvalEpisode({
         id: 'auth-old',
@@ -85,6 +88,7 @@ export const EVAL_CORPUS: EvalScenario[] = [
 
   {
     name: 'Summary boost — summary episodes rank higher',
+    questionType: 'single-hop',
     seedEpisodes: [
       makeEvalEpisode({
         id: 'db-turn',
@@ -108,6 +112,7 @@ export const EVAL_CORPUS: EvalScenario[] = [
 
   {
     name: 'High-access utility — frequently accessed memories rank higher',
+    questionType: 'single-hop',
     seedEpisodes: [
       makeEvalEpisode({
         id: 'api-low',
@@ -130,6 +135,7 @@ export const EVAL_CORPUS: EvalScenario[] = [
 
   {
     name: 'Diversity filter — near-duplicate memories deduplicated',
+    questionType: 'single-hop',
     seedEpisodes: [
       makeEvalEpisode({
         id: 'dup-1',
@@ -156,6 +162,7 @@ export const EVAL_CORPUS: EvalScenario[] = [
 
   {
     name: 'No relevant memories — should return empty',
+    questionType: 'adversarial',
     seedEpisodes: [
       makeEvalEpisode({
         id: 'irrelevant-1',
@@ -170,6 +177,7 @@ export const EVAL_CORPUS: EvalScenario[] = [
 
   {
     name: 'Multi-topic retrieval — finds specific topic among many',
+    questionType: 'single-hop',
     seedEpisodes: [
       makeEvalEpisode({
         id: 'topic-1',

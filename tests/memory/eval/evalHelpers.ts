@@ -96,10 +96,18 @@ export function makeEvalQuery(
   };
 }
 
+export type QuestionType =
+  | 'single-hop'
+  | 'multi-hop'
+  | 'temporal'
+  | 'adversarial'
+  | 'preference-tracking';
+
 export interface EvalScenario {
   name: string;
   seedEpisodes: MemoryEpisodeRecord[];
   query: MemoryRetrievalQuery;
   expectedEpisodeIds: string[];
   forbiddenEpisodeIds?: string[];
+  questionType?: QuestionType;
 }

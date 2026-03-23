@@ -95,7 +95,18 @@ describe('Memory Eval Harness', () => {
       );
     }
 
-    // Informational test — always passes
-    expect(true).toBe(true);
+    // Regression assertion: at default threshold (0.55), recall must stay high
+    let defaultRecall = 0;
+    for (const scenario of scenariosWithExpected) {
+      const { candidates } = service.retrieveAndRankWithDiagnostics(
+        scenario.query,
+        scenario.seedEpisodes,
+        { minScoreThreshold: 0.55 },
+      );
+      const ids = candidates.map((c) => c.episodeId);
+      defaultRecall += computeRecall(ids, scenario.expectedEpisodeIds);
+    }
+    const avgDefaultRecall = defaultRecall / scenariosWithExpected.length;
+    expect(avgDefaultRecall).toBeGreaterThanOrEqual(0.85);
   });
 });
