@@ -100,7 +100,10 @@ export class ContextManager {
    * allocation. When total content exceeds the context budget, tabs are
    * automatically tiered: full content -> summarized -> metadata only.
    */
-  async getAllContent(signal?: AbortSignal): Promise<ContentPart[]> {
+  async getAllContent(
+    signal?: AbortSignal,
+    query?: string,
+  ): Promise<ContentPart[]> {
     // Extract raw content from all tabs.
     const entries: TabContentEntry[] = [];
     for (const tab of this.pinnedTabs) {
@@ -116,7 +119,10 @@ export class ContextManager {
     }
 
     // Allocate budget across all tabs.
-    const allocations = await this.budgetManager.allocate(entries, signal);
+    const allocations = await this.budgetManager.allocate(entries, {
+      signal,
+      query,
+    });
     return this.budgetManager.buildContextParts(allocations);
   }
 

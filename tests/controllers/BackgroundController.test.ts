@@ -386,6 +386,10 @@ describe('BackgroundController', () => {
 
       expect(response).toEqual({ reply: 'Hello from Gemini' });
       expect(mockGeminiService.generateContent).toHaveBeenCalled();
+      expect(mockContextManager.getAllContent).toHaveBeenCalledWith(
+        expect.any(AbortSignal),
+        'Hi',
+      );
       expect(mockChatHistory.addMessage).toHaveBeenCalledWith({
         role: 'user',
         text: 'Hi',
