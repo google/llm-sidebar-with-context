@@ -28,6 +28,7 @@ export const MEMORY_EPISODE_SUMMARY_MAX_CHARS = 900;
 export const MEMORY_MAX_KEYWORDS_PER_EPISODE = 16;
 export const MEMORY_MAX_QUERY_KEYWORDS = 12;
 export const MEMORY_MIN_KEYWORD_LENGTH = 3;
+export const MEMORY_MIN_SCORE_THRESHOLD = 0.55;
 
 export const MEMORY_STOPWORDS = [
   'about',
@@ -56,6 +57,7 @@ export const MEMORY_STOPWORDS = [
   'else',
   'even',
   'every',
+  'for',
   'from',
   'gave',
   'give',
@@ -95,7 +97,12 @@ export const MEMORY_STOPWORDS = [
   'those',
   'through',
   'under',
+  'use',
   'using',
+  'user',
+  'assistant',
+  'question',
+  'answer',
   'very',
   'want',
   'were',

@@ -21,6 +21,7 @@ import { ITabService, ChromeTab } from '../../src/scripts/services/tabService';
 import { IGeminiService } from '../../src/scripts/services/geminiService';
 import { IMessageService } from '../../src/scripts/services/messageService';
 import { ChatHistory } from '../../src/scripts/models/ChatHistory';
+import { AgentMemory } from '../../src/scripts/models/AgentMemory';
 import { ContextManager } from '../../src/scripts/models/ContextManager';
 import { MessageTypes, StorageKeys } from '../../src/scripts/constants';
 import {
@@ -35,6 +36,7 @@ describe('BackgroundController', () => {
   let mockGeminiService: IGeminiService;
   let mockMessageService: IMessageService;
   let mockChatHistory: ChatHistory;
+  let mockAgentMemory: AgentMemory;
   let mockContextManager: ContextManager;
 
   beforeEach(() => {
@@ -74,8 +76,16 @@ describe('BackgroundController', () => {
       addMessage: vi.fn(),
       removeLastMessage: vi.fn(),
       getMessages: vi.fn(),
+      getRecentMessages: vi.fn(),
       clear: vi.fn(),
     } as unknown as ChatHistory;
+
+    mockAgentMemory = {
+      load: vi.fn(),
+      clear: vi.fn(),
+      buildContextPart: vi.fn(),
+      recordTurn: vi.fn(),
+    } as unknown as AgentMemory;
 
     mockContextManager = {
       load: vi.fn(),
@@ -91,6 +101,7 @@ describe('BackgroundController', () => {
 
     controller = new BackgroundController(
       mockChatHistory,
+      mockAgentMemory,
       mockContextManager,
       mockSyncStorage,
       mockTabService,
@@ -374,7 +385,8 @@ describe('BackgroundController', () => {
       vi.mocked(mockContextManager.getAllContent).mockResolvedValue([
         { type: 'text', text: 'Pinned Content' },
       ]);
-      vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
+      vi.mocked(mockChatHistory.getRecentMessages).mockReturnValue([]);
+      vi.mocked(mockAgentMemory.buildContextPart).mockResolvedValue(null);
 
       const response = await controller.handleMessage({
         type: MessageTypes.CHAT_MESSAGE,
@@ -393,12 +405,17 @@ describe('BackgroundController', () => {
         role: 'model',
         text: 'Hello from Gemini',
       });
+      expect(mockAgentMemory.recordTurn).toHaveBeenCalledWith(
+        'Hi',
+        'Hello from Gemini',
+      );
     });
 
     it('should ensure JIT loading is called on every message', async () => {
       await controller.handleMessage({ type: MessageTypes.GET_HISTORY });
 
       expect(mockChatHistory.load).toHaveBeenCalled();
+      expect(mockAgentMemory.load).toHaveBeenCalled();
       expect(mockContextManager.load).toHaveBeenCalled();
     });
 
@@ -406,6 +423,8 @@ describe('BackgroundController', () => {
       vi.mocked(mockSyncStorage.get).mockResolvedValue('fake-key');
       vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([]);
       vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
+      vi.mocked(mockChatHistory.getRecentMessages).mockReturnValue([]);
+      vi.mocked(mockAgentMemory.buildContextPart).mockResolvedValue(null);
 
       let requestStartedResolve: () => void;
       const requestStartedPromise = new Promise<void>(
@@ -447,6 +466,8 @@ describe('BackgroundController', () => {
     it('should abort generation during context gathering', async () => {
       vi.mocked(mockSyncStorage.get).mockResolvedValue('fake-key');
       vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
+      vi.mocked(mockChatHistory.getRecentMessages).mockReturnValue([]);
+      vi.mocked(mockAgentMemory.buildContextPart).mockResolvedValue(null);
 
       let contextGatheringStartedResolve: () => void;
       const contextGatheringStartedPromise = new Promise<void>(
@@ -492,7 +513,8 @@ describe('BackgroundController', () => {
       vi.mocked(mockGeminiService.generateContent).mockRejectedValue(
         new DOMException('The user aborted a request.', 'AbortError'),
       );
-      vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
+      vi.mocked(mockChatHistory.getRecentMessages).mockReturnValue([]);
+      vi.mocked(mockAgentMemory.buildContextPart).mockResolvedValue(null);
 
       const response = await controller.handleMessage({
         type: MessageTypes.CHAT_MESSAGE,
@@ -519,7 +541,11 @@ describe('BackgroundController', () => {
       vi.mocked(mockContextManager.getAllContent).mockResolvedValue([
         { type: 'text', text: 'Pinned Content' },
       ]);
-      vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
+      vi.mocked(mockChatHistory.getRecentMessages).mockReturnValue([]);
+      vi.mocked(mockAgentMemory.buildContextPart).mockResolvedValue({
+        type: 'text',
+        text: 'Memory Context',
+      });
       vi.mocked(mockGeminiService.generateContent).mockResolvedValue({
         reply: 'Responded',
       });
@@ -534,6 +560,7 @@ describe('BackgroundController', () => {
       expect(mockGeminiService.generateContent).toHaveBeenCalledWith(
         'fake-key',
         [
+          { type: 'text', text: 'Memory Context' },
           { type: 'text', text: 'Active Content' },
           { type: 'text', text: 'Pinned Content' },
         ],
@@ -551,7 +578,11 @@ describe('BackgroundController', () => {
       vi.mocked(mockContextManager.getAllContent).mockResolvedValue([
         { type: 'text', text: 'Pinned Content' },
       ]);
-      vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
+      vi.mocked(mockChatHistory.getRecentMessages).mockReturnValue([]);
+      vi.mocked(mockAgentMemory.buildContextPart).mockResolvedValue({
+        type: 'text',
+        text: 'Memory Context',
+      });
       vi.mocked(mockGeminiService.generateContent).mockResolvedValue({
         reply: 'Responded',
       });
@@ -565,7 +596,10 @@ describe('BackgroundController', () => {
 
       expect(mockGeminiService.generateContent).toHaveBeenCalledWith(
         'fake-key',
-        [{ type: 'text', text: 'Pinned Content' }], // Active content should be excluded
+        [
+          { type: 'text', text: 'Memory Context' },
+          { type: 'text', text: 'Pinned Content' },
+        ], // Active content should be excluded
         expect.any(Array),
         'gemini-pro',
         expect.any(AbortSignal),
@@ -580,7 +614,8 @@ describe('BackgroundController', () => {
       });
       vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([]);
       vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
-      vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
+      vi.mocked(mockChatHistory.getRecentMessages).mockReturnValue([]);
+      vi.mocked(mockAgentMemory.buildContextPart).mockResolvedValue(null);
 
       const response = await controller.handleMessage({
         type: MessageTypes.CHAT_MESSAGE,
@@ -747,6 +782,7 @@ describe('BackgroundController', () => {
       });
       expect(response).toEqual({ success: true });
       expect(mockChatHistory.clear).toHaveBeenCalled();
+      expect(mockAgentMemory.clear).toHaveBeenCalled();
       expect(mockContextManager.clear).toHaveBeenCalled();
     });
 

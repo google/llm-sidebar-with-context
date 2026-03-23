@@ -24,6 +24,7 @@ import { GeminiService } from './services/geminiService';
 import { ChromeMessageService } from './services/messageService';
 import { ChatHistory } from './models/ChatHistory';
 import { ContextManager } from './models/ContextManager';
+import { AgentMemory } from './models/AgentMemory';
 
 const localStorageService = new ChromeLocalStorageService();
 const syncStorageService = new ChromeSyncStorageService();
@@ -32,10 +33,12 @@ const geminiService = new GeminiService();
 const messageService = new ChromeMessageService();
 
 const chatHistory = new ChatHistory(localStorageService);
+const agentMemory = new AgentMemory(localStorageService);
 const contextManager = new ContextManager(localStorageService, tabService);
 
 const controller = new BackgroundController(
   chatHistory,
+  agentMemory,
   contextManager,
   syncStorageService,
   tabService,

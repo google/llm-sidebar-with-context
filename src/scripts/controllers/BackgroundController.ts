@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
-import { MessageTypes, StorageKeys } from '../constants';
+import {
+  MessageTypes,
+  StorageKeys,
+  MODEL_SHORT_TERM_HISTORY_WINDOW,
+} from '../constants';
 import { ChatHistory } from '../models/ChatHistory';
 import { ContextManager } from '../models/ContextManager';
 import { TabContext } from '../models/TabContext';
+import { AgentMemory } from '../models/AgentMemory';
 import { IGeminiService } from '../services/geminiService';
 import { ISyncStorageService } from '../services/storageService';
 import { ITabService } from '../services/tabService';
@@ -39,6 +44,7 @@ export class BackgroundController {
 
   constructor(
     private chatHistory: ChatHistory,
+    private agentMemory: AgentMemory,
     private contextManager: ContextManager,
     private syncStorageService: ISyncStorageService,
     private tabService: ITabService,
@@ -148,7 +154,11 @@ export class BackgroundController {
   async handleMessage(request: ExtensionMessage): Promise<ExtensionResponse> {
     try {
       // Just-In-Time Loading to handle Service Worker restarts
-      await Promise.all([this.chatHistory.load(), this.contextManager.load()]);
+      await Promise.all([
+        this.chatHistory.load(),
+        this.agentMemory.load(),
+        this.contextManager.load(),
+      ]);
 
       switch (request.type) {
         case MessageTypes.CHAT_MESSAGE:
@@ -219,6 +229,18 @@ export class BackgroundController {
       }
 
       // 2. Build Context
+      const recentHistory = this.chatHistory.getRecentMessages(
+        MODEL_SHORT_TERM_HISTORY_WINDOW,
+      );
+      const memoryContext = await this.agentMemory.buildContextPart(
+        message,
+        recentHistory,
+      );
+
+      if (this.abortController.signal.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+      }
+
       let activeContext: ContentPart[] = [];
       if (includeCurrentTab) {
         activeContext = await this.contextManager.getActiveTabContent();
@@ -229,13 +251,17 @@ export class BackgroundController {
       }
 
       const pinnedContent = await this.contextManager.getAllContent();
-      const fullContext = [...activeContext, ...pinnedContent];
+      const fullContext = [
+        ...(memoryContext ? [memoryContext] : []),
+        ...activeContext,
+        ...pinnedContent,
+      ];
 
       // 3. Send to Gemini
       const response = await this.geminiService.generateContent(
         apiKey,
         fullContext,
-        this.chatHistory.getMessages(),
+        recentHistory,
         model,
         this.abortController.signal,
       );
@@ -246,6 +272,11 @@ export class BackgroundController {
           role: 'model',
           text: response.reply,
         });
+        try {
+          await this.agentMemory.recordTurn(message, response.reply);
+        } catch (memoryError) {
+          console.error('Failed to persist agent memory:', memoryError);
+        }
       } else if (response.aborted) {
         // If aborted, we need to clean up the user message from history
         await this.chatHistory.removeLastMessage();
@@ -355,6 +386,7 @@ export class BackgroundController {
 
   private async handleClearChat(): Promise<SuccessResponse> {
     await this.chatHistory.clear();
+    await this.agentMemory.clear();
     await this.contextManager.clear();
     return { success: true };
   }
