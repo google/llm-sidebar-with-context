@@ -95,11 +95,20 @@ export interface GetMemoryStatsRequest {
   type: typeof MessageTypes.GET_MEMORY_STATS;
 }
 
+export interface MemoryEpisodeSummary {
+  id: string;
+  kind: 'turn' | 'summary';
+  summary: string;
+  createdAt: number;
+  keywords: string[];
+}
+
 export interface MemoryStatsResponse {
   success: boolean;
   episodeCount: number;
   maxEpisodes: number;
   pinnedTabCount: number;
+  recentEpisodes: MemoryEpisodeSummary[];
 }
 
 export interface CurrentTabInfoMessage {

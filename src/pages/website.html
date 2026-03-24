@@ -44,14 +44,116 @@
           </span>
         </div>
 
-        <!-- Context Bar -->
-        <div class="context-bar">
-          <div class="memory-indicator">
-            <span class="memory-label">AI Memory</span>
-            <div class="memory-bar">
-              <div class="memory-bar-fill" style="width: 42%"></div>
+        <!-- Memory Panel -->
+        <div class="memory-panel">
+          <div class="memory-panel-header expanded">
+            <span class="memory-panel-title">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+              AI Memory
+            </span>
+            <span class="memory-panel-badge">67 / 160</span>
+            <svg
+              class="memory-panel-chevron"
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+          <div class="memory-panel-body">
+            <div class="memory-indicator">
+              <span class="memory-label">Context Window</span>
+              <div class="memory-bar">
+                <div class="memory-bar-fill" style="width: 42%"></div>
+              </div>
+              <span class="memory-label">67 / 160</span>
             </div>
-            <span class="memory-label">67 / 160</span>
+            <div class="memory-episodes">
+              <div class="memory-episode">
+                <div class="memory-episode-icon turn">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                    />
+                  </svg>
+                </div>
+                <span class="memory-episode-text"
+                  >User prefers dark mode UI</span
+                >
+                <span class="memory-episode-time">2h</span>
+              </div>
+              <div class="memory-episode">
+                <div class="memory-episode-icon turn">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                    />
+                  </svg>
+                </div>
+                <span class="memory-episode-text"
+                  >Working on a React project</span
+                >
+                <span class="memory-episode-time">5h</span>
+              </div>
+              <div class="memory-episode">
+                <div class="memory-episode-icon summary">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"
+                    />
+                    <path d="M14 2v6h6" />
+                  </svg>
+                </div>
+                <span class="memory-episode-text"
+                  >Asked about authentication best practices</span
+                >
+                <span class="memory-episode-time">1d</span>
+              </div>
+            </div>
           </div>
         </div>
 

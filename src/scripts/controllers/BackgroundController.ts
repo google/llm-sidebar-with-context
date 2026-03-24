@@ -419,6 +419,7 @@ export class BackgroundController {
       episodeCount: this.memoryPipeline.getEpisodeCount(),
       maxEpisodes: MEMORY_MAX_EPISODES,
       pinnedTabCount: this.contextManager.getPinnedTabs().length,
+      recentEpisodes: this.memoryPipeline.getRecentEpisodes(5),
     };
   }
 

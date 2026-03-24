@@ -59,6 +59,26 @@ export class MemoryPipelineOrchestrator {
     return this.collectScopedEpisodes(DEFAULT_SCOPES).length;
   }
 
+  getRecentEpisodes(limit: number): {
+    id: string;
+    kind: 'turn' | 'summary';
+    summary: string;
+    createdAt: number;
+    keywords: string[];
+  }[] {
+    const episodes = this.collectScopedEpisodes(DEFAULT_SCOPES);
+    return episodes
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, limit)
+      .map((e) => ({
+        id: e.id,
+        kind: e.kind,
+        summary: e.summary,
+        createdAt: e.createdAt,
+        keywords: e.keywords,
+      }));
+  }
+
   async recordTurn(userText: string, modelText: string): Promise<void> {
     const timestamp = Date.now();
     const keywords = this.extractKeywords(`${userText}\n${modelText}`, 16);

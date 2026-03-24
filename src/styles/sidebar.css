@@ -549,41 +549,52 @@ body {
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
 }
 
-/* Pinned Contexts */
+/* Pinned Contexts - Action Item Style */
 #pinned-tabs-container {
   font-size: var(--font-sm);
   color: var(--text-secondary);
 }
 
-#current-tab,
+#current-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 8px var(--spacing-md);
+  background: var(--bg-alt);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-bottom: var(--spacing-sm);
+  transition: all var(--transition-fast);
+}
+
+#current-tab:hover {
+  background: var(--bg-hover);
+}
+
 #pinned-tabs li {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: 6px var(--spacing-sm);
+  padding: 8px var(--spacing-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
-  transition: background-color var(--transition-fast);
+  margin-bottom: 4px;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
 }
 
-#current-tab:hover,
 #pinned-tabs li:hover {
-  background-color: var(--bg-alt);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-md);
 }
 
 .favicon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   border-radius: 4px;
-}
-
-#current-tab {
-  color: var(--text-primary);
-  font-weight: 500;
-  border-bottom: 1px solid var(--border-light);
-  margin-bottom: var(--spacing-xs);
-  padding-bottom: 8px;
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 #current-tab span,
@@ -592,6 +603,24 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.pinned-status {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.pinned-status.active {
+  background: var(--accent-success-light);
+  color: var(--accent-success);
+}
+
+.pinned-status.closed {
+  background: var(--accent-error-light);
+  color: var(--accent-error);
 }
 
 /* Icon Buttons */
@@ -883,13 +912,149 @@ body {
   height: 18px;
 }
 
-/* --- Context Bar --- */
+/* --- Memory Panel --- */
 
-.context-bar {
+.memory-panel {
   flex-shrink: 0;
-  padding: var(--spacing-sm) var(--spacing-lg);
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-light);
+}
+
+.memory-panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: 10px var(--spacing-lg);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color var(--transition-fast);
+}
+
+.memory-panel-header:hover {
+  background: var(--bg-alt);
+}
+
+.memory-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.memory-panel-title svg {
+  color: var(--accent-primary);
+}
+
+.memory-panel-badge {
+  margin-left: auto;
+  background: var(--accent-gradient);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.memory-panel-chevron {
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.memory-panel-header.expanded .memory-panel-chevron {
+  transform: rotate(180deg);
+}
+
+.memory-panel-body {
+  padding: 0 var(--spacing-lg) var(--spacing-md);
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Remembered Context List */
+.memory-episodes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: var(--spacing-sm);
+}
+
+.memory-episode {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--accent-gradient-soft);
+  border: 1px solid rgba(124, 92, 252, 0.08);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.memory-episode:hover {
+  background: rgba(124, 92, 252, 0.1);
+  border-color: rgba(124, 92, 252, 0.15);
+}
+
+.memory-episode-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 10px;
+}
+
+.memory-episode-icon.turn {
+  background: var(--accent-gradient);
+}
+
+.memory-episode-icon.summary {
+  background: linear-gradient(135deg, #5b8def 0%, #38bdf8 100%);
+}
+
+.memory-episode-text {
+  flex: 1;
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.memory-episode-time {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.memory-empty {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--spacing-sm);
+  font-style: italic;
 }
 
 /* --- Memory Progress Bar --- */
