@@ -51,6 +51,10 @@ describe('BackgroundController', () => {
       action: {
         onClicked: { addListener: vi.fn() },
       },
+      runtime: {
+        onInstalled: { addListener: vi.fn() },
+        getURL: vi.fn((path: string) => `chrome-extension://test-id/${path}`),
+      },
       sidePanel: {
         open: vi.fn(),
       },
