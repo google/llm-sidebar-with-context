@@ -883,6 +883,15 @@ body {
   height: 18px;
 }
 
+/* --- Context Bar --- */
+
+.context-bar {
+  flex-shrink: 0;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-light);
+}
+
 /* --- Memory Progress Bar --- */
 
 .memory-indicator {

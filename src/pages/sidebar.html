@@ -34,9 +34,27 @@
           Active
         </span>
         <span class="status-pill model" id="status-model">Flash Lite</span>
+        <span class="status-pill memory" id="status-memory">
+          <span class="status-dot"></span>
+          0 memories
+        </span>
       </div>
 
       <div id="messages"></div>
+
+      <div id="context-bar" class="context-bar" style="display: none">
+        <div class="memory-indicator">
+          <span class="memory-label" id="memory-label">AI Memory</span>
+          <div class="memory-bar">
+            <div
+              class="memory-bar-fill"
+              id="memory-bar-fill"
+              style="width: 0%"
+            ></div>
+          </div>
+          <span class="memory-label" id="memory-count">0 / 160</span>
+        </div>
+      </div>
 
       <div class="bottom-panel">
         <div id="settings-panel">

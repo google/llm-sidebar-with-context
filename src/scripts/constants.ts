@@ -148,6 +148,7 @@ export const MessageTypes = {
   CLEAR_CHAT: 'clearChat',
   GET_HISTORY: 'getHistory',
   STOP_GENERATION: 'stopGeneration',
+  GET_MEMORY_STATS: 'getMemoryStats',
 } as const;
 
 export const StorageKeys = {

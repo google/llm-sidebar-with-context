@@ -91,6 +91,17 @@ export interface StopGenerationRequest {
   type: typeof MessageTypes.STOP_GENERATION;
 }
 
+export interface GetMemoryStatsRequest {
+  type: typeof MessageTypes.GET_MEMORY_STATS;
+}
+
+export interface MemoryStatsResponse {
+  success: boolean;
+  episodeCount: number;
+  maxEpisodes: number;
+  pinnedTabCount: number;
+}
+
 export interface CurrentTabInfoMessage {
   type: typeof MessageTypes.CURRENT_TAB_INFO;
   tab: TabInfo;
@@ -111,7 +122,8 @@ export type ExtensionMessage =
   | ClearChatRequest
   | GetHistoryRequest
   | CurrentTabInfoMessage
-  | StopGenerationRequest;
+  | StopGenerationRequest
+  | GetMemoryStatsRequest;
 
 export interface GeminiResponse {
   reply?: string;
@@ -144,4 +156,5 @@ export type ExtensionResponse =
   | GetContextResponse
   | SuccessResponse
   | CheckPinnedTabsResponse
-  | GetHistoryResponse;
+  | GetHistoryResponse
+  | MemoryStatsResponse;

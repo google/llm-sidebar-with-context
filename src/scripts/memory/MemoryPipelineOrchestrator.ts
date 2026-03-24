@@ -55,6 +55,10 @@ export class MemoryPipelineOrchestrator {
     await this.longTermMemoryService.clear(scope);
   }
 
+  getEpisodeCount(): number {
+    return this.collectScopedEpisodes(DEFAULT_SCOPES).length;
+  }
+
   async recordTurn(userText: string, modelText: string): Promise<void> {
     const timestamp = Date.now();
     const keywords = this.extractKeywords(`${userText}\n${modelText}`, 16);

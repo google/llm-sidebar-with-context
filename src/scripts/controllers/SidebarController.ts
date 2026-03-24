@@ -25,6 +25,7 @@ import {
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
+  MemoryStatsResponse,
 } from '../types';
 import {
   ISyncStorageService,
@@ -47,6 +48,10 @@ export class SidebarController {
   private toggleSettingsButton: HTMLButtonElement;
   private newChatButton: HTMLButtonElement;
   private statusModel: HTMLElement | null;
+  private statusMemory: HTMLElement | null;
+  private contextBar: HTMLElement | null;
+  private memoryBarFill: HTMLElement | null;
+  private memoryCount: HTMLElement | null;
 
   private pinnedContexts: TabInfo[] = [];
   private currentTab: TabInfo | null = null;
@@ -91,6 +96,10 @@ export class SidebarController {
       'new-chat-button',
     ) as HTMLButtonElement;
     this.statusModel = document.getElementById('status-model');
+    this.statusMemory = document.getElementById('status-memory');
+    this.contextBar = document.getElementById('context-bar');
+    this.memoryBarFill = document.getElementById('memory-bar-fill');
+    this.memoryCount = document.getElementById('memory-count');
 
     this.setupEventListeners();
   }
@@ -226,6 +235,9 @@ export class SidebarController {
 
     // Rehydrate History
     await this.loadHistory();
+
+    // Load memory stats
+    await this.refreshMemoryStats();
   }
 
   private async loadHistory() {
@@ -334,6 +346,44 @@ export class SidebarController {
       modelMap[this.modelSelect.value] || this.modelSelect.value;
   }
 
+  private async refreshMemoryStats() {
+    try {
+      const response =
+        await this.messageService.sendMessage<MemoryStatsResponse>({
+          type: MessageTypes.GET_MEMORY_STATS,
+        });
+      if (response && response.success) {
+        const { episodeCount, maxEpisodes, pinnedTabCount } = response;
+
+        // Update status pill
+        if (this.statusMemory) {
+          const label =
+            episodeCount === 1 ? '1 memory' : `${episodeCount} memories`;
+          this.statusMemory.innerHTML = `<span class="status-dot"></span>${label}`;
+        }
+
+        // Update context bar
+        if (episodeCount > 0 || pinnedTabCount > 0) {
+          if (this.contextBar) this.contextBar.style.display = '';
+          if (this.memoryBarFill) {
+            const pct = Math.min(
+              100,
+              Math.round((episodeCount / maxEpisodes) * 100),
+            );
+            this.memoryBarFill.style.width = `${pct}%`;
+          }
+          if (this.memoryCount) {
+            this.memoryCount.textContent = `${episodeCount} / ${maxEpisodes}`;
+          }
+        } else {
+          if (this.contextBar) this.contextBar.style.display = 'none';
+        }
+      }
+    } catch {
+      // Silently ignore - stats are non-critical
+    }
+  }
+
   private async saveApiKey() {
     const apiKey = this.apiKeyInput.value;
     if (apiKey.trim() === '') {
@@ -422,6 +472,7 @@ export class SidebarController {
       this.isGenerating = false;
       this.submitButton.innerHTML = ICONS.SEND;
       this.submitButton.title = 'Send prompt';
+      this.refreshMemoryStats();
     }
   }
 
