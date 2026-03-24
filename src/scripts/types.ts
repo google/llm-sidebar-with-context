@@ -74,6 +74,10 @@ export interface StopGenerationRequest {
   type: typeof MessageTypes.STOP_GENERATION;
 }
 
+export interface AgentdropAnimateRequest {
+  type: typeof MessageTypes.AGENTDROP_ANIMATE;
+}
+
 export interface CurrentTabInfoMessage {
   type: typeof MessageTypes.CURRENT_TAB_INFO;
   tab: TabInfo;
@@ -94,7 +98,8 @@ export type ExtensionMessage =
   | ClearChatRequest
   | GetHistoryRequest
   | CurrentTabInfoMessage
-  | StopGenerationRequest;
+  | StopGenerationRequest
+  | AgentdropAnimateRequest;
 
 export interface GeminiResponse {
   reply?: string;

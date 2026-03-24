@@ -16,6 +16,7 @@
 
 import { marked } from 'marked';
 import { MessageTypes, StorageKeys, RestrictedURLs } from '../constants';
+import { runAgentdropAnimation } from '../agentdropAnimation';
 import {
   ExtensionMessage,
   ExtensionResponse,
@@ -46,6 +47,7 @@ export class SidebarController {
   private modelSelect: HTMLSelectElement;
   private toggleSettingsButton: HTMLButtonElement;
   private newChatButton: HTMLButtonElement;
+  private agentdropButton: HTMLButtonElement;
 
   private pinnedContexts: TabInfo[] = [];
   private currentTab: TabInfo | null = null;
@@ -89,6 +91,9 @@ export class SidebarController {
     this.newChatButton = document.getElementById(
       'new-chat-button',
     ) as HTMLButtonElement;
+    this.agentdropButton = document.getElementById(
+      'agentdrop-button',
+    ) as HTMLButtonElement;
 
     this.setupEventListeners();
   }
@@ -131,6 +136,10 @@ export class SidebarController {
         this.displayPinnedTabs([]); // Clear pinned tabs in UI
         this.showWelcomeMessage();
       }
+    });
+
+    this.agentdropButton.addEventListener('click', () => {
+      this.triggerAgentdrop();
     });
 
     this.modelSelect.addEventListener('change', () => {
@@ -433,6 +442,27 @@ export class SidebarController {
     } catch (err) {
       console.error('Failed to copy!', err);
     }
+  }
+
+  private async triggerAgentdrop() {
+    this.agentdropButton.disabled = true;
+
+    // Step 1: Ask background to inject the content script and coordinate timing.
+    // Background returns a shared startTime (Date.now() value) that both
+    // the page content script and this sidebar will use so the animations
+    // begin at exactly the same wall-clock instant.
+    const response = await this.messageService
+      .sendMessage<SuccessResponse & { startTime?: number }>({
+        type: MessageTypes.AGENTDROP_ANIMATE,
+      })
+      .catch(() => null);
+
+    const startTime = response?.startTime;
+
+    // Step 2: Run the sidebar animation (overlay-only, no warp) using the
+    // same coordinated start time. Origin = left edge (where page meets sidebar).
+    await runAgentdropAnimation(undefined, startTime, 'left');
+    this.agentdropButton.disabled = false;
   }
 
   private async pinCurrentTab() {

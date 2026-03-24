@@ -77,7 +77,10 @@ async function build() {
     path.join(srcDir, 'scripts/sidebar.ts'),
   ];
 
-  const iifeEntryPoints = [path.join(srcDir, 'scripts/webExtraction.ts')];
+  const iifeEntryPoints = [
+    path.join(srcDir, 'scripts/webExtraction.ts'),
+    path.join(srcDir, 'scripts/agentdropContent.ts'),
+  ];
 
   // ESM Build (Background, Sidebar)
   await esbuild.build({

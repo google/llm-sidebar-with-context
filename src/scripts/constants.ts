@@ -48,6 +48,7 @@ export const MessageTypes = {
   CLEAR_CHAT: 'clearChat',
   GET_HISTORY: 'getHistory',
   STOP_GENERATION: 'stopGeneration',
+  AGENTDROP_ANIMATE: 'agentdropAnimate',
 } as const;
 
 export const StorageKeys = {

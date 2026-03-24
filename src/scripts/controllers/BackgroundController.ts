@@ -183,6 +183,8 @@ export class BackgroundController {
             this.abortController.abort();
           }
           return { success: true };
+        case MessageTypes.AGENTDROP_ANIMATE:
+          return await this.handleAgentdropAnimate();
         default:
           return {
             error: `Unknown message type: ${(request as { type: unknown }).type}`,
@@ -367,6 +369,50 @@ export class BackgroundController {
     await this.chatHistory.clear();
     await this.contextManager.clear();
     return { success: true };
+  }
+
+  private async handleAgentdropAnimate(): Promise<
+    SuccessResponse & { startTime?: number }
+  > {
+    const [tab] = await this.tabService.query({
+      active: true,
+      currentWindow: true,
+    });
+
+    if (!tab || !tab.id) {
+      return { success: false, message: 'No active tab found.' };
+    }
+
+    try {
+      // Step 1: Capture the visible tab as a PNG screenshot.
+      // This becomes the WebGL2 texture that the fragment shader warps.
+      const screenshotUrl = await chrome.tabs.captureVisibleTab(
+        undefined as unknown as number,
+        { format: 'png' },
+      );
+
+      // Step 2: Inject the content script (registers listener, does NOT animate yet)
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['src/scripts/agentdropContent.js'],
+      });
+
+      // Step 3: Pick a coordinated start time with buffer for image decode.
+      const startTime = Date.now() + 150;
+
+      // Step 4: Send GO + screenshot + startTime to the content script.
+      await chrome.tabs.sendMessage(tab.id, {
+        type: 'agentdropGo',
+        startTime,
+        screenshotUrl,
+      });
+
+      // Step 5: Return the same startTime to the sidebar.
+      return { success: true, startTime };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, message };
+    }
   }
 
   private async getApiKey(): Promise<string | null> {
