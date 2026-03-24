@@ -89,6 +89,8 @@ describe('BackgroundController', () => {
       clear: vi.fn(),
       buildContextPart: vi.fn(),
       recordTurn: vi.fn(),
+      getEpisodeCount: vi.fn().mockReturnValue(0),
+      getRecentEpisodes: vi.fn().mockReturnValue([]),
     } as unknown as MemoryPipelineOrchestrator;
 
     mockContextManager = {

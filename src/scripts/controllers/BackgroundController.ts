@@ -18,6 +18,7 @@ import {
   MessageTypes,
   StorageKeys,
   MODEL_SHORT_TERM_HISTORY_WINDOW,
+  MEMORY_MAX_EPISODES,
 } from '../constants';
 import { ChatHistory } from '../models/ChatHistory';
 import { ContextManager } from '../models/ContextManager';
@@ -38,6 +39,7 @@ import {
   GetHistoryResponse,
   GeminiResponse,
   ContentPart,
+  MemoryStatsResponse,
 } from '../types';
 
 export class BackgroundController {
@@ -201,6 +203,8 @@ export class BackgroundController {
             this.abortController.abort();
           }
           return { success: true };
+        case MessageTypes.GET_MEMORY_STATS:
+          return this.handleGetMemoryStats();
         default:
           return {
             error: `Unknown message type: ${(request as { type: unknown }).type}`,
@@ -407,6 +411,16 @@ export class BackgroundController {
     await this.memoryPipeline.clear();
     await this.contextManager.clear();
     return { success: true };
+  }
+
+  private handleGetMemoryStats(): MemoryStatsResponse {
+    return {
+      success: true,
+      episodeCount: this.memoryPipeline.getEpisodeCount(),
+      maxEpisodes: MEMORY_MAX_EPISODES,
+      pinnedTabCount: this.contextManager.getPinnedTabs().length,
+      recentEpisodes: this.memoryPipeline.getRecentEpisodes(5),
+    };
   }
 
   private async getApiKey(): Promise<string | null> {

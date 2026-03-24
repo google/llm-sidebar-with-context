@@ -34,9 +34,68 @@
           Active
         </span>
         <span class="status-pill model" id="status-model">Flash Lite</span>
+        <span class="status-pill memory" id="status-memory">
+          <span class="status-dot"></span>
+          0 memories
+        </span>
       </div>
 
       <div id="messages"></div>
+
+      <div id="memory-panel" class="memory-panel" style="display: none">
+        <button id="memory-panel-toggle" class="memory-panel-header">
+          <span class="memory-panel-title">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
+            AI Memory
+          </span>
+          <span class="memory-panel-badge" id="memory-badge">0 / 160</span>
+          <svg
+            class="memory-panel-chevron"
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+        <div
+          id="memory-panel-body"
+          class="memory-panel-body"
+          style="display: none"
+        >
+          <div class="memory-indicator">
+            <span class="memory-label">Context Window</span>
+            <div class="memory-bar">
+              <div
+                class="memory-bar-fill"
+                id="memory-bar-fill"
+                style="width: 0%"
+              ></div>
+            </div>
+            <span class="memory-label" id="memory-count">0 / 160</span>
+          </div>
+          <div id="memory-episodes" class="memory-episodes"></div>
+        </div>
+      </div>
 
       <div class="bottom-panel">
         <div id="settings-panel">
