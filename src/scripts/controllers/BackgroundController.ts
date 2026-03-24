@@ -24,11 +24,11 @@ import { ChatHistory } from '../models/ChatHistory';
 import { ContextManager } from '../models/ContextManager';
 import { TabContext } from '../models/TabContext';
 import { MemoryPipelineOrchestrator } from '../memory/MemoryPipelineOrchestrator';
-import { IGeminiService } from '../services/geminiService';
+import { ILLMService } from '../services/llmService';
 import { ISyncStorageService } from '../services/storageService';
 import { ITabService } from '../services/tabService';
 import { IMessageService } from '../services/messageService';
-import { GeminiSummarizationService } from '../services/summarizationService';
+import { LLMSummarizationService } from '../services/summarizationService';
 import { isRestrictedURL } from '../utils';
 import {
   ExtensionMessage,
@@ -37,7 +37,7 @@ import {
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
-  GeminiResponse,
+  LLMResponse,
   ContentPart,
   MemoryStatsResponse,
 } from '../types';
@@ -51,12 +51,13 @@ export class BackgroundController {
     private contextManager: ContextManager,
     private syncStorageService: ISyncStorageService,
     private tabService: ITabService,
-    private geminiService: IGeminiService,
+    private llmService: ILLMService,
     private messageService: IMessageService,
   ) {
     // Wire up summarization so ContextManager can compress overflowing tabs.
-    const summarizationService = new GeminiSummarizationService(() =>
-      this.getApiKey(),
+    const summarizationService = new LLMSummarizationService(
+      this.llmService,
+      () => this.getApiKey(),
     );
     this.contextManager.setSummarizationService(summarizationService);
   }
@@ -229,11 +230,11 @@ export class BackgroundController {
     message: string,
     model: string,
     includeCurrentTab: boolean,
-  ): Promise<GeminiResponse> {
+  ): Promise<LLMResponse> {
     const apiKey = await this.getApiKey();
     if (!apiKey) {
       return {
-        error: 'Gemini API Key not set. Please set it in the sidebar.',
+        error: 'API Key not set. Please set it in the sidebar.',
       };
     }
 
@@ -279,8 +280,8 @@ export class BackgroundController {
         ...pinnedContent,
       ];
 
-      // 3. Send to Gemini
-      const response = await this.geminiService.generateContent(
+      // 3. Send to LLM
+      const response = await this.llmService.generateContent(
         apiKey,
         fullContext,
         recentHistory,

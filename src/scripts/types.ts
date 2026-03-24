@@ -134,11 +134,14 @@ export type ExtensionMessage =
   | StopGenerationRequest
   | GetMemoryStatsRequest;
 
-export interface GeminiResponse {
+export interface LLMResponse {
   reply?: string;
   error?: string;
   aborted?: boolean;
 }
+
+/** @deprecated Use LLMResponse instead */
+export type GeminiResponse = LLMResponse;
 
 export interface GetContextResponse {
   pinnedContexts: TabInfo[];
@@ -161,7 +164,7 @@ export interface GetHistoryResponse {
 }
 
 export type ExtensionResponse =
-  | GeminiResponse
+  | LLMResponse
   | GetContextResponse
   | SuccessResponse
   | CheckPinnedTabsResponse
