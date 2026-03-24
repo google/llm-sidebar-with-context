@@ -21,10 +21,15 @@ import {
   MEMORY_RETRIEVAL_TOP_K,
   MEMORY_STOPWORDS,
 } from '../../config';
-import { IRetrieverRankerService } from '../../contracts/IRetrieverRankerService';
+import {
+  IRetrieverRankerService,
+  RetrievalResult,
+} from '../../contracts/IRetrieverRankerService';
 import {
   MemoryRetrievalQuery,
   RankedMemoryCandidate,
+  RetrieverConfig,
+  RetrievalDiagnostics,
 } from '../../types/domain';
 import { MemoryEpisodeRecord } from '../../types/entities';
 
@@ -33,66 +38,161 @@ type InternalRanked = RankedMemoryCandidate & {
   matchedKeywordSet: Set<string>;
 };
 
+const DEFAULT_DIVERSITY_THRESHOLD = 0.9;
+const PARTIAL_MATCH_WEIGHT = 0.5;
+
 export class RetrieverRankerService implements IRetrieverRankerService {
   retrieveAndRank(
     query: MemoryRetrievalQuery,
     episodes: MemoryEpisodeRecord[],
+    config?: Partial<RetrieverConfig>,
   ): RankedMemoryCandidate[] {
+    return this.retrieveAndRankWithDiagnostics(query, episodes, config)
+      .candidates;
+  }
+
+  retrieveAndRankWithDiagnostics(
+    query: MemoryRetrievalQuery,
+    episodes: MemoryEpisodeRecord[],
+    config?: Partial<RetrieverConfig>,
+  ): RetrievalResult {
+    const threshold = config?.minScoreThreshold ?? MEMORY_MIN_SCORE_THRESHOLD;
+    const topK = config?.topK ?? MEMORY_RETRIEVAL_TOP_K;
+    const diversityThreshold =
+      config?.diversitySimilarityThreshold ?? DEFAULT_DIVERSITY_THRESHOLD;
+
     if (episodes.length === 0) {
-      return [];
+      return {
+        candidates: [],
+        diagnostics: {
+          queryKeywords: [],
+          candidateCount: 0,
+          aboveThresholdCount: 0,
+          scores: [],
+          avgKeywordOverlap: 0,
+        },
+      };
     }
 
     const keywords = this.extractQueryKeywords(query);
     const now = Date.now();
+    const idfMap = this.computeIdf(keywords, episodes);
 
-    const ranked: InternalRanked[] = episodes
-      .map((episode) => {
-        const overlapSet = this.getOverlapSet(episode.keywords, keywords);
-        if (keywords.length > 0 && overlapSet.size === 0) {
-          return null;
-        }
+    const allScored: (InternalRanked | null)[] = episodes.map((episode) => {
+      const { exactSet, partialSet } = this.getOverlapSets(
+        episode.keywords,
+        keywords,
+      );
+      if (keywords.length > 0 && exactSet.size === 0 && partialSet.size === 0) {
+        return null;
+      }
 
-        const overlapRatio =
-          keywords.length === 0 ? 0 : overlapSet.size / keywords.length;
-        const ageHours = Math.max(
-          1,
-          (now - episode.createdAt) / (1000 * 60 * 60),
-        );
-        const recencyScore = 1 / (1 + Math.log10(ageHours + 1));
-        const utilityScore = Math.min(episode.accessCount, 20) / 25;
-        const summaryBoost = episode.kind === 'summary' ? 0.2 : 0;
-        const relevanceScore = overlapRatio * 2;
-        const score =
-          relevanceScore + recencyScore + utilityScore + summaryBoost;
+      const relevanceScore = this.computeRelevanceScore(
+        keywords,
+        exactSet,
+        partialSet,
+        idfMap,
+      );
 
-        if (score < MEMORY_MIN_SCORE_THRESHOLD) {
-          return null;
-        }
+      const ageHours = Math.max(
+        1,
+        (now - episode.createdAt) / (1000 * 60 * 60),
+      );
+      const recencyScore = 1 / (1 + Math.log10(ageHours + 1));
+      const utilityScore = Math.min(episode.accessCount, 20) / 25;
+      const summaryBoost = episode.kind === 'summary' ? 0.2 : 0;
+      const score = relevanceScore + recencyScore + utilityScore + summaryBoost;
 
-        return {
-          episode,
-          episodeId: episode.id,
-          score,
-          matchedKeywords: [...overlapSet],
-          matchedKeywordSet: overlapSet,
-        };
-      })
-      .filter((candidate): candidate is InternalRanked => Boolean(candidate))
+      const allMatched = new Set([...exactSet, ...partialSet]);
+
+      return {
+        episode,
+        episodeId: episode.id,
+        score,
+        matchedKeywords: [...allMatched],
+        matchedKeywordSet: allMatched,
+      };
+    });
+
+    const aboveThreshold = allScored
+      .filter((c): c is InternalRanked => c !== null && c.score >= threshold)
       .sort((a, b) => b.score - a.score);
 
     const selected = this.selectDiverseCandidates(
-      ranked,
-      Math.min(
-        MEMORY_RETRIEVAL_TOP_K,
-        query.maxResults || MEMORY_RETRIEVAL_TOP_K,
-      ),
+      aboveThreshold,
+      Math.min(topK, query.maxResults || topK),
+      diversityThreshold,
     );
 
-    return selected.map(({ episodeId, score, matchedKeywords }) => ({
-      episodeId,
-      score,
-      matchedKeywords,
-    }));
+    const overlapValues = aboveThreshold.map((c) =>
+      keywords.length > 0 ? c.matchedKeywords.length / keywords.length : 0,
+    );
+    const avgKeywordOverlap =
+      overlapValues.length > 0
+        ? overlapValues.reduce((a, b) => a + b, 0) / overlapValues.length
+        : 0;
+
+    const diagnostics: RetrievalDiagnostics = {
+      queryKeywords: keywords,
+      candidateCount: episodes.length,
+      aboveThresholdCount: aboveThreshold.length,
+      scores: aboveThreshold.map((c) => c.score),
+      avgKeywordOverlap,
+    };
+
+    const candidates = selected.map(
+      ({ episodeId, score, matchedKeywords }) => ({
+        episodeId,
+        score,
+        matchedKeywords,
+      }),
+    );
+
+    return { candidates, diagnostics };
+  }
+
+  private computeIdf(
+    queryKeywords: string[],
+    episodes: MemoryEpisodeRecord[],
+  ): Map<string, number> {
+    const idfMap = new Map<string, number>();
+    const totalDocs = episodes.length;
+    for (const keyword of queryKeywords) {
+      let docCount = 0;
+      for (const episode of episodes) {
+        if (episode.keywords.includes(keyword)) {
+          docCount += 1;
+        }
+      }
+      const idf = Math.log((totalDocs + 1) / (docCount + 1)) + 1;
+      idfMap.set(keyword, idf);
+    }
+    return idfMap;
+  }
+
+  private computeRelevanceScore(
+    queryKeywords: string[],
+    exactSet: Set<string>,
+    partialSet: Set<string>,
+    idfMap: Map<string, number>,
+  ): number {
+    if (queryKeywords.length === 0) {
+      return 0;
+    }
+
+    let matchedWeight = 0;
+    let totalWeight = 0;
+    for (const keyword of queryKeywords) {
+      const idf = idfMap.get(keyword) ?? 1;
+      totalWeight += idf;
+      if (exactSet.has(keyword)) {
+        matchedWeight += idf;
+      } else if (partialSet.has(keyword)) {
+        matchedWeight += idf * PARTIAL_MATCH_WEIGHT;
+      }
+    }
+
+    return totalWeight > 0 ? (matchedWeight / totalWeight) * 2 : 0;
   }
 
   private extractQueryKeywords(query: MemoryRetrievalQuery): string[] {
@@ -123,23 +223,52 @@ export class RetrieverRankerService implements IRetrieverRankerService {
       .map(([keyword]) => keyword);
   }
 
-  private getOverlapSet(
+  private getOverlapSets(
     episodeKeywords: string[],
     queryKeywords: string[],
-  ): Set<string> {
+  ): { exactSet: Set<string>; partialSet: Set<string> } {
     const querySet = new Set(queryKeywords);
-    const overlap = new Set<string>();
+    const exactSet = new Set<string>();
+    const partialSet = new Set<string>();
+
     for (const keyword of episodeKeywords) {
       if (querySet.has(keyword)) {
-        overlap.add(keyword);
+        exactSet.add(keyword);
       }
     }
-    return overlap;
+
+    for (const qk of queryKeywords) {
+      if (exactSet.has(qk)) {
+        continue;
+      }
+      for (const ek of episodeKeywords) {
+        if (
+          ek.includes(qk) ||
+          qk.includes(ek) ||
+          this.sharesStemPrefix(qk, ek)
+        ) {
+          partialSet.add(qk);
+          break;
+        }
+      }
+    }
+
+    return { exactSet, partialSet };
+  }
+
+  private sharesStemPrefix(a: string, b: string): boolean {
+    const minLen = Math.min(a.length, b.length);
+    const prefixLen = Math.max(4, Math.floor(minLen * 0.75));
+    if (minLen < 4) {
+      return false;
+    }
+    return a.slice(0, prefixLen) === b.slice(0, prefixLen);
   }
 
   private selectDiverseCandidates(
     ranked: InternalRanked[],
     limit: number,
+    similarityThreshold: number,
   ): InternalRanked[] {
     const selected: InternalRanked[] = [];
     for (const candidate of ranked) {
@@ -152,7 +281,7 @@ export class RetrieverRankerService implements IRetrieverRankerService {
           this.jaccard(
             existing.matchedKeywordSet,
             candidate.matchedKeywordSet,
-          ) >= 0.9,
+          ) >= similarityThreshold,
       );
       if (tooSimilar) {
         continue;

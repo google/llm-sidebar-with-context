@@ -14,12 +14,29 @@
  * limitations under the License.
  */
 
-import { MemoryRetrievalQuery, RankedMemoryCandidate } from '../types/domain';
+import {
+  MemoryRetrievalQuery,
+  RankedMemoryCandidate,
+  RetrieverConfig,
+  RetrievalDiagnostics,
+} from '../types/domain';
 import { MemoryEpisodeRecord } from '../types/entities';
+
+export interface RetrievalResult {
+  candidates: RankedMemoryCandidate[];
+  diagnostics: RetrievalDiagnostics;
+}
 
 export interface IRetrieverRankerService {
   retrieveAndRank(
     query: MemoryRetrievalQuery,
     episodes: MemoryEpisodeRecord[],
+    config?: Partial<RetrieverConfig>,
   ): RankedMemoryCandidate[];
+
+  retrieveAndRankWithDiagnostics(
+    query: MemoryRetrievalQuery,
+    episodes: MemoryEpisodeRecord[],
+    config?: Partial<RetrieverConfig>,
+  ): RetrievalResult;
 }
