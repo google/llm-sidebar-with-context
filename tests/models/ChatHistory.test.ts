@@ -134,6 +134,34 @@ describe('ChatHistory', () => {
     );
   });
 
+  it('should return recent messages bounded by limit', async () => {
+    await chatHistory.addMessage({ role: 'user', text: '1' });
+    await chatHistory.addMessage({ role: 'model', text: '2' });
+    await chatHistory.addMessage({ role: 'user', text: '3' });
+
+    expect(chatHistory.getRecentMessages(2)).toEqual([
+      { role: 'model', text: '2' },
+      { role: 'user', text: '3' },
+    ]);
+  });
+
+  it('should return all messages when limit exceeds history length', async () => {
+    await chatHistory.addMessage({ role: 'user', text: '1' });
+    await chatHistory.addMessage({ role: 'model', text: '2' });
+
+    expect(chatHistory.getRecentMessages(10)).toEqual([
+      { role: 'user', text: '1' },
+      { role: 'model', text: '2' },
+    ]);
+  });
+
+  it('should return empty array for invalid recent-message limit', async () => {
+    await chatHistory.addMessage({ role: 'user', text: '1' });
+    expect(chatHistory.getRecentMessages(0)).toEqual([]);
+    expect(chatHistory.getRecentMessages(-1)).toEqual([]);
+    expect(chatHistory.getRecentMessages(Number.NaN)).toEqual([]);
+  });
+
   it('should propagate errors if storage save fails', async () => {
     const error = new Error('Storage quota exceeded');
     vi.mocked(mockLocalStorageService.set).mockRejectedValue(error);

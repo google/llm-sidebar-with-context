@@ -47,6 +47,16 @@ export class ChatHistory {
   }
 
   /**
+   * Gets only the most recent messages, bounded by limit.
+   */
+  getRecentMessages(limit: number): ChatMessage[] {
+    if (!Number.isFinite(limit) || limit <= 0) {
+      return [];
+    }
+    return this.messages.slice(-Math.floor(limit));
+  }
+
+  /**
    * Clears the history and saves the empty state.
    */
   async clear(): Promise<void> {

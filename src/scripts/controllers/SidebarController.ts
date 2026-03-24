@@ -26,6 +26,7 @@ import {
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
+  MemoryStatsResponse,
 } from '../types';
 import {
   ISyncStorageService,
@@ -48,6 +49,15 @@ export class SidebarController {
   private toggleSettingsButton: HTMLButtonElement;
   private newChatButton: HTMLButtonElement;
   private agentdropButton: HTMLButtonElement;
+  private statusModel: HTMLElement | null;
+  private statusMemory: HTMLElement | null;
+  private memoryPanel: HTMLElement | null;
+  private memoryPanelToggle: HTMLElement | null;
+  private memoryPanelBody: HTMLElement | null;
+  private memoryBarFill: HTMLElement | null;
+  private memoryCount: HTMLElement | null;
+  private memoryBadge: HTMLElement | null;
+  private memoryEpisodes: HTMLElement | null;
 
   private pinnedContexts: TabInfo[] = [];
   private currentTab: TabInfo | null = null;
@@ -94,6 +104,15 @@ export class SidebarController {
     this.agentdropButton = document.getElementById(
       'agentdrop-button',
     ) as HTMLButtonElement;
+    this.statusModel = document.getElementById('status-model');
+    this.statusMemory = document.getElementById('status-memory');
+    this.memoryPanel = document.getElementById('memory-panel');
+    this.memoryPanelToggle = document.getElementById('memory-panel-toggle');
+    this.memoryPanelBody = document.getElementById('memory-panel-body');
+    this.memoryBarFill = document.getElementById('memory-bar-fill');
+    this.memoryCount = document.getElementById('memory-count');
+    this.memoryBadge = document.getElementById('memory-badge');
+    this.memoryEpisodes = document.getElementById('memory-episodes');
 
     this.setupEventListeners();
   }
@@ -142,11 +161,20 @@ export class SidebarController {
       this.triggerAgentdrop();
     });
 
+    if (this.memoryPanelToggle && this.memoryPanelBody) {
+      this.memoryPanelToggle.addEventListener('click', () => {
+        const isHidden = this.memoryPanelBody!.style.display === 'none';
+        this.memoryPanelBody!.style.display = isHidden ? '' : 'none';
+        this.memoryPanelToggle!.classList.toggle('expanded', isHidden);
+      });
+    }
+
     this.modelSelect.addEventListener('change', () => {
       this.syncStorageService.set(
         StorageKeys.SELECTED_MODEL,
         this.modelSelect.value,
       );
+      this.updateStatusBar();
     });
 
     this.promptForm.addEventListener('submit', (e) => {
@@ -204,6 +232,7 @@ export class SidebarController {
     if (selectedModel) {
       this.modelSelect.value = selectedModel;
     }
+    this.updateStatusBar();
 
     // Load Sharing Preference
     const storedSharing = await this.localStorageService.get<boolean>(
@@ -231,6 +260,9 @@ export class SidebarController {
 
     // Rehydrate History
     await this.loadHistory();
+
+    // Load memory stats
+    await this.refreshMemoryStats();
   }
 
   private async loadHistory() {
@@ -263,28 +295,167 @@ export class SidebarController {
     this.messagesDiv.innerHTML = `
       <div class="welcome-container">
         <div class="welcome-header">
-          <h1>Welcome to LLM Sidebar with Context</h1>
+          <span class="welcome-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            AI Sidebar
+          </span>
+          <h1>What can I help with?</h1>
+          <p>I can read your open tabs and answer questions about anything on the web.</p>
         </div>
 
         <div class="welcome-section">
           <h2>Quick Tips</h2>
-          <ul>
-            <li><strong>Select Model:</strong> Choose the best model for your task.</li>
-            <li><strong>Pin Tabs:</strong> Click the ${ICONS.PIN} icon to pin the current tab as context. You can pin multiple tabs.</li>
-            <li><strong>Control Privacy:</strong> Click the ${ICONS.EYE} icon to toggle auto-sharing of your current tab.</li>
-          </ul>
+          <div class="welcome-cards">
+            <div class="welcome-card">
+              <div class="welcome-card-icon purple">
+                ${ICONS.PIN}
+              </div>
+              <div class="welcome-card-content">
+                <h3>Pin Tabs</h3>
+                <p>Click the pin icon to add any tab as persistent context.</p>
+              </div>
+            </div>
+            <div class="welcome-card">
+              <div class="welcome-card-icon blue">
+                ${ICONS.EYE}
+              </div>
+              <div class="welcome-card-content">
+                <h3>Smart Context</h3>
+                <p>Toggle the eye icon to share your current page automatically.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="welcome-section">
           <h2>Try asking</h2>
-          <ul>
-            <li>"Summarize news from multiple tabs"</li>
-            <li>"Explain this code snippet"</li>
-            <li>"Review my doc"</li>
-          </ul>
+          <div class="welcome-prompts">
+            <div class="welcome-prompt" data-prompt="Summarize the key points from this page">
+              ${ICONS.SEND}
+              "Summarize the key points from this page"
+            </div>
+            <div class="welcome-prompt" data-prompt="Explain this code snippet">
+              ${ICONS.SEND}
+              "Explain this code snippet"
+            </div>
+            <div class="welcome-prompt" data-prompt="Review my document and suggest improvements">
+              ${ICONS.SEND}
+              "Review my document and suggest improvements"
+            </div>
+          </div>
         </div>
       </div>
     `;
+
+    // Add click handlers for prompt suggestions
+    this.messagesDiv.querySelectorAll('.welcome-prompt').forEach((el) => {
+      el.addEventListener('click', () => {
+        const prompt = (el as HTMLElement).dataset.prompt;
+        if (prompt) {
+          this.promptInput.value = prompt;
+          this.promptInput.focus();
+        }
+      });
+    });
+  }
+
+  private updateStatusBar() {
+    if (!this.statusModel) return;
+    const modelMap: Record<string, string> = {
+      'gemini-3-flash-preview': '3 Flash',
+      'gemini-2.5-pro': '2.5 Pro',
+      'gemini-2.5-flash': '2.5 Flash',
+      'gemini-2.5-flash-lite': 'Flash Lite',
+    };
+    this.statusModel.textContent =
+      modelMap[this.modelSelect.value] || this.modelSelect.value;
+  }
+
+  private async refreshMemoryStats() {
+    try {
+      const response =
+        await this.messageService.sendMessage<MemoryStatsResponse>({
+          type: MessageTypes.GET_MEMORY_STATS,
+        });
+      if (response && response.success) {
+        const { episodeCount, maxEpisodes, recentEpisodes } = response;
+
+        // Update status pill
+        if (this.statusMemory) {
+          const label =
+            episodeCount === 1 ? '1 memory' : `${episodeCount} memories`;
+          this.statusMemory.innerHTML = `<span class="status-dot"></span>${label}`;
+        }
+
+        // Show/hide memory panel
+        if (this.memoryPanel) {
+          this.memoryPanel.style.display = episodeCount > 0 ? '' : 'none';
+        }
+
+        // Update progress bar
+        if (this.memoryBarFill) {
+          const pct = Math.min(
+            100,
+            Math.round((episodeCount / maxEpisodes) * 100),
+          );
+          this.memoryBarFill.style.width = `${pct}%`;
+        }
+        if (this.memoryCount) {
+          this.memoryCount.textContent = `${episodeCount} / ${maxEpisodes}`;
+        }
+        if (this.memoryBadge) {
+          this.memoryBadge.textContent = `${episodeCount} / ${maxEpisodes}`;
+        }
+
+        // Render recent episodes
+        if (this.memoryEpisodes) {
+          if (recentEpisodes && recentEpisodes.length > 0) {
+            this.memoryEpisodes.innerHTML = recentEpisodes
+              .map((ep) => {
+                const iconClass = ep.kind === 'turn' ? 'turn' : 'summary';
+                const iconSvg =
+                  ep.kind === 'turn'
+                    ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+                    : '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>';
+                const timeAgo = this.formatTimeAgo(ep.createdAt);
+                const summary = this.escapeHtml(
+                  ep.summary.length > 80
+                    ? ep.summary.slice(0, 80) + '...'
+                    : ep.summary,
+                );
+                return `<div class="memory-episode">
+                  <div class="memory-episode-icon ${iconClass}">${iconSvg}</div>
+                  <span class="memory-episode-text">${summary}</span>
+                  <span class="memory-episode-time">${timeAgo}</span>
+                </div>`;
+              })
+              .join('');
+          } else {
+            this.memoryEpisodes.innerHTML =
+              '<div class="memory-empty">No remembered context yet</div>';
+          }
+        }
+      }
+    } catch {
+      // Silently ignore - stats are non-critical
+    }
+  }
+
+  private formatTimeAgo(timestamp: number): string {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return 'now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `${days}d`;
+  }
+
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   private async saveApiKey() {
@@ -375,6 +546,7 @@ export class SidebarController {
       this.isGenerating = false;
       this.submitButton.innerHTML = ICONS.SEND;
       this.submitButton.title = 'Send prompt';
+      this.refreshMemoryStats();
     }
   }
 
@@ -515,11 +687,12 @@ export class SidebarController {
       const faviconHtml = context.favIconUrl
         ? `<img src="${context.favIconUrl}" class="favicon" alt="${context.title}" />`
         : '';
+      const statusBadge = `<span class="pinned-status active">Pinned</span>`;
       const buttons = `
         <button class="icon-button unpin-button" data-id="${context.id}" title="Unpin this tab">
           ${ICONS.CLOSE}
         </button>`;
-      li.innerHTML = `${faviconHtml}<span>${context.title}</span>${buttons}`;
+      li.innerHTML = `${faviconHtml}<span>${context.title}</span>${statusBadge}${buttons}`;
       ul.appendChild(li);
     });
     this.pinnedTabsDiv.appendChild(ul);

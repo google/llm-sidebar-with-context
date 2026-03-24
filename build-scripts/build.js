@@ -55,21 +55,21 @@ async function build() {
     await fs.copy(file.src, file.dest);
   }
 
-  // 4. Process sidebar.html with placeholders
-  const sidebarHtmlPath = path.join(srcDir, 'pages/sidebar.html');
-  let sidebarHtml = await fs.readFile(sidebarHtmlPath, 'utf-8');
-
-  sidebarHtml = sidebarHtml
-    .replace(/{{LEGAL_NOTICE_URL}}/g, process.env.LEGAL_NOTICE_URL)
-    .replace(/{{PRIVACY_POLICY_URL}}/g, process.env.PRIVACY_POLICY_URL)
-    .replace(/{{LICENSE_URL}}/g, process.env.LICENSE_URL);
-
+  // 4. Process HTML pages with placeholders
   await fs.ensureDir(path.join(distDir, 'src/pages'));
-  await fs.writeFile(
-    path.join(distDir, 'src/pages/sidebar.html'),
-    sidebarHtml,
-    'utf-8',
-  );
+
+  const htmlPages = ['sidebar.html', 'welcome.html', 'website.html'];
+  for (const page of htmlPages) {
+    const htmlPath = path.join(srcDir, 'pages', page);
+    let html = await fs.readFile(htmlPath, 'utf-8');
+
+    html = html
+      .replace(/{{LEGAL_NOTICE_URL}}/g, process.env.LEGAL_NOTICE_URL)
+      .replace(/{{PRIVACY_POLICY_URL}}/g, process.env.PRIVACY_POLICY_URL)
+      .replace(/{{LICENSE_URL}}/g, process.env.LICENSE_URL);
+
+    await fs.writeFile(path.join(distDir, 'src/pages', page), html, 'utf-8');
+  }
 
   // 5. Bundle scripts
   const esmEntryPoints = [

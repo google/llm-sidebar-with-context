@@ -21,25 +21,29 @@ import {
 } from './services/storageService';
 import { ChromeTabService } from './services/tabService';
 import { GeminiService } from './services/geminiService';
+import { ILLMService } from './services/llmService';
 import { ChromeMessageService } from './services/messageService';
 import { ChatHistory } from './models/ChatHistory';
 import { ContextManager } from './models/ContextManager';
+import { MemoryPipelineOrchestrator } from './memory/MemoryPipelineOrchestrator';
 
 const localStorageService = new ChromeLocalStorageService();
 const syncStorageService = new ChromeSyncStorageService();
 const tabService = new ChromeTabService();
-const geminiService = new GeminiService();
+const llmService: ILLMService = new GeminiService();
 const messageService = new ChromeMessageService();
 
 const chatHistory = new ChatHistory(localStorageService);
+const memoryPipeline = new MemoryPipelineOrchestrator(localStorageService);
 const contextManager = new ContextManager(localStorageService, tabService);
 
 const controller = new BackgroundController(
   chatHistory,
+  memoryPipeline,
   contextManager,
   syncStorageService,
   tabService,
-  geminiService,
+  llmService,
   messageService,
 );
 

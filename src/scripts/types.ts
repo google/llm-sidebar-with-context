@@ -28,6 +28,23 @@ export interface ChatMessage {
   text: string;
 }
 
+export type MemoryEpisodeKind = 'turn' | 'summary';
+
+export interface MemoryEpisode {
+  id: string;
+  kind: MemoryEpisodeKind;
+  summary: string;
+  keywords: string[];
+  createdAt: number;
+  accessCount: number;
+  lastAccessedAt: number;
+}
+
+export interface MemoryState {
+  episodes: MemoryEpisode[];
+  updatedAt: number;
+}
+
 export interface ChatMessageRequest {
   type: typeof MessageTypes.CHAT_MESSAGE;
   message: string;
@@ -78,6 +95,26 @@ export interface AgentdropAnimateRequest {
   type: typeof MessageTypes.AGENTDROP_ANIMATE;
 }
 
+export interface GetMemoryStatsRequest {
+  type: typeof MessageTypes.GET_MEMORY_STATS;
+}
+
+export interface MemoryEpisodeSummary {
+  id: string;
+  kind: 'turn' | 'summary';
+  summary: string;
+  createdAt: number;
+  keywords: string[];
+}
+
+export interface MemoryStatsResponse {
+  success: boolean;
+  episodeCount: number;
+  maxEpisodes: number;
+  pinnedTabCount: number;
+  recentEpisodes: MemoryEpisodeSummary[];
+}
+
 export interface CurrentTabInfoMessage {
   type: typeof MessageTypes.CURRENT_TAB_INFO;
   tab: TabInfo;
@@ -99,13 +136,17 @@ export type ExtensionMessage =
   | GetHistoryRequest
   | CurrentTabInfoMessage
   | StopGenerationRequest
-  | AgentdropAnimateRequest;
+  | AgentdropAnimateRequest
+  | GetMemoryStatsRequest;
 
-export interface GeminiResponse {
+export interface LLMResponse {
   reply?: string;
   error?: string;
   aborted?: boolean;
 }
+
+/** @deprecated Use LLMResponse instead */
+export type GeminiResponse = LLMResponse;
 
 export interface GetContextResponse {
   pinnedContexts: TabInfo[];
@@ -128,8 +169,9 @@ export interface GetHistoryResponse {
 }
 
 export type ExtensionResponse =
-  | GeminiResponse
+  | LLMResponse
   | GetContextResponse
   | SuccessResponse
   | CheckPinnedTabsResponse
-  | GetHistoryResponse;
+  | GetHistoryResponse
+  | MemoryStatsResponse;

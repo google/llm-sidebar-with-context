@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import { ChatMessage, GeminiResponse, ContentPart } from '../types';
+import { ChatMessage, LLMResponse, ContentPart } from '../types';
 import { isAbortError } from '../utils';
+import { ILLMService } from './llmService';
 
 interface GeminiApiResponse {
   candidates?: Array<{
@@ -30,24 +31,17 @@ interface GeminiApiResponse {
   };
 }
 
-export interface IGeminiService {
-  generateContent(
-    apiKey: string,
-    context: ContentPart[],
-    history: ChatMessage[],
-    model?: string,
-    signal?: AbortSignal,
-  ): Promise<GeminiResponse>;
-}
+/** @deprecated Use ILLMService instead */
+export type IGeminiService = ILLMService;
 
-export class GeminiService implements IGeminiService {
+export class GeminiService implements ILLMService {
   async generateContent(
     apiKey: string,
     context: ContentPart[],
     history: ChatMessage[],
     model: string = 'gemini-2.5-flash-lite',
     signal?: AbortSignal,
-  ): Promise<GeminiResponse> {
+  ): Promise<LLMResponse> {
     try {
       if (!apiKey) {
         return { error: 'API key is required' };

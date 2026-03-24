@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-import { MessageTypes, StorageKeys } from '../constants';
+import {
+  MessageTypes,
+  StorageKeys,
+  MODEL_SHORT_TERM_HISTORY_WINDOW,
+  MEMORY_MAX_EPISODES,
+} from '../constants';
 import { ChatHistory } from '../models/ChatHistory';
 import { ContextManager } from '../models/ContextManager';
 import { TabContext } from '../models/TabContext';
-import { IGeminiService } from '../services/geminiService';
+import { MemoryPipelineOrchestrator } from '../memory/MemoryPipelineOrchestrator';
+import { ILLMService } from '../services/llmService';
 import { ISyncStorageService } from '../services/storageService';
 import { ITabService } from '../services/tabService';
 import { IMessageService } from '../services/messageService';
-import { GeminiSummarizationService } from '../services/summarizationService';
+import { LLMSummarizationService } from '../services/summarizationService';
 import { isRestrictedURL } from '../utils';
 import {
   ExtensionMessage,
@@ -31,8 +37,9 @@ import {
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
-  GeminiResponse,
+  LLMResponse,
   ContentPart,
+  MemoryStatsResponse,
 } from '../types';
 
 export class BackgroundController {
@@ -40,15 +47,17 @@ export class BackgroundController {
 
   constructor(
     private chatHistory: ChatHistory,
+    private memoryPipeline: MemoryPipelineOrchestrator,
     private contextManager: ContextManager,
     private syncStorageService: ISyncStorageService,
     private tabService: ITabService,
-    private geminiService: IGeminiService,
+    private llmService: ILLMService,
     private messageService: IMessageService,
   ) {
     // Wire up summarization so ContextManager can compress overflowing tabs.
-    const summarizationService = new GeminiSummarizationService(() =>
-      this.getApiKey(),
+    const summarizationService = new LLMSummarizationService(
+      this.llmService,
+      () => this.getApiKey(),
     );
     this.contextManager.setSummarizationService(summarizationService);
   }
@@ -74,6 +83,14 @@ export class BackgroundController {
         return true; // Keep the message channel open for async response
       },
     );
+
+    // Open welcome page on first install
+    chrome.runtime.onInstalled.addListener((details) => {
+      if (details.reason === 'install') {
+        const welcomeUrl = chrome.runtime.getURL('src/pages/welcome.html');
+        this.tabService.create({ url: welcomeUrl });
+      }
+    });
 
     // Update context when active tab changes
     chrome.tabs.onActivated.addListener(() => this.broadcastCurrentTabInfo());
@@ -155,7 +172,11 @@ export class BackgroundController {
   async handleMessage(request: ExtensionMessage): Promise<ExtensionResponse> {
     try {
       // Just-In-Time Loading to handle Service Worker restarts
-      await Promise.all([this.chatHistory.load(), this.contextManager.load()]);
+      await Promise.all([
+        this.chatHistory.load(),
+        this.memoryPipeline.load(),
+        this.contextManager.load(),
+      ]);
 
       switch (request.type) {
         case MessageTypes.CHAT_MESSAGE:
@@ -185,6 +206,8 @@ export class BackgroundController {
           return { success: true };
         case MessageTypes.AGENTDROP_ANIMATE:
           return await this.handleAgentdropAnimate();
+        case MessageTypes.GET_MEMORY_STATS:
+          return this.handleGetMemoryStats();
         default:
           return {
             error: `Unknown message type: ${(request as { type: unknown }).type}`,
@@ -209,11 +232,11 @@ export class BackgroundController {
     message: string,
     model: string,
     includeCurrentTab: boolean,
-  ): Promise<GeminiResponse> {
+  ): Promise<LLMResponse> {
     const apiKey = await this.getApiKey();
     if (!apiKey) {
       return {
-        error: 'Gemini API Key not set. Please set it in the sidebar.',
+        error: 'API Key not set. Please set it in the sidebar.',
       };
     }
 
@@ -228,6 +251,18 @@ export class BackgroundController {
       }
 
       // 2. Build Context
+      const recentHistory = this.chatHistory.getRecentMessages(
+        MODEL_SHORT_TERM_HISTORY_WINDOW,
+      );
+      const memoryContext = await this.memoryPipeline.buildContextPart(
+        message,
+        recentHistory,
+      );
+
+      if (this.abortController.signal.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+      }
+
       let activeContext: ContentPart[] = [];
       if (includeCurrentTab) {
         activeContext = await this.contextManager.getActiveTabContent();
@@ -241,13 +276,17 @@ export class BackgroundController {
         this.abortController.signal,
         message,
       );
-      const fullContext = [...activeContext, ...pinnedContent];
+      const fullContext = [
+        ...(memoryContext ? [memoryContext] : []),
+        ...activeContext,
+        ...pinnedContent,
+      ];
 
-      // 3. Send to Gemini
-      const response = await this.geminiService.generateContent(
+      // 3. Send to LLM
+      const response = await this.llmService.generateContent(
         apiKey,
         fullContext,
-        this.chatHistory.getMessages(),
+        recentHistory,
         model,
         this.abortController.signal,
       );
@@ -258,6 +297,11 @@ export class BackgroundController {
           role: 'model',
           text: response.reply,
         });
+        try {
+          await this.memoryPipeline.recordTurn(message, response.reply);
+        } catch (memoryError) {
+          console.error('Failed to persist agent memory:', memoryError);
+        }
       } else if (response.aborted) {
         // If aborted, we need to clean up the user message from history
         await this.chatHistory.removeLastMessage();
@@ -367,6 +411,7 @@ export class BackgroundController {
 
   private async handleClearChat(): Promise<SuccessResponse> {
     await this.chatHistory.clear();
+    await this.memoryPipeline.clear();
     await this.contextManager.clear();
     return { success: true };
   }
@@ -413,6 +458,16 @@ export class BackgroundController {
       const message = error instanceof Error ? error.message : String(error);
       return { success: false, message };
     }
+  }
+
+  private handleGetMemoryStats(): MemoryStatsResponse {
+    return {
+      success: true,
+      episodeCount: this.memoryPipeline.getEpisodeCount(),
+      maxEpisodes: MEMORY_MAX_EPISODES,
+      pinnedTabCount: this.contextManager.getPinnedTabs().length,
+      recentEpisodes: this.memoryPipeline.getRecentEpisodes(5),
+    };
   }
 
   private async getApiKey(): Promise<string | null> {
