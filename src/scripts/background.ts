@@ -26,12 +26,14 @@ import { ChromeMessageService } from './services/messageService';
 import { ChatHistory } from './models/ChatHistory';
 import { ContextManager } from './models/ContextManager';
 import { MemoryPipelineOrchestrator } from './memory/MemoryPipelineOrchestrator';
+import { NativeCompanionService } from './nativeCompanion/nativeCompanionService';
 
 const localStorageService = new ChromeLocalStorageService();
 const syncStorageService = new ChromeSyncStorageService();
 const tabService = new ChromeTabService();
 const llmService: ILLMService = new GeminiService();
 const messageService = new ChromeMessageService();
+const nativeCompanionService = new NativeCompanionService(localStorageService);
 
 const chatHistory = new ChatHistory(localStorageService);
 const memoryPipeline = new MemoryPipelineOrchestrator(localStorageService);
@@ -45,6 +47,7 @@ const controller = new BackgroundController(
   tabService,
   llmService,
   messageService,
+  nativeCompanionService,
 );
 
 controller.start();

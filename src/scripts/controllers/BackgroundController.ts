@@ -29,6 +29,7 @@ import { ISyncStorageService } from '../services/storageService';
 import { ITabService } from '../services/tabService';
 import { IMessageService } from '../services/messageService';
 import { LLMSummarizationService } from '../services/summarizationService';
+import { NativeCompanionService } from '../nativeCompanion/nativeCompanionService';
 import { isRestrictedURL } from '../utils';
 import {
   ExtensionMessage,
@@ -40,6 +41,7 @@ import {
   LLMResponse,
   ContentPart,
   MemoryStatsResponse,
+  NativeCompanionStatusResponse,
 } from '../types';
 
 export class BackgroundController {
@@ -53,6 +55,7 @@ export class BackgroundController {
     private tabService: ITabService,
     private llmService: ILLMService,
     private messageService: IMessageService,
+    private nativeCompanionService: NativeCompanionService,
   ) {
     // Wire up summarization so ContextManager can compress overflowing tabs.
     const summarizationService = new LLMSummarizationService(
@@ -67,6 +70,7 @@ export class BackgroundController {
    */
   public start() {
     this.setupEventListeners();
+    void this.nativeCompanionService.start();
     // Initial context update on startup
     this.broadcastCurrentTabInfo();
   }
@@ -208,6 +212,8 @@ export class BackgroundController {
           return await this.handleAgentdropAnimate();
         case MessageTypes.GET_MEMORY_STATS:
           return this.handleGetMemoryStats();
+        case MessageTypes.NATIVE_COMPANION_STATUS:
+          return this.handleNativeCompanionStatus();
         default:
           return {
             error: `Unknown message type: ${(request as { type: unknown }).type}`,
@@ -467,6 +473,13 @@ export class BackgroundController {
       maxEpisodes: MEMORY_MAX_EPISODES,
       pinnedTabCount: this.contextManager.getPinnedTabs().length,
       recentEpisodes: this.memoryPipeline.getRecentEpisodes(5),
+    };
+  }
+
+  private handleNativeCompanionStatus(): NativeCompanionStatusResponse {
+    return {
+      success: true,
+      state: this.nativeCompanionService.getState(),
     };
   }
 
