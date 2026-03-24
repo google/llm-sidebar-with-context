@@ -18,16 +18,17 @@ import {
   MessageTypes,
   StorageKeys,
   MODEL_SHORT_TERM_HISTORY_WINDOW,
+  MEMORY_MAX_EPISODES,
 } from '../constants';
 import { ChatHistory } from '../models/ChatHistory';
 import { ContextManager } from '../models/ContextManager';
 import { TabContext } from '../models/TabContext';
 import { MemoryPipelineOrchestrator } from '../memory/MemoryPipelineOrchestrator';
-import { IGeminiService } from '../services/geminiService';
+import { ILLMService } from '../services/llmService';
 import { ISyncStorageService } from '../services/storageService';
 import { ITabService } from '../services/tabService';
 import { IMessageService } from '../services/messageService';
-import { GeminiSummarizationService } from '../services/summarizationService';
+import { LLMSummarizationService } from '../services/summarizationService';
 import { isRestrictedURL } from '../utils';
 import {
   ExtensionMessage,
@@ -36,8 +37,9 @@ import {
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
-  GeminiResponse,
+  LLMResponse,
   ContentPart,
+  MemoryStatsResponse,
 } from '../types';
 
 export class BackgroundController {
@@ -49,12 +51,13 @@ export class BackgroundController {
     private contextManager: ContextManager,
     private syncStorageService: ISyncStorageService,
     private tabService: ITabService,
-    private geminiService: IGeminiService,
+    private llmService: ILLMService,
     private messageService: IMessageService,
   ) {
     // Wire up summarization so ContextManager can compress overflowing tabs.
-    const summarizationService = new GeminiSummarizationService(() =>
-      this.getApiKey(),
+    const summarizationService = new LLMSummarizationService(
+      this.llmService,
+      () => this.getApiKey(),
     );
     this.contextManager.setSummarizationService(summarizationService);
   }
@@ -80,6 +83,14 @@ export class BackgroundController {
         return true; // Keep the message channel open for async response
       },
     );
+
+    // Open welcome page on first install
+    chrome.runtime.onInstalled.addListener((details) => {
+      if (details.reason === 'install') {
+        const welcomeUrl = chrome.runtime.getURL('src/pages/welcome.html');
+        this.tabService.create({ url: welcomeUrl });
+      }
+    });
 
     // Update context when active tab changes
     chrome.tabs.onActivated.addListener(() => this.broadcastCurrentTabInfo());
@@ -193,6 +204,8 @@ export class BackgroundController {
             this.abortController.abort();
           }
           return { success: true };
+        case MessageTypes.GET_MEMORY_STATS:
+          return this.handleGetMemoryStats();
         default:
           return {
             error: `Unknown message type: ${(request as { type: unknown }).type}`,
@@ -217,11 +230,11 @@ export class BackgroundController {
     message: string,
     model: string,
     includeCurrentTab: boolean,
-  ): Promise<GeminiResponse> {
+  ): Promise<LLMResponse> {
     const apiKey = await this.getApiKey();
     if (!apiKey) {
       return {
-        error: 'Gemini API Key not set. Please set it in the sidebar.',
+        error: 'API Key not set. Please set it in the sidebar.',
       };
     }
 
@@ -267,8 +280,8 @@ export class BackgroundController {
         ...pinnedContent,
       ];
 
-      // 3. Send to Gemini
-      const response = await this.geminiService.generateContent(
+      // 3. Send to LLM
+      const response = await this.llmService.generateContent(
         apiKey,
         fullContext,
         recentHistory,
@@ -399,6 +412,16 @@ export class BackgroundController {
     await this.memoryPipeline.clear();
     await this.contextManager.clear();
     return { success: true };
+  }
+
+  private handleGetMemoryStats(): MemoryStatsResponse {
+    return {
+      success: true,
+      episodeCount: this.memoryPipeline.getEpisodeCount(),
+      maxEpisodes: MEMORY_MAX_EPISODES,
+      pinnedTabCount: this.contextManager.getPinnedTabs().length,
+      recentEpisodes: this.memoryPipeline.getRecentEpisodes(5),
+    };
   }
 
   private async getApiKey(): Promise<string | null> {

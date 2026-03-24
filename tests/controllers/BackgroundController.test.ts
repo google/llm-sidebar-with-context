@@ -18,7 +18,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BackgroundController } from '../../src/scripts/controllers/BackgroundController';
 import { ISyncStorageService } from '../../src/scripts/services/storageService';
 import { ITabService, ChromeTab } from '../../src/scripts/services/tabService';
-import { IGeminiService } from '../../src/scripts/services/geminiService';
+import { ILLMService } from '../../src/scripts/services/llmService';
 import { IMessageService } from '../../src/scripts/services/messageService';
 import { ChatHistory } from '../../src/scripts/models/ChatHistory';
 import { MemoryPipelineOrchestrator } from '../../src/scripts/memory/MemoryPipelineOrchestrator';
@@ -33,7 +33,7 @@ describe('BackgroundController', () => {
   let controller: BackgroundController;
   let mockSyncStorage: ISyncStorageService;
   let mockTabService: ITabService;
-  let mockGeminiService: IGeminiService;
+  let mockGeminiService: ILLMService;
   let mockMessageService: IMessageService;
   let mockChatHistory: ChatHistory;
   let mockMemoryPipeline: MemoryPipelineOrchestrator;
@@ -50,6 +50,10 @@ describe('BackgroundController', () => {
       },
       action: {
         onClicked: { addListener: vi.fn() },
+      },
+      runtime: {
+        onInstalled: { addListener: vi.fn() },
+        getURL: vi.fn((path: string) => `chrome-extension://test-id/${path}`),
       },
       sidePanel: {
         open: vi.fn(),
@@ -85,6 +89,8 @@ describe('BackgroundController', () => {
       clear: vi.fn(),
       buildContextPart: vi.fn(),
       recordTurn: vi.fn(),
+      getEpisodeCount: vi.fn().mockReturnValue(0),
+      getRecentEpisodes: vi.fn().mockReturnValue([]),
     } as unknown as MemoryPipelineOrchestrator;
 
     mockContextManager = {

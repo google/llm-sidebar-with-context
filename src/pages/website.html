@@ -1,0 +1,426 @@
+<!doctype html>
+<!--
+ Copyright 2026 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<html>
+  <head>
+    <title>LLM Sidebar with Context</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../styles/sidebar.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="website-page">
+      <!-- Sidebar Mock Frame -->
+      <div class="website-frame">
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <span class="status-pill active">
+            <span class="status-dot"></span>
+            Active
+          </span>
+          <span class="status-pill model">Flash Lite</span>
+          <span class="status-pill memory">
+            <span class="status-dot"></span>
+            67 memories
+          </span>
+        </div>
+
+        <!-- Memory Panel -->
+        <div class="memory-panel">
+          <div class="memory-panel-header expanded">
+            <span class="memory-panel-title">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+              AI Memory
+            </span>
+            <span class="memory-panel-badge">67 / 160</span>
+            <svg
+              class="memory-panel-chevron"
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+          <div class="memory-panel-body">
+            <div class="memory-indicator">
+              <span class="memory-label">Context Window</span>
+              <div class="memory-bar">
+                <div class="memory-bar-fill" style="width: 42%"></div>
+              </div>
+              <span class="memory-label">67 / 160</span>
+            </div>
+            <div class="memory-episodes">
+              <div class="memory-episode">
+                <div class="memory-episode-icon turn">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                    />
+                  </svg>
+                </div>
+                <span class="memory-episode-text"
+                  >User prefers dark mode UI</span
+                >
+                <span class="memory-episode-time">2h</span>
+              </div>
+              <div class="memory-episode">
+                <div class="memory-episode-icon turn">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                    />
+                  </svg>
+                </div>
+                <span class="memory-episode-text"
+                  >Working on a React project</span
+                >
+                <span class="memory-episode-time">5h</span>
+              </div>
+              <div class="memory-episode">
+                <div class="memory-episode-icon summary">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"
+                    />
+                    <path d="M14 2v6h6" />
+                  </svg>
+                </div>
+                <span class="memory-episode-text"
+                  >Asked about authentication best practices</span
+                >
+                <span class="memory-episode-time">1d</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mock Chat Area -->
+        <div class="website-mock-chat">
+          <!-- Welcome -->
+          <div class="welcome-container" style="padding: 16px 0; gap: 16px">
+            <div class="welcome-header">
+              <span class="welcome-badge">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                  />
+                </svg>
+                AI Sidebar
+              </span>
+              <h1 style="font-size: 20px">LLM Sidebar with Context</h1>
+              <p>
+                Context-aware AI assistant that lives in your browser sidebar.
+                Free, open source, and privacy-first.
+              </p>
+            </div>
+
+            <div class="welcome-section">
+              <h2>Features</h2>
+              <div class="welcome-cards">
+                <div class="welcome-card">
+                  <div class="welcome-card-icon purple">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M12 17v5" />
+                      <path
+                        d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"
+                      />
+                    </svg>
+                  </div>
+                  <div class="welcome-card-content">
+                    <h3>Pin Tabs as Context</h3>
+                    <p>
+                      Pin up to 6 tabs. Content is automatically extracted and
+                      fed to the AI.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="welcome-card">
+                  <div class="welcome-card-icon blue">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="m9 12 2 2 4-4" />
+                    </svg>
+                  </div>
+                  <div class="welcome-card-content">
+                    <h3>Persistent Memory</h3>
+                    <p>
+                      Conversations are remembered across sessions with
+                      intelligent retrieval.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="welcome-card">
+                  <div class="welcome-card-icon green">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
+                      />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  </div>
+                  <div class="welcome-card-content">
+                    <h3>Smart Page Reading</h3>
+                    <p>
+                      Auto-extracts content from YouTube, Google Docs, and any
+                      web page.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="welcome-section">
+              <h2>Try asking</h2>
+              <div class="welcome-prompts">
+                <div class="welcome-prompt">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"
+                    />
+                    <path d="m21.854 2.147-10.94 10.939" />
+                  </svg>
+                  "Summarize news from multiple tabs"
+                </div>
+                <div class="welcome-prompt">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"
+                    />
+                    <path d="m21.854 2.147-10.94 10.939" />
+                  </svg>
+                  "Explain this code snippet"
+                </div>
+                <div class="welcome-prompt">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"
+                    />
+                    <path d="m21.854 2.147-10.94 10.939" />
+                  </svg>
+                  "Review my document"
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mock Input -->
+        <div class="website-mock-bottom">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              border: 1.5px solid var(--border-main);
+              background: var(--bg-input);
+              border-radius: var(--radius-xl);
+              padding: 4px;
+            "
+          >
+            <span
+              style="
+                flex: 1;
+                padding: 10px 16px;
+                color: var(--text-dim);
+                font-size: 14px;
+              "
+              >Ask anything...</span
+            >
+            <button
+              style="
+                background: var(--accent-gradient);
+                border: none;
+                color: #fff;
+                padding: 8px;
+                border-radius: var(--radius-md);
+                margin: 2px;
+                cursor: pointer;
+                display: flex;
+              "
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"
+                />
+                <path d="m21.854 2.147-10.94 10.939" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA below frame -->
+      <div class="website-cta">
+        <a
+          class="website-cta-button"
+          href="https://chromewebstore.google.com"
+          target="_blank"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Install Extension
+        </a>
+        <p class="website-subtitle">
+          Free &amp; open source. Works on Chrome, Edge, Brave &amp; Vivaldi.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
