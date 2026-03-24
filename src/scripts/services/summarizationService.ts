@@ -15,27 +15,19 @@
  */
 
 import { ISummarizationService } from '../models/ContextBudgetManager';
-
-interface GeminiSummarizationResponse {
-  candidates?: Array<{
-    content: {
-      parts: Array<{ text: string }>;
-    };
-  }>;
-  error?: { message: string };
-}
+import { ILLMService } from './llmService';
+import { GeminiService } from './geminiService';
 
 /**
- * Uses a fast/cheap Gemini model to summarize tab content that exceeds
- * the per-tab context budget. This implements the "hierarchical
- * summarization" pattern from NEXUSSUM (ACL 2025) at the application
- * layer — compressing large documents into dense, information-preserving
- * summaries before they enter the main context window.
+ * Provider-agnostic summarization service that works with any ILLMService.
+ * Replaces the Gemini-specific GeminiSummarizationService.
  */
-export class GeminiSummarizationService implements ISummarizationService {
-  private readonly model = 'gemini-2.5-flash-lite';
-
-  constructor(private getApiKey: () => Promise<string | null>) {}
+export class LLMSummarizationService implements ISummarizationService {
+  constructor(
+    private llmService: ILLMService,
+    private getApiKey: () => Promise<string | null>,
+    private model?: string,
+  ) {}
 
   async summarize(
     text: string,
@@ -50,36 +42,34 @@ export class GeminiSummarizationService implements ISummarizationService {
 
     const prompt = `You are a context compression engine. Summarize the following web page content into approximately ${targetLength} characters. Preserve all key facts, data points, names, dates, code snippets, and arguments. Prioritize details relevant to the user request when one is provided, but keep globally important facts even if they are not mentioned in the request. Do NOT add commentary. Output only the summary.\n\nUser request: ${query || 'No specific request provided.'}\n\n---\n${text.substring(0, 200000)}`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        }),
-        signal,
-      },
+    const response = await this.llmService.generateContent(
+      apiKey,
+      [],
+      [{ role: 'user', text: prompt }],
+      this.model,
+      signal,
     );
 
-    const data: GeminiSummarizationResponse = await response.json();
-
-    if (data.candidates && data.candidates.length > 0) {
-      return data.candidates[0].content.parts[0].text;
+    if (response.reply) {
+      return response.reply;
     }
-    if (data.error) {
-      throw new Error(`Summarization failed: ${data.error.message}`);
+    if (response.error) {
+      throw new Error(`Summarization failed: ${response.error}`);
     }
     throw new Error('Summarization returned no content');
   }
 }
 
+/** @deprecated Use LLMSummarizationService instead */
+export class GeminiSummarizationService extends LLMSummarizationService {
+  constructor(getApiKey: () => Promise<string | null>) {
+    super(new GeminiService(), getApiKey, 'gemini-2.5-flash-lite');
+  }
+}
+
 /**
  * A no-op summarization service that simply truncates.
- * Used as a fallback when no API key is available.
+ * Used as a fallback when no API key or LLM is available.
  */
 export class TruncationSummarizationService implements ISummarizationService {
   async summarize(
