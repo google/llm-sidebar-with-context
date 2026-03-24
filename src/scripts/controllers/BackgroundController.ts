@@ -81,6 +81,14 @@ export class BackgroundController {
       },
     );
 
+    // Open welcome page on first install
+    chrome.runtime.onInstalled.addListener((details) => {
+      if (details.reason === 'install') {
+        const welcomeUrl = chrome.runtime.getURL('src/pages/welcome.html');
+        this.tabService.create({ url: welcomeUrl });
+      }
+    });
+
     // Update context when active tab changes
     chrome.tabs.onActivated.addListener(() => this.broadcastCurrentTabInfo());
 

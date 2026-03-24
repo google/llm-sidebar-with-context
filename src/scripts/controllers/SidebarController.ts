@@ -46,6 +46,7 @@ export class SidebarController {
   private modelSelect: HTMLSelectElement;
   private toggleSettingsButton: HTMLButtonElement;
   private newChatButton: HTMLButtonElement;
+  private statusModel: HTMLElement | null;
 
   private pinnedContexts: TabInfo[] = [];
   private currentTab: TabInfo | null = null;
@@ -89,6 +90,7 @@ export class SidebarController {
     this.newChatButton = document.getElementById(
       'new-chat-button',
     ) as HTMLButtonElement;
+    this.statusModel = document.getElementById('status-model');
 
     this.setupEventListeners();
   }
@@ -138,6 +140,7 @@ export class SidebarController {
         StorageKeys.SELECTED_MODEL,
         this.modelSelect.value,
       );
+      this.updateStatusBar();
     });
 
     this.promptForm.addEventListener('submit', (e) => {
@@ -195,6 +198,7 @@ export class SidebarController {
     if (selectedModel) {
       this.modelSelect.value = selectedModel;
     }
+    this.updateStatusBar();
 
     // Load Sharing Preference
     const storedSharing = await this.localStorageService.get<boolean>(
@@ -254,28 +258,80 @@ export class SidebarController {
     this.messagesDiv.innerHTML = `
       <div class="welcome-container">
         <div class="welcome-header">
-          <h1>Welcome to LLM Sidebar with Context</h1>
+          <span class="welcome-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            AI Sidebar
+          </span>
+          <h1>What can I help with?</h1>
+          <p>I can read your open tabs and answer questions about anything on the web.</p>
         </div>
 
         <div class="welcome-section">
           <h2>Quick Tips</h2>
-          <ul>
-            <li><strong>Select Model:</strong> Choose the best model for your task.</li>
-            <li><strong>Pin Tabs:</strong> Click the ${ICONS.PIN} icon to pin the current tab as context. You can pin multiple tabs.</li>
-            <li><strong>Control Privacy:</strong> Click the ${ICONS.EYE} icon to toggle auto-sharing of your current tab.</li>
-          </ul>
+          <div class="welcome-cards">
+            <div class="welcome-card">
+              <div class="welcome-card-icon purple">
+                ${ICONS.PIN}
+              </div>
+              <div class="welcome-card-content">
+                <h3>Pin Tabs</h3>
+                <p>Click the pin icon to add any tab as persistent context.</p>
+              </div>
+            </div>
+            <div class="welcome-card">
+              <div class="welcome-card-icon blue">
+                ${ICONS.EYE}
+              </div>
+              <div class="welcome-card-content">
+                <h3>Smart Context</h3>
+                <p>Toggle the eye icon to share your current page automatically.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="welcome-section">
           <h2>Try asking</h2>
-          <ul>
-            <li>"Summarize news from multiple tabs"</li>
-            <li>"Explain this code snippet"</li>
-            <li>"Review my doc"</li>
-          </ul>
+          <div class="welcome-prompts">
+            <div class="welcome-prompt" data-prompt="Summarize the key points from this page">
+              ${ICONS.SEND}
+              "Summarize the key points from this page"
+            </div>
+            <div class="welcome-prompt" data-prompt="Explain this code snippet">
+              ${ICONS.SEND}
+              "Explain this code snippet"
+            </div>
+            <div class="welcome-prompt" data-prompt="Review my document and suggest improvements">
+              ${ICONS.SEND}
+              "Review my document and suggest improvements"
+            </div>
+          </div>
         </div>
       </div>
     `;
+
+    // Add click handlers for prompt suggestions
+    this.messagesDiv.querySelectorAll('.welcome-prompt').forEach((el) => {
+      el.addEventListener('click', () => {
+        const prompt = (el as HTMLElement).dataset.prompt;
+        if (prompt) {
+          this.promptInput.value = prompt;
+          this.promptInput.focus();
+        }
+      });
+    });
+  }
+
+  private updateStatusBar() {
+    if (!this.statusModel) return;
+    const modelMap: Record<string, string> = {
+      'gemini-3-flash-preview': '3 Flash',
+      'gemini-2.5-pro': '2.5 Pro',
+      'gemini-2.5-flash': '2.5 Flash',
+      'gemini-2.5-flash-lite': 'Flash Lite',
+    };
+    this.statusModel.textContent =
+      modelMap[this.modelSelect.value] || this.modelSelect.value;
   }
 
   private async saveApiKey() {
