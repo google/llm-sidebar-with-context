@@ -87,142 +87,125 @@ void main() {
   vec2 totalDisp = vec2(0.0);
   float totalBlur = 0.0;
 
-  float impactTime = 0.40; // FIX #4: tighter timing — ball→nova overlap
+  float impactTime = 0.40;
 
   // ════════════════════════════════════════════════════════════════
-  // 1. BALL — accelerates toward GZ, kinetic energy builds
+  // SUPERNOVA BEACON — glows from the START (preboom.png)
+  // Starts dim at p=0, grows brighter as ball approaches.
+  // At impact, reaches max brightness.
+  // ════════════════════════════════════════════════════════════════
+
+  // Pre-impact: supernova beacon growing at GZ
+  float beaconGlow = ss(0.0, impactTime, p); // 0→1 during approach
+  // Post-impact: main flash then recession pulse
+  float novaPulse = 0.0;
+  float novaPhase = (p - impactTime) / 0.20;
+  if (novaPhase > 0.0 && novaPhase < 1.0) {
+    novaPulse = exp(-pow(novaPhase - 0.15, 2.0) / 0.01)
+              - exp(-pow(novaPhase - 0.5, 2.0) / 0.008) * 0.5
+              + exp(-pow(novaPhase - 0.78, 2.0) / 0.012) * 0.2;
+    novaPulse = max(0.0, novaPulse);
+  }
+  // Combined supernova intensity: beacon pre-impact + flash post-impact
+  float novaI = beaconGlow * 0.4 + novaPulse;
+  float novaRadius = 0.06 + beaconGlow * 0.04 + novaPulse * 0.06;
+
+  // Wave distortion near GZ — visible even during approach (boom.jpg)
+  float waveT = ss(0.15, impactTime, p);
+  float waveFalloff = exp(-distGZ * 4.0 / maxD);
+  float waveDisp = sin(distGZ * 40.0 - p * 20.0) * waveT * waveFalloff * 0.006;
+  totalDisp += dirGZ * waveDisp;
+
+  // ════════════════════════════════════════════════════════════════
+  // DISTORTION BALL — subtle RGB circle approaching GZ
   // ════════════════════════════════════════════════════════════════
 
   float ballT = clamp(p / impactTime, 0.0, 1.0);
   float ballEase = ballT * ballT * (3.0 - 2.0 * ballT * ballT);
   float ballDistFromGZ = (1.0 - ballEase) * 0.55;
   vec2 ballPos = uOrigin + vec2(approachSign * ballDistFromGZ / aspect, 0.0);
-  float ballRadius = 0.085 + (1.0 - ballEase) * 0.015;
-  // FIX #4: ball fades INTO the nova — no gap, overlapping transition
+  float ballRadius = 0.07;
   float ballVisible = 1.0 - ss(impactTime - 0.02, impactTime + 0.03, p);
-  float ballSpeed = ballEase * 2.0;
 
   vec2 toBall = (uv - ballPos) * ar;
   float ballD = length(toBall);
 
-  // Ball: very subtle refraction — just enough to notice, not distort
+  // Subtle refraction inside ball
   if (ballD < ballRadius && ballVisible > 0.0) {
     float nd = ballD / ballRadius;
-    float refract = (1.0 - nd * nd) * 0.008 * ballVisible; // SUBTLE
+    float refract = (1.0 - nd * nd) * 0.008 * ballVisible;
     vec2 bDir = ballD > 0.001 ? toBall / ballD : vec2(0.0);
     totalDisp += bDir * refract / ar;
   }
 
-  // FIX #2: TOP-DOWN PROGRESSIVE BLUR — builds during approach
-  // Top of screen blurs first, spreads downward as ball nears GZ
-  float topDownT = ss(0.15, impactTime, p);
-  float topDownFade = 1.0 - ss(impactTime + 0.05, impactTime + 0.15, p);
-  // uv.y=0 is top, uv.y=1 is bottom. Top blurs more.
-  float topWeight = (1.0 - uv.y) * (1.0 - uv.y); // quadratic — heavy at top
-  totalBlur += topDownT * topDownFade * topWeight * 0.014; // FIX 2: 1.7x heavier
-
-  // Pre-impact tension near GZ
-  float tensionT = ss(0.25, impactTime, p) * (1.0 - ss(impactTime, impactTime + 0.08, p));
-  float tensionFalloff = exp(-distGZ * 6.0 / maxD);
-  totalDisp += dirGZ * tensionT * tensionFalloff * 0.008;
-  totalBlur += tensionT * tensionFalloff * 0.003;
+  // Minor blur at top during approach (preboom.png annotation)
+  float topBlurT = ss(0.10, impactTime, p) * (1.0 - ss(impactTime, impactTime + 0.1, p));
+  float topWeight = max(0.0, 1.0 - uv.y * 1.5); // fades below top third
+  totalBlur += topBlurT * topWeight * 0.006;
 
   // ════════════════════════════════════════════════════════════════
-  // 2. SUPERNOVA — FIX #3: softer blob, no geometric spikes
-  //    Recession pulse: expand → suck back → re-expand into lens
+  // POST-IMPACT: proximity ripple (postboom.jpg)
+  // Single distortion band sweeping outward from GZ
   // ════════════════════════════════════════════════════════════════
 
-  float novaPulse = 0.0;
-  float novaPhase = (p - impactTime) / 0.18;
-  if (novaPhase > 0.0 && novaPhase < 1.0) {
-    novaPulse = exp(-pow(novaPhase - 0.2, 2.0) / 0.012)       // main flash
-              - exp(-pow(novaPhase - 0.5, 2.0) / 0.008) * 0.55 // FIX 15: deeper recession
-              + exp(-pow(novaPhase - 0.78, 2.0) / 0.012) * 0.25; // re-expand
-    novaPulse = max(0.0, novaPulse);
+  float rippleStart = impactTime + 0.02;
+  float rippleT = clamp((p - rippleStart) / 0.35, 0.0, 1.0);
+  if (rippleT > 0.0 && rippleT < 1.0) {
+    float rippleRadius = dampedSpring(rippleT, 6.0, 0.5) * maxD * 1.1;
+    float rippleWidth = 0.05 + rippleT * 0.04;
+    float ringDist = abs(distGZ - rippleRadius);
+    float rippleStrength = exp(-ringDist * ringDist / (rippleWidth * rippleWidth))
+                         * (1.0 - rippleT);
+    // Content bends at the wavefront
+    totalDisp += -dirGZ * rippleStrength * 0.015;
+    totalBlur += rippleStrength * 0.004;
   }
-  float novaEnv = novaPulse;
-  float novaRadius = 0.10 + novaPulse * 0.05;
-
-  // Nova pushes content away + CLEARS blur near GZ (frame 5)
-  float novaFalloff = exp(-distGZ * 5.0 / maxD);
-  totalDisp += -dirGZ * novaPulse * 0.022 * novaFalloff; // FIX 22: stronger push
-  // FIX 11: nova SUBTRACTS blur near GZ — content clears momentarily
-  float novaClear = novaFalloff * novaPulse * 0.012;
-  totalBlur = max(0.0, totalBlur - novaClear);
 
   // ════════════════════════════════════════════════════════════════
-  // 3. CONVEX LENS BUBBLE — FIX #1 & #5: asymmetric warp + elastic plop
+  // POST-BOOM: blur WHOLE PAGE, supernova area stays CLEAR
+  // (postboomt2.jpg — "blur whole page" + "supernova clearer than page")
   // ════════════════════════════════════════════════════════════════
 
-  // FIX 5: Damped spring for lens — physical overshoot + settle
+  float postBoomBlur = ss(impactTime, impactTime + 0.15, p) * (1.0 - ss(0.85, 1.0, p));
+  // Whole page gets blurred
+  totalBlur += postBoomBlur * 0.015;
+  // BUT supernova area SUBTRACTS blur — stays sharp/clear
+  float novaClearZone = exp(-distGZ * distGZ / (novaRadius * novaRadius * 4.0 + 0.001));
+  totalBlur -= novaClearZone * postBoomBlur * 0.018;
+  totalBlur = max(0.0, totalBlur);
+
+  // Lens warp that grows from GZ after impact
   float lensStart = impactTime + 0.05;
   float lensRaw = clamp((p - lensStart) / 0.50, 0.0, 1.0);
-  // omega=8 (fast), zeta=0.35 (underdamped — visible overshoot then settle)
   float lensT = lensRaw > 0.0 ? dampedSpring(lensRaw, 8.0, 0.35) : 0.0;
-
-  float lensFade = 1.0 - ss(0.90, 1.0, p);
-  // FIX 1: Blobby organic edge — perturb radius with angle-based noise
+  float lensFade = 1.0 - ss(0.88, 1.0, p);
   float lensAngle = atan(toGZ.y, toGZ.x);
-  float blobNoise = hash(floor(lensAngle * 5.0)) * 0.12 - 0.06; // ±6% variation
-  float lensRadius = lensT * maxD * (0.9 + blobNoise);
+  float blobNoise = hash(floor(lensAngle * 5.0)) * 0.10 - 0.05;
+  float lensRadius = lensT * maxD * (0.85 + blobNoise);
 
   if (distGZ < lensRadius && lensT > 0.0) {
     float nd = distGZ / max(lensRadius, 0.001);
-
-    // FIX #1: ASYMMETRIC warp — far side (top) warps MORE than near side
-    // Y-offset from origin: content above GZ gets stronger distortion
-    float yOffset = (uOrigin.y - uv.y); // positive = above origin
-    float asymmetry = 1.0 + clamp(yOffset * 2.0, -0.3, 0.8); // 0.7x..1.8x
-
+    float yOffset = (uOrigin.y - uv.y);
+    float asymmetry = 1.0 + clamp(yOffset * 2.0, -0.3, 0.8);
     float barrelShape = (1.0 - nd * nd) * (1.0 - nd * 0.3);
-    // FIX 19: organic wobble — time-varying noise perturbs barrel
-    float wobble = 1.0 + sin(lensAngle * 3.0 + p * 8.0) * 0.08;
-    float barrelStrength = barrelShape * lensT * lensFade * 0.04 * asymmetry * wobble;
-    // FIX 20: magnification — pull sample TOWARD pixel (content appears larger)
-    // This adds a scale component on top of translation
-    float magStrength = barrelShape * lensT * lensFade * 0.008 * asymmetry;
-    vec2 magDisp = (uv - uOrigin) * magStrength; // scale outward from GZ
-    totalDisp += -dirGZ * barrelStrength + magDisp;
-
-    // Blur also asymmetric — heavier at top
-    float lensBlur = (1.0 - nd * nd) * lensT * lensFade * 0.012 * asymmetry; // FIX 2: 1.7x
-    totalBlur += lensBlur;
+    float wobble = 1.0 + sin(lensAngle * 3.0 + p * 8.0) * 0.06;
+    float barrelStrength = barrelShape * lensT * lensFade * 0.03 * asymmetry * wobble;
+    totalDisp += -dirGZ * barrelStrength;
   }
 
-  // Chromatic fringe + refraction bump at lens edge
-  float lensEdgeDist = abs(distGZ - lensRadius);
-  float edgeWidth = 0.005 + 0.003 * max(lensRadius, 0.01);
-  float lensEdge = exp(-lensEdgeDist * lensEdgeDist / edgeWidth);
-  float fringeStrength = lensEdge * lensT * lensFade;
+  // Impact screen-shake
+  float shakeEnv = bell(p, impactTime + 0.01, 0.015);
+  totalDisp += vec2(sin(p * 200.0) * 0.003, cos(p * 170.0) * 0.002) * shakeEnv;
 
-  // FIX 26: Refraction bump — content shifts at the lens boundary
-  // Like a physical membrane: pixels at the edge get pushed outward
-  float edgeBump = lensEdge * lensT * lensFade * 0.008;
-  totalDisp += -dirGZ * edgeBump;
-
-  // FIX 27: Impact screen-shake — tiny whole-frame jolt at collision
-  float shakeEnv = bell(p, impactTime + 0.01, 0.015); // very short burst
-  vec2 shake = vec2(
-    sin(p * 200.0) * 0.003,
-    cos(p * 170.0) * 0.002
-  ) * shakeEnv;
-  totalDisp += shake;
-
-  // FIX 28: Softer bottom protection — gentler gradient
-  float bottomProtect = ss(0.80, 0.92, uv.y);
-  totalDisp *= (1.0 - bottomProtect * 0.5);    // reduce displacement 50%
-  totalBlur *= (1.0 - bottomProtect * 0.6);    // reduce blur 60%
-
-  // ════════════════════════════════════════════════════════════════
-  // SAMPLE — 11 taps
-  // ════════════════════════════════════════════════════════════════
-
-  // FIX 17: Snap-back at very end — slight overshoot past rest
+  // Snap-back at end
   if (p > 0.92) {
     float snapT = (p - 0.92) / 0.08;
-    float snapBack = sin(snapT * 3.14159) * 0.005 * (1.0 - snapT);
-    totalDisp *= (1.0 + snapBack * 3.0); // displacement overshoots then returns
+    totalDisp *= 1.0 + sin(snapT * 3.14159) * 0.005 * (1.0 - snapT) * 3.0;
   }
+
+  // ════════════════════════════════════════════════════════════════
+  // SAMPLE with blur
+  // ════════════════════════════════════════════════════════════════
 
   vec2 sampleUV = uv + totalDisp;
   vec3 color = vec3(0.0);
@@ -235,21 +218,13 @@ void main() {
     for (int i = -5; i <= 5; i++) {
       float fi = float(i);
       float w = exp(-fi * fi * 0.16);
-      vec2 off = blurDir * fi * totalBlur + perpDir * fi * totalBlur * 0.18;
+      vec2 off = blurDir * fi * totalBlur + perpDir * fi * totalBlur * 0.25;
       color += texture(uPage, clamp(sampleUV + off, 0.0, 1.0)).rgb * w;
       totalW += w;
     }
     color /= totalW;
   } else {
     color = texture(uPage, clamp(sampleUV, 0.0, 1.0)).rgb;
-  }
-
-  // FIX 13: Chromatic aberration at lens edge — split R/G/B sampling
-  if (fringeStrength > 0.03 && lensRadius > 0.01) {
-    vec2 chromaDir = dirGZ / ar;
-    float chromaAmt = fringeStrength * 0.006;
-    color.r = texture(uPage, clamp(sampleUV + chromaDir * chromaAmt, 0.0, 1.0)).r;
-    color.b = texture(uPage, clamp(sampleUV - chromaDir * chromaAmt, 0.0, 1.0)).b;
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -278,34 +253,34 @@ void main() {
     color += vec3(0.6, 0.7, 1.0) * rim * ballVisible * 0.2;
   }
 
-  // FIX #3: Supernova — soft organic blob, NOT geometric spikes
-  if (novaEnv > 0.01) {
-    // Vertical elongation for column shape
-    vec2 novaD = (uv - uOrigin) * ar * vec2(1.0, 2.2); // FIX 3: more vertical column
+  // Supernova beacon + flash — glows from START, peaks at impact
+  // (preboom.png: "supernova emitting as soon as distortion ball starts")
+  if (novaI > 0.01) {
+    vec2 novaD = (uv - uOrigin) * ar * vec2(1.0, 2.0);
     float novaDist = length(novaD);
 
-    // White-hot core — soft Gaussian, no hard edges
-    float coreR = novaRadius * 0.35;
+    // White-hot core
+    float coreR = novaRadius * 0.4;
     float coreF = exp(-novaDist * novaDist / (coreR * coreR + 0.0001));
-    color = mix(color, vec3(1.0), clamp(coreF * novaEnv * 3.5, 0.0, 0.98));
+    color = mix(color, vec3(1.0), clamp(coreF * novaI * 2.5, 0.0, 0.98));
 
-    // Warm soft bloom — wider, organic falloff
-    float bloomR = novaRadius * 0.9;
+    // Warm bloom
+    float bloomR = novaRadius * 1.0;
     float bloomF = exp(-novaDist * novaDist / (bloomR * bloomR + 0.0001));
-    color = mix(color, vec3(1.0, 0.97, 0.93), clamp(bloomF * novaEnv * 1.0, 0.0, 0.65));
+    color = mix(color, vec3(1.0, 0.97, 0.93), clamp(bloomF * novaI * 0.8, 0.0, 0.6));
 
-    // Red/pink lip — soft donut, no sharp edges
-    float lipR = novaRadius * 0.7;
-    float lipDist = abs(novaDist - lipR);
-    float lipF = exp(-lipDist * lipDist / (0.004 + 0.002 * novaRadius));
-    float lipI = lipF * novaEnv * 0.6;
-    color += vec3(0.85, 0.12, 0.22) * lipI;
-    color += vec3(0.65, 0.08, 0.35) * lipI * 0.3;
+    // Red/pink lip
+    float lipR = novaRadius * 0.75;
+    float lipDist2 = abs(novaDist - lipR);
+    float lipF = exp(-lipDist2 * lipDist2 / (0.004 + 0.002 * novaRadius));
+    float lipVal = lipF * novaI * 0.5;
+    color += vec3(0.85, 0.12, 0.22) * lipVal;
+    color += vec3(0.65, 0.08, 0.35) * lipVal * 0.3;
 
-    // Soft outer haze (replaces geometric spikes)
-    float hazeR = novaRadius * 2.0;
+    // Soft outer haze
+    float hazeR = novaRadius * 2.2;
     float hazeF = exp(-novaDist * novaDist / (hazeR * hazeR));
-    color += vec3(1.0, 0.94, 0.96) * hazeF * novaEnv * 0.1;
+    color += vec3(1.0, 0.94, 0.96) * hazeF * novaI * 0.08;
   }
 
   // Purple/blue hue shift inside lens — FIX 12: concentrated at top
@@ -592,36 +567,38 @@ function runOverlayAnimation(
         smoothstep(0.25, impactTime, p) *
         (1 - smoothstep(impactTime, impactTime + 0.1, p));
 
-      // ── 2. Supernova — recession pulse: expand → suck back → re-expand ──
+      // ── 2. Supernova beacon — glows from START, peaks at impact ──
+      const beaconGlow = smoothstep(0.0, impactTime, p);
       const novaPhase = (p - impactTime) / 0.2;
       let novaPulse = 0;
       if (novaPhase > 0 && novaPhase < 1) {
-        const d1 = novaPhase - 0.2;
+        const d1 = novaPhase - 0.15;
         const d2 = novaPhase - 0.5;
         const d3 = novaPhase - 0.78;
         novaPulse = Math.max(
           0,
-          Math.exp(-(d1 * d1) / 0.012) -
-            Math.exp(-(d2 * d2) / 0.008) * 0.55 +
-            Math.exp(-(d3 * d3) / 0.012) * 0.25,
+          Math.exp(-(d1 * d1) / 0.01) -
+            Math.exp(-(d2 * d2) / 0.008) * 0.5 +
+            Math.exp(-(d3 * d3) / 0.012) * 0.2,
         );
       }
-      const novaEnv = novaPulse;
-      if (novaEnv > 0.02) {
+      const novaI = beaconGlow * 0.4 + novaPulse;
+      const novaRadius = 20 + beaconGlow * 12 + novaPulse * 18;
+      if (novaI > 0.02) {
         // White core — HOT, small, bright
-        const coreR = 15 + novaEnv * 8;
+        const coreR = 15 + novaI * 8;
         const coreG = ctx.createRadialGradient(ox, oy, 0, ox, oy, coreR);
         coreG.addColorStop(
           0,
-          `rgba(255, 255, 255, ${Math.min(novaEnv * 1.5, 1)})`,
+          `rgba(255, 255, 255, ${Math.min(novaI * 1.5, 1)})`,
         );
-        coreG.addColorStop(0.5, `rgba(255, 252, 250, ${novaEnv * 0.8})`);
+        coreG.addColorStop(0.5, `rgba(255, 252, 250, ${novaI * 0.8})`);
         coreG.addColorStop(1, 'rgba(255, 248, 245, 0)');
         ctx.fillStyle = coreG;
         ctx.fillRect(ox - coreR, oy - coreR * 1.3, coreR * 2, coreR * 2.6);
 
         // Red/pink lip around the core
-        const lipR = coreR * 1.8;
+        const lipR = novaRadius * 0.9;
         const lipG = ctx.createRadialGradient(
           ox,
           oy,
@@ -631,8 +608,8 @@ function runOverlayAnimation(
           lipR,
         );
         lipG.addColorStop(0, 'rgba(255, 50, 80, 0)');
-        lipG.addColorStop(0.4, `rgba(230, 40, 70, ${novaEnv * 0.35})`);
-        lipG.addColorStop(0.7, `rgba(200, 30, 100, ${novaEnv * 0.2})`);
+        lipG.addColorStop(0.4, `rgba(230, 40, 70, ${novaI * 0.35})`);
+        lipG.addColorStop(0.7, `rgba(200, 30, 100, ${novaI * 0.2})`);
         lipG.addColorStop(1, 'rgba(180, 20, 120, 0)');
         ctx.fillStyle = lipG;
         ctx.fillRect(ox - lipR, oy - lipR, lipR * 2, lipR * 2);
@@ -640,14 +617,14 @@ function runOverlayAnimation(
         // Lens flare spikes — 4 lines radiating from center
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
-        const spikeLen = 20 + novaEnv * 30;
+        const spikeLen = 20 + novaI * 30;
         for (let i = 0; i < 4; i++) {
           const angle = (i * Math.PI) / 2 + 0.3; // rotated 17deg
           const sx = Math.cos(angle) * spikeLen;
           const sy = Math.sin(angle) * spikeLen;
           const sg = ctx.createLinearGradient(ox, oy, ox + sx, oy + sy);
-          sg.addColorStop(0, `rgba(255, 255, 255, ${novaEnv * 0.7})`);
-          sg.addColorStop(0.3, `rgba(255, 220, 240, ${novaEnv * 0.3})`);
+          sg.addColorStop(0, `rgba(255, 255, 255, ${novaI * 0.7})`);
+          sg.addColorStop(0.3, `rgba(255, 220, 240, ${novaI * 0.3})`);
           sg.addColorStop(1, 'rgba(255, 200, 230, 0)');
           ctx.strokeStyle = sg;
           ctx.lineWidth = 1.5;
@@ -666,7 +643,7 @@ function runOverlayAnimation(
         // Outer warm haze
         const hazeR = lipR * 1.5;
         const hazeG = ctx.createRadialGradient(ox, oy, 0, ox, oy, hazeR);
-        hazeG.addColorStop(0, `rgba(255, 250, 252, ${novaEnv * 0.06})`);
+        hazeG.addColorStop(0, `rgba(255, 250, 252, ${novaI * 0.06})`);
         hazeG.addColorStop(1, 'rgba(255, 245, 248, 0)');
         ctx.fillStyle = hazeG;
         ctx.fillRect(ox - hazeR, oy - hazeR, hazeR * 2, hazeR * 2);
@@ -687,10 +664,13 @@ function runOverlayAnimation(
       const lensFade = 1 - smoothstep(0.9, 1.0, p);
       const lensR = lensT * Math.max(w, h) * 0.6;
 
-      // Blur + pull driven by lens energy
-      const blurPx = lensT * lensFade * 8;
+      // Post-impact: blur WHOLE sidebar (postboomt2.jpg)
+      const postBoomBlur =
+        smoothstep(impactTime, impactTime + 0.15, p) *
+        (1 - smoothstep(0.85, 1.0, p));
+      const blurPx = postBoomBlur * 10 + lensT * lensFade * 3;
       const pullPx =
-        (tensionT * 6 + lensT * lensFade * 8) * (originUV[0] < 0.5 ? 1 : -1);
+        (tensionT * 6 + lensT * lensFade * 6) * (originUV[0] < 0.5 ? 1 : -1);
       sidebarContent.style.filter = blurPx > 0.3 ? `blur(${blurPx}px)` : '';
       sidebarContent.style.transform =
         Math.abs(pullPx) > 0.3 ? `translateX(${pullPx}px)` : '';
