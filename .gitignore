@@ -5,3 +5,6 @@ coverage
 GEMINI.md
 work_diary.md
 .env
+*.pem
+*.crx
+native/target

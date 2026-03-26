@@ -10,6 +10,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
+    "pack-crx": "node build-scripts/pack-crx.js",
     "prepare": "husky"
   },
   "repository": {
