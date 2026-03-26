@@ -19,7 +19,11 @@ import { ContextManager } from '../../src/scripts/models/ContextManager';
 import { TabContext } from '../../src/scripts/models/TabContext';
 import { ILocalStorageService } from '../../src/scripts/services/storageService';
 import { ITabService, ChromeTab } from '../../src/scripts/services/tabService';
-import { StorageKeys, CONTEXT_MESSAGES } from '../../src/scripts/constants';
+import {
+  StorageKeys,
+  CONTEXT_MESSAGES,
+  MAX_AUTO_PINNED_TABS,
+} from '../../src/scripts/constants';
 
 describe('ContextManager', () => {
   let contextManager: ContextManager;
@@ -682,6 +686,178 @@ describe('ContextManager', () => {
       const pinned = contextManager.getPinnedTabs();
       expect(pinned).toHaveLength(1);
       expect(pinned[0].favIconUrl).toBe('https://new.com/icon.png');
+    });
+  });
+
+  describe('autoPin', () => {
+    it('should auto-pin a tab with autoPinned=true', async () => {
+      const tab = new TabContext(
+        1,
+        'https://example.com',
+        'Example',
+        mockTabService,
+      );
+
+      await contextManager.autoPin(tab);
+
+      const pinned = contextManager.getPinnedTabs();
+      expect(pinned).toHaveLength(1);
+      expect(pinned[0].autoPinned).toBe(true);
+      expect(mockLocalStorageService.set).toHaveBeenCalled();
+    });
+
+    it('should be idempotent for already pinned tabs', async () => {
+      const tab = new TabContext(
+        1,
+        'https://example.com',
+        'Example',
+        mockTabService,
+      );
+
+      await contextManager.autoPin(tab);
+      await contextManager.autoPin(tab);
+
+      expect(contextManager.getPinnedTabs()).toHaveLength(1);
+    });
+
+    it('should skip restricted URLs silently', async () => {
+      const tab = new TabContext(
+        1,
+        'chrome://settings',
+        'Settings',
+        mockTabService,
+      );
+
+      await contextManager.autoPin(tab);
+
+      expect(contextManager.getPinnedTabs()).toHaveLength(0);
+    });
+
+    it('should skip tabs with no URL silently', async () => {
+      const tab = new TabContext(1, '', 'Empty', mockTabService);
+
+      await contextManager.autoPin(tab);
+
+      expect(contextManager.getPinnedTabs()).toHaveLength(0);
+    });
+
+    it('should evict oldest auto-pinned tab when limit exceeded', async () => {
+      // Fill up to the limit
+      for (let i = 0; i < MAX_AUTO_PINNED_TABS; i++) {
+        const tab = new TabContext(
+          i + 1,
+          `https://site${i}.com`,
+          `Site ${i}`,
+          mockTabService,
+        );
+        await contextManager.autoPin(tab);
+      }
+
+      expect(contextManager.getPinnedTabs()).toHaveLength(MAX_AUTO_PINNED_TABS);
+
+      // Add one more — should evict the first
+      const newTab = new TabContext(
+        999,
+        'https://new-site.com',
+        'New Site',
+        mockTabService,
+      );
+      await contextManager.autoPin(newTab);
+
+      const pinned = contextManager.getPinnedTabs();
+      expect(pinned).toHaveLength(MAX_AUTO_PINNED_TABS);
+      // Oldest (id=1) should have been evicted
+      expect(pinned.find((t) => t.tabId === 1)).toBeUndefined();
+      // Newest should be present
+      expect(pinned.find((t) => t.tabId === 999)).toBeDefined();
+    });
+
+    it('should not evict manually pinned tabs during LRU eviction', async () => {
+      // Manually pin a tab first
+      const manualTab = new TabContext(
+        1,
+        'https://manual.com',
+        'Manual',
+        mockTabService,
+      );
+      await contextManager.addTab(manualTab);
+      expect(manualTab.autoPinned).toBe(false);
+
+      // Fill auto-pin up to the limit
+      for (let i = 0; i < MAX_AUTO_PINNED_TABS; i++) {
+        const tab = new TabContext(
+          i + 100,
+          `https://auto${i}.com`,
+          `Auto ${i}`,
+          mockTabService,
+        );
+        await contextManager.autoPin(tab);
+      }
+
+      // Add one more auto-pin — should evict oldest auto-pin, NOT the manual one
+      const overflow = new TabContext(
+        9999,
+        'https://overflow.com',
+        'Overflow',
+        mockTabService,
+      );
+      await contextManager.autoPin(overflow);
+
+      const pinned = contextManager.getPinnedTabs();
+      // Manual tab should still be present
+      expect(pinned.find((t) => t.tabId === 1)).toBeDefined();
+      // Oldest auto-pin (id=100) should be evicted
+      expect(pinned.find((t) => t.tabId === 100)).toBeUndefined();
+    });
+
+    it('should persist autoPinned flag in save and restore in load', async () => {
+      const tab = new TabContext(
+        42,
+        'https://auto.com',
+        'Auto Tab',
+        mockTabService,
+        'https://auto.com/icon.png',
+      );
+      await contextManager.autoPin(tab);
+
+      // Verify save includes autoPinned
+      expect(mockLocalStorageService.set).toHaveBeenCalledWith(
+        StorageKeys.PINNED_CONTEXTS,
+        expect.arrayContaining([
+          expect.objectContaining({ id: 42, autoPinned: true }),
+        ]),
+      );
+
+      // Simulate load
+      vi.mocked(mockLocalStorageService.get).mockResolvedValue([
+        {
+          id: 42,
+          url: 'https://auto.com',
+          title: 'Auto Tab',
+          favIconUrl: 'https://auto.com/icon.png',
+          autoPinned: true,
+        },
+      ]);
+      vi.mocked(mockTabService.getTab).mockResolvedValue({
+        id: 42,
+        url: 'https://auto.com',
+        title: 'Auto Tab',
+        status: 'complete',
+        active: false,
+        windowId: 1,
+        discarded: false,
+        favIconUrl: 'https://auto.com/icon.png',
+      });
+
+      const newManager = new ContextManager(
+        mockLocalStorageService,
+        mockTabService,
+      );
+      await newManager.load();
+
+      const pinned = newManager.getPinnedTabs();
+      expect(pinned).toHaveLength(1);
+      expect(pinned[0].autoPinned).toBe(true);
     });
   });
 });

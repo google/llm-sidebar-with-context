@@ -21,6 +21,7 @@ export interface TabInfo {
   title: string;
   url: string;
   favIconUrl?: string;
+  autoPinned?: boolean;
 }
 
 export interface ChatMessage {
@@ -99,6 +100,14 @@ export interface GetMemoryStatsRequest {
   type: typeof MessageTypes.GET_MEMORY_STATS;
 }
 
+export interface GetCurrentTabRequest {
+  type: typeof MessageTypes.GET_CURRENT_TAB;
+}
+
+export interface GetCurrentTabResponse {
+  tab: TabInfo | null;
+}
+
 export interface MemoryEpisodeSummary {
   id: string;
   kind: 'turn' | 'summary';
@@ -137,7 +146,8 @@ export type ExtensionMessage =
   | CurrentTabInfoMessage
   | StopGenerationRequest
   | AgentdropAnimateRequest
-  | GetMemoryStatsRequest;
+  | GetMemoryStatsRequest
+  | GetCurrentTabRequest;
 
 export interface LLMResponse {
   reply?: string;
@@ -174,4 +184,5 @@ export type ExtensionResponse =
   | SuccessResponse
   | CheckPinnedTabsResponse
   | GetHistoryResponse
-  | MemoryStatsResponse;
+  | MemoryStatsResponse
+  | GetCurrentTabResponse;

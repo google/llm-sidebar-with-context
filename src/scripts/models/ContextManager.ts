@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { StorageKeys } from '../constants';
+import { StorageKeys, MAX_AUTO_PINNED_TABS } from '../constants';
 import { TabContext } from './TabContext';
 import { isRestrictedURL } from '../utils';
 import { TabInfo, ContentPart } from '../types';
@@ -54,6 +54,24 @@ export class ContextManager {
       return;
     }
     this.pinnedTabs.push(tab);
+    await this.save();
+  }
+
+  async autoPin(tab: TabContext): Promise<void> {
+    tab.autoPinned = true;
+    if (this.isTabPinned(tab.tabId)) {
+      return;
+    }
+    if (!tab.url || isRestrictedURL(tab.url)) {
+      return;
+    }
+    this.pinnedTabs.push(tab);
+    // LRU eviction: remove oldest auto-pinned tabs when over limit
+    const autoPinned = this.pinnedTabs.filter((t) => t.autoPinned);
+    while (autoPinned.length > MAX_AUTO_PINNED_TABS) {
+      const oldest = autoPinned.shift()!;
+      this.pinnedTabs = this.pinnedTabs.filter((t) => t.tabId !== oldest.tabId);
+    }
     await this.save();
   }
 
@@ -178,6 +196,7 @@ export class ContextManager {
                 tab.title || s.title || 'Untitled',
                 this.tabService,
                 tab.favIconUrl || s.favIconUrl,
+                s.autoPinned,
               ),
             );
           }
@@ -197,6 +216,7 @@ export class ContextManager {
       title: t.title,
       url: t.url,
       favIconUrl: t.favIconUrl,
+      autoPinned: t.autoPinned,
     }));
     await this.localStorageService.set(StorageKeys.PINNED_CONTEXTS, infos);
   }

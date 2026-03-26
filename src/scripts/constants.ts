@@ -16,6 +16,7 @@
 
 export const MAX_CONTEXT_LENGTH = 250000;
 export const MAX_PINNED_TABS = 6;
+export const MAX_AUTO_PINNED_TABS = 50;
 export const MODEL_SHORT_TERM_HISTORY_WINDOW = 12;
 
 export const MEMORY_MAX_EPISODES = 160;
@@ -150,6 +151,7 @@ export const MessageTypes = {
   STOP_GENERATION: 'stopGeneration',
   AGENTDROP_ANIMATE: 'agentdropAnimate',
   GET_MEMORY_STATS: 'getMemoryStats',
+  GET_CURRENT_TAB: 'getCurrentTab',
 } as const;
 
 export const StorageKeys = {
