@@ -130,13 +130,7 @@ void main() {
   vec2 toBall = (uv - ballPos) * ar;
   float ballD = length(toBall);
 
-  // Subtle refraction inside ball
-  if (ballD < ballRadius && ballVisible > 0.0) {
-    float nd = ballD / ballRadius;
-    float refract = (1.0 - nd * nd) * 0.008 * ballVisible;
-    vec2 bDir = ballD > 0.001 ? toBall / ballD : vec2(0.0);
-    totalDisp += bDir * refract / ar;
-  }
+  // Ball: NO displacement/warp — purely a color overlay (see below)
 
   // Minor blur at top during approach (preboom.png annotation)
   float topBlurT = ss(0.10, impactTime, p) * (1.0 - ss(impactTime, impactTime + 0.1, p));
