@@ -21,6 +21,7 @@ export interface TabInfo {
   title: string;
   url: string;
   favIconUrl?: string;
+  autoPinned?: boolean;
 }
 
 export interface ChatMessage {
@@ -97,6 +98,14 @@ export interface AgentdropAnimateRequest {
 
 export interface GetMemoryStatsRequest {
   type: typeof MessageTypes.GET_MEMORY_STATS;
+}
+
+export interface GetCurrentTabRequest {
+  type: typeof MessageTypes.GET_CURRENT_TAB;
+}
+
+export interface GetCurrentTabResponse {
+  tab: TabInfo | null;
 }
 
 export interface NativeCompanionStatusRequest {
@@ -262,6 +271,7 @@ export type ExtensionMessage =
   | StopGenerationRequest
   | AgentdropAnimateRequest
   | GetMemoryStatsRequest
+  | GetCurrentTabRequest
   | NativeCompanionStatusRequest;
 
 export interface LLMResponse {
@@ -300,4 +310,5 @@ export type ExtensionResponse =
   | CheckPinnedTabsResponse
   | GetHistoryResponse
   | MemoryStatsResponse
+  | GetCurrentTabResponse
   | NativeCompanionStatusResponse;

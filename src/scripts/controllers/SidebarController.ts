@@ -23,6 +23,7 @@ import {
   TabInfo,
   GeminiResponse,
   GetContextResponse,
+  GetCurrentTabResponse,
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
@@ -63,6 +64,7 @@ export class SidebarController {
   private currentTab: TabInfo | null = null;
   private isCurrentTabShared: boolean = true;
   private isGenerating: boolean = false;
+  private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private syncStorageService: ISyncStorageService,
@@ -211,6 +213,13 @@ export class SidebarController {
         }
       },
     );
+
+    // Pull-based refresh: recover from missed push messages
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.refreshCurrentTab();
+      }
+    });
   }
 
   public async start() {
@@ -263,6 +272,9 @@ export class SidebarController {
 
     // Load memory stats
     await this.refreshMemoryStats();
+
+    // Periodic heartbeat to catch missed tab updates
+    this.refreshInterval = setInterval(() => this.refreshCurrentTab(), 2000);
   }
 
   private async loadHistory() {
@@ -688,7 +700,9 @@ export class SidebarController {
       const faviconHtml = context.favIconUrl
         ? `<img src="${context.favIconUrl}" class="favicon" alt="${context.title}" />`
         : '';
-      const statusBadge = `<span class="pinned-status active">Pinned</span>`;
+      const statusBadge = context.autoPinned
+        ? `<span class="pinned-status auto">Auto</span>`
+        : `<span class="pinned-status active">Pinned</span>`;
       const buttons = `
         <button class="icon-button unpin-button" data-id="${context.id}" title="Unpin this tab">
           ${ICONS.CLOSE}
@@ -721,6 +735,28 @@ export class SidebarController {
     );
     if (this.currentTab) {
       this.updateCurrentTabInfo(this.currentTab);
+    }
+  }
+
+  private async refreshCurrentTab() {
+    try {
+      const response =
+        await this.messageService.sendMessage<GetCurrentTabResponse>({
+          type: MessageTypes.GET_CURRENT_TAB,
+        });
+      if (response && response.tab) {
+        // Only update if the tab actually changed
+        if (
+          !this.currentTab ||
+          this.currentTab.id !== response.tab.id ||
+          this.currentTab.url !== response.tab.url ||
+          this.currentTab.title !== response.tab.title
+        ) {
+          this.updateCurrentTabInfo(response.tab);
+        }
+      }
+    } catch {
+      // Silently ignore - background may be restarting
     }
   }
 

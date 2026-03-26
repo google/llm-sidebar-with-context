@@ -102,6 +102,7 @@ describe('BackgroundController', () => {
       getAllContent: vi.fn(),
       getPinnedTabs: vi.fn(),
       addTab: vi.fn(),
+      autoPin: vi.fn(),
       removeTab: vi.fn(),
       clear: vi.fn(),
       isTabPinned: vi.fn(),
@@ -856,6 +857,134 @@ describe('BackgroundController', () => {
       });
 
       expect(response).toEqual({ success: false, error: 'Load Error' });
+    });
+
+    it('should handle GET_CURRENT_TAB with an active tab', async () => {
+      vi.mocked(mockTabService.query).mockResolvedValue([
+        {
+          id: 42,
+          url: 'https://example.com',
+          title: 'Example',
+          favIconUrl: 'https://example.com/icon.png',
+        } as ChromeTab,
+      ]);
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.GET_CURRENT_TAB,
+      });
+
+      expect(response).toEqual({
+        tab: {
+          id: 42,
+          title: 'Example',
+          url: 'https://example.com',
+          favIconUrl: 'https://example.com/icon.png',
+        },
+      });
+    });
+
+    it('should handle GET_CURRENT_TAB with no active tab', async () => {
+      vi.mocked(mockTabService.query).mockResolvedValue([]);
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.GET_CURRENT_TAB,
+      });
+
+      expect(response).toEqual({ tab: null });
+    });
+  });
+
+  describe('auto-pin', () => {
+    it('should auto-pin the tab when onActivated fires', async () => {
+      vi.mocked(mockTabService.getTab).mockResolvedValue({
+        id: 5,
+        url: 'https://auto.com',
+        title: 'Auto Page',
+        active: true,
+        discarded: false,
+        windowId: 1,
+      } as ChromeTab);
+
+      controller.start();
+      const activationListener = vi.mocked(chrome.tabs.onActivated.addListener)
+        .mock.calls[0][0];
+
+      activationListener({
+        tabId: 5,
+        windowId: 1,
+      } as chrome.tabs.TabActiveInfo);
+
+      // Wait for async auto-pin operations to complete
+      await vi.waitFor(() => {
+        expect(mockContextManager.autoPin).toHaveBeenCalled();
+      });
+
+      expect(mockContextManager.load).toHaveBeenCalled();
+      expect(mockContextManager.autoPin).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tabId: 5,
+          url: 'https://auto.com',
+          autoPinned: true,
+        }),
+      );
+    });
+
+    it('should auto-pin when active tab navigates to a new URL', async () => {
+      vi.mocked(mockTabService.getTab).mockResolvedValue({
+        id: 10,
+        url: 'https://new-url.com',
+        title: 'New URL',
+        active: true,
+        discarded: false,
+        windowId: 1,
+      } as ChromeTab);
+
+      controller.start();
+      const updateListener = vi.mocked(chrome.tabs.onUpdated.addListener).mock
+        .calls[0][0];
+
+      updateListener(
+        10,
+        { url: 'https://new-url.com' } as chrome.tabs.TabChangeInfo,
+        { id: 10, active: true } as ChromeTab,
+      );
+
+      await vi.waitFor(() => {
+        expect(mockContextManager.autoPin).toHaveBeenCalled();
+      });
+
+      expect(mockContextManager.autoPin).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tabId: 10,
+          url: 'https://new-url.com',
+          autoPinned: true,
+        }),
+      );
+    });
+
+    it('should not auto-pin restricted URLs', async () => {
+      vi.mocked(mockTabService.getTab).mockResolvedValue({
+        id: 7,
+        url: 'chrome://settings',
+        title: 'Settings',
+        active: true,
+        discarded: false,
+        windowId: 1,
+      } as ChromeTab);
+
+      controller.start();
+      const activationListener = vi.mocked(chrome.tabs.onActivated.addListener)
+        .mock.calls[0][0];
+
+      activationListener({
+        tabId: 7,
+        windowId: 1,
+      } as chrome.tabs.TabActiveInfo);
+
+      // Give async operations time to complete
+      await new Promise((r) => setTimeout(r, 50));
+
+      expect(mockContextManager.autoPin).not.toHaveBeenCalled();
     });
   });
 });

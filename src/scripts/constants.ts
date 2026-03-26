@@ -156,6 +156,7 @@ export const MessageTypes = {
   STOP_GENERATION: 'stopGeneration',
   AGENTDROP_ANIMATE: 'agentdropAnimate',
   GET_MEMORY_STATS: 'getMemoryStats',
+  GET_CURRENT_TAB: 'getCurrentTab',
   NATIVE_COMPANION_STATUS: 'nativeCompanionStatus',
 } as const;
 

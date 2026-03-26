@@ -5,5 +5,8 @@ coverage
 GEMINI.md
 work_diary.md
 .env
+*.pem
+*.crx
+native/target
 native/overlay-companion/target
 test-harness/native-companion/.tmp

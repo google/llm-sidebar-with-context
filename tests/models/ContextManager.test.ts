@@ -684,4 +684,107 @@ describe('ContextManager', () => {
       expect(pinned[0].favIconUrl).toBe('https://new.com/icon.png');
     });
   });
+
+  describe('autoPin', () => {
+    it('should auto-pin a tab with autoPinned=true', async () => {
+      const tab = new TabContext(
+        1,
+        'https://example.com',
+        'Example',
+        mockTabService,
+      );
+
+      await contextManager.autoPin(tab);
+
+      const pinned = contextManager.getPinnedTabs();
+      expect(pinned).toHaveLength(1);
+      expect(pinned[0].autoPinned).toBe(true);
+      expect(mockLocalStorageService.set).toHaveBeenCalled();
+    });
+
+    it('should be idempotent for already pinned tabs', async () => {
+      const tab = new TabContext(
+        1,
+        'https://example.com',
+        'Example',
+        mockTabService,
+      );
+
+      await contextManager.autoPin(tab);
+      await contextManager.autoPin(tab);
+
+      expect(contextManager.getPinnedTabs()).toHaveLength(1);
+    });
+
+    it('should skip restricted URLs silently', async () => {
+      const tab = new TabContext(
+        1,
+        'chrome://settings',
+        'Settings',
+        mockTabService,
+      );
+
+      await contextManager.autoPin(tab);
+
+      expect(contextManager.getPinnedTabs()).toHaveLength(0);
+    });
+
+    it('should skip tabs with no URL silently', async () => {
+      const tab = new TabContext(1, '', 'Empty', mockTabService);
+
+      await contextManager.autoPin(tab);
+
+      expect(contextManager.getPinnedTabs()).toHaveLength(0);
+    });
+
+    it('should persist autoPinned flag in save and restore in load', async () => {
+      const tab = new TabContext(
+        42,
+        'https://auto.com',
+        'Auto Tab',
+        mockTabService,
+        'https://auto.com/icon.png',
+      );
+      await contextManager.autoPin(tab);
+
+      // Verify save includes autoPinned
+      expect(mockLocalStorageService.set).toHaveBeenCalledWith(
+        StorageKeys.PINNED_CONTEXTS,
+        expect.arrayContaining([
+          expect.objectContaining({ id: 42, autoPinned: true }),
+        ]),
+      );
+
+      // Simulate load
+      vi.mocked(mockLocalStorageService.get).mockResolvedValue([
+        {
+          id: 42,
+          url: 'https://auto.com',
+          title: 'Auto Tab',
+          favIconUrl: 'https://auto.com/icon.png',
+          autoPinned: true,
+        },
+      ]);
+      vi.mocked(mockTabService.getTab).mockResolvedValue({
+        id: 42,
+        url: 'https://auto.com',
+        title: 'Auto Tab',
+        status: 'complete',
+        active: false,
+        windowId: 1,
+        discarded: false,
+        favIconUrl: 'https://auto.com/icon.png',
+      });
+
+      const newManager = new ContextManager(
+        mockLocalStorageService,
+        mockTabService,
+      );
+      await newManager.load();
+
+      const pinned = newManager.getPinnedTabs();
+      expect(pinned).toHaveLength(1);
+      expect(pinned[0].autoPinned).toBe(true);
+    });
+  });
 });

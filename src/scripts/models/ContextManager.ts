@@ -57,6 +57,18 @@ export class ContextManager {
     await this.save();
   }
 
+  async autoPin(tab: TabContext): Promise<void> {
+    tab.autoPinned = true;
+    if (this.isTabPinned(tab.tabId)) {
+      return;
+    }
+    if (!tab.url || isRestrictedURL(tab.url)) {
+      return;
+    }
+    this.pinnedTabs.push(tab);
+    await this.save();
+  }
+
   async removeTab(tabId: number): Promise<void> {
     const initialLength = this.pinnedTabs.length;
     this.pinnedTabs = this.pinnedTabs.filter((t) => t.tabId !== tabId);
@@ -178,6 +190,7 @@ export class ContextManager {
                 tab.title || s.title || 'Untitled',
                 this.tabService,
                 tab.favIconUrl || s.favIconUrl,
+                s.autoPinned,
               ),
             );
           }
@@ -197,6 +210,7 @@ export class ContextManager {
       title: t.title,
       url: t.url,
       favIconUrl: t.favIconUrl,
+      autoPinned: t.autoPinned,
     }));
     await this.localStorageService.set(StorageKeys.PINNED_CONTEXTS, infos);
   }
