@@ -6,7 +6,7 @@ import globals from 'globals';
 export default tseslint.config(
   // Global ignores MUST be in their own object at the top level
   {
-    ignores: ['dist/', 'coverage/', 'node_modules/'],
+    ignores: ['dist/', 'coverage/', 'node_modules/', 'test-harness/**/.tmp/'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
@@ -31,7 +31,7 @@ export default tseslint.config(
   },
   {
     // Override for build scripts (CommonJS)
-    files: ['build-scripts/**/*.js'],
+    files: ['build-scripts/**/*.js', 'test-harness/**/*.js'],
     languageOptions: {
       sourceType: 'commonjs',
     },

@@ -29,6 +29,7 @@ import { ISyncStorageService } from '../services/storageService';
 import { ITabService } from '../services/tabService';
 import { IMessageService } from '../services/messageService';
 import { LLMSummarizationService } from '../services/summarizationService';
+import { NativeCompanionService } from '../nativeCompanion/nativeCompanionService';
 import { isRestrictedURL } from '../utils';
 import {
   ExtensionMessage,
@@ -41,6 +42,7 @@ import {
   LLMResponse,
   ContentPart,
   MemoryStatsResponse,
+  NativeCompanionStatusResponse,
 } from '../types';
 
 export class BackgroundController {
@@ -54,6 +56,7 @@ export class BackgroundController {
     private tabService: ITabService,
     private llmService: ILLMService,
     private messageService: IMessageService,
+    private nativeCompanionService: NativeCompanionService,
   ) {
     // Wire up summarization so ContextManager can compress overflowing tabs.
     const summarizationService = new LLMSummarizationService(
@@ -68,6 +71,7 @@ export class BackgroundController {
    */
   public start() {
     this.setupEventListeners();
+    void this.nativeCompanionService.start();
     // Initial context update on startup
     this.broadcastCurrentTabInfo();
   }
@@ -217,6 +221,8 @@ export class BackgroundController {
           return this.handleGetMemoryStats();
         case MessageTypes.GET_CURRENT_TAB:
           return await this.handleGetCurrentTab();
+        case MessageTypes.NATIVE_COMPANION_STATUS:
+          return this.handleNativeCompanionStatus();
         default:
           return {
             error: `Unknown message type: ${(request as { type: unknown }).type}`,
@@ -527,6 +533,13 @@ export class BackgroundController {
     } catch (error) {
       console.error('Auto-pin failed:', error);
     }
+  }
+
+  private handleNativeCompanionStatus(): NativeCompanionStatusResponse {
+    return {
+      success: true,
+      state: this.nativeCompanionService.getState(),
+    };
   }
 
   private async getApiKey(): Promise<string | null> {

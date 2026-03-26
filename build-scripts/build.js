@@ -6,22 +6,24 @@ require('dotenv').config();
 const projectRoot = path.resolve(__dirname, '..');
 const distDir = path.join(projectRoot, 'dist');
 const srcDir = path.join(projectRoot, 'src');
+const legalLinks = {
+  LEGAL_NOTICE_URL:
+    process.env.LEGAL_NOTICE_URL || 'https://example.com/legal-notice',
+  PRIVACY_POLICY_URL:
+    process.env.PRIVACY_POLICY_URL || 'https://example.com/privacy-policy',
+  LICENSE_URL:
+    process.env.LICENSE_URL ||
+    'https://github.com/google/llm-sidebar-with-context/blob/main/LICENSE',
+};
 
 async function build() {
-  // 1. Validate environment variables
-  const requiredEnvVars = [
-    'LEGAL_NOTICE_URL',
-    'PRIVACY_POLICY_URL',
-    'LICENSE_URL',
-  ];
-  const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
+  // 1. Resolve optional environment variables
+  const missingVars = Object.entries(legalLinks)
+    .filter(([key]) => !process.env[key])
+    .map(([key]) => key);
 
   if (missingVars.length > 0) {
-    console.error(
-      `Error: Missing required environment variables: ${missingVars.join(', ')}`,
-    );
-    console.error('Please create a .env file based on .env.example');
-    process.exit(1);
+    console.warn(`Using fallback legal links for: ${missingVars.join(', ')}`);
   }
 
   // 2. Clean dist directory
@@ -58,15 +60,20 @@ async function build() {
   // 4. Process HTML pages with placeholders
   await fs.ensureDir(path.join(distDir, 'src/pages'));
 
-  const htmlPages = ['sidebar.html', 'welcome.html', 'website.html'];
+  const htmlPages = [
+    'sidebar.html',
+    'welcome.html',
+    'website.html',
+    'native-companion-test.html',
+  ];
   for (const page of htmlPages) {
     const htmlPath = path.join(srcDir, 'pages', page);
     let html = await fs.readFile(htmlPath, 'utf-8');
 
     html = html
-      .replace(/{{LEGAL_NOTICE_URL}}/g, process.env.LEGAL_NOTICE_URL)
-      .replace(/{{PRIVACY_POLICY_URL}}/g, process.env.PRIVACY_POLICY_URL)
-      .replace(/{{LICENSE_URL}}/g, process.env.LICENSE_URL);
+      .replace(/{{LEGAL_NOTICE_URL}}/g, legalLinks.LEGAL_NOTICE_URL)
+      .replace(/{{PRIVACY_POLICY_URL}}/g, legalLinks.PRIVACY_POLICY_URL)
+      .replace(/{{LICENSE_URL}}/g, legalLinks.LICENSE_URL);
 
     await fs.writeFile(path.join(distDir, 'src/pages', page), html, 'utf-8');
   }
@@ -93,12 +100,12 @@ async function build() {
     sourcemap: true,
     define: {
       'process.env.LEGAL_NOTICE_URL': JSON.stringify(
-        process.env.LEGAL_NOTICE_URL,
+        legalLinks.LEGAL_NOTICE_URL,
       ),
       'process.env.PRIVACY_POLICY_URL': JSON.stringify(
-        process.env.PRIVACY_POLICY_URL,
+        legalLinks.PRIVACY_POLICY_URL,
       ),
-      'process.env.LICENSE_URL': JSON.stringify(process.env.LICENSE_URL),
+      'process.env.LICENSE_URL': JSON.stringify(legalLinks.LICENSE_URL),
     },
   });
 

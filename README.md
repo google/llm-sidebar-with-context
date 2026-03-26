@@ -95,13 +95,22 @@ This Chrome Extension allows you to interact with Gemini models in a sidebar, us
 
 ### Commands
 
-| Command              | Description                     |
-| :------------------- | :------------------------------ |
-| `npm run build`      | Builds the extension to `dist/` |
-| `npm test`           | Runs unit tests with Vitest     |
-| `npm run lint`       | Runs ESLint                     |
-| `npm run format`     | Formats code with Prettier      |
-| `npm run type-check` | Runs TypeScript type checking   |
+| Command                         | Description                                 |
+| :------------------------------ | :------------------------------------------ |
+| `npm run build`                 | Builds the extension to `dist/`             |
+| `npm test`                      | Runs unit tests with Vitest                 |
+| `npm run lint`                  | Runs ESLint                                 |
+| `npm run format`                | Formats code with Prettier                  |
+| `npm run type-check`            | Runs TypeScript type checking               |
+| `npm run test:native-companion` | Runs the Puppeteer/native companion harness |
+
+### Native companion foundation
+
+This repository now includes a Rust-based native companion foundation under `native/overlay-companion/` plus a Puppeteer harness under `test-harness/native-companion/`.
+
+The native companion is designed around a durable daemon + native-messaging bridge split so the long-lived process can tolerate Chrome MV3 service-worker restarts and reconnect cleanly using JSON-RPC `hello`, `ping`, and `status` messages.
+
+The harness builds the extension, builds the Rust binary, registers native messaging manifests in an isolated browser home, launches Chrome headless with the unpacked extension, and waits for the extension to report a connected native companion session.
 
 ### Environment Variables
 

@@ -7,6 +7,7 @@
     "test": "vitest run",
     "build": "node build-scripts/build.js",
     "type-check": "tsc",
+    "test:native-companion": "node test-harness/native-companion/run-harness.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
@@ -44,6 +45,7 @@
     "husky": "^9.1.7",
     "jsdom": "^27.4.0",
     "prettier": "^3.8.1",
+    "puppeteer": "^24.40.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.17"

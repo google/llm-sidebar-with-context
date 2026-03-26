@@ -108,6 +108,10 @@ export interface GetCurrentTabResponse {
   tab: TabInfo | null;
 }
 
+export interface NativeCompanionStatusRequest {
+  type: typeof MessageTypes.NATIVE_COMPANION_STATUS;
+}
+
 export interface MemoryEpisodeSummary {
   id: string;
   kind: 'turn' | 'summary';
@@ -129,6 +133,126 @@ export interface CurrentTabInfoMessage {
   tab: TabInfo;
 }
 
+export type NativeCompanionConnectionState =
+  | 'disabled'
+  | 'connecting'
+  | 'connected'
+  | 'degraded'
+  | 'disconnected';
+
+export type NativeOverlayStatus = 'running' | 'starting' | 'unsupported';
+export type NativeServiceStatus = 'ready' | 'starting' | 'degraded';
+
+export interface NativeCompanionState {
+  connectionState: NativeCompanionConnectionState;
+  extensionSessionId: string;
+  nativeSessionId?: string;
+  lastHelloAt?: number;
+  lastPingAt?: number;
+  lastPongAt?: number;
+  lastDisconnectAt?: number;
+  reconnectAttempt: number;
+  transport: 'native-messaging';
+  hostName: string;
+  diagnostics: string[];
+  overlayStatus: NativeOverlayStatus;
+  serviceStatus: NativeServiceStatus;
+  supportedFeatures: string[];
+}
+
+export interface NativeCompanionStatusResponse {
+  success: boolean;
+  state: NativeCompanionState;
+}
+
+export interface JsonRpcRequest<TParams = Record<string, unknown> | undefined> {
+  jsonrpc: '2.0';
+  id: string;
+  method: string;
+  params?: TParams;
+}
+
+export interface JsonRpcSuccess<TResult = unknown> {
+  jsonrpc: '2.0';
+  id: string;
+  result: TResult;
+}
+
+export interface JsonRpcError {
+  code: number;
+  message: string;
+  data?: unknown;
+}
+
+export interface JsonRpcFailure {
+  jsonrpc: '2.0';
+  id: string | null;
+  error: JsonRpcError;
+}
+
+export interface JsonRpcNotification<
+  TParams = Record<string, unknown> | undefined,
+> {
+  jsonrpc: '2.0';
+  method: string;
+  params?: TParams;
+}
+
+export type JsonRpcEnvelope<TResult = unknown, TParams = unknown> =
+  | JsonRpcRequest<TParams>
+  | JsonRpcSuccess<TResult>
+  | JsonRpcFailure
+  | JsonRpcNotification<TParams>;
+
+export interface NativeHelloParams {
+  extensionSessionId: string;
+  extensionVersion: string;
+  browser: 'chrome';
+  capabilities: string[];
+  platform?: string;
+}
+
+export interface NativeHelloResult {
+  nativeSessionId: string;
+  overlayStatus: NativeOverlayStatus;
+  transport: 'ipc';
+  platform: string;
+  supportedFeatures: string[];
+}
+
+export interface NativePingParams {
+  extensionSessionId: string;
+  sentAt: number;
+}
+
+export interface NativePingResult {
+  pong: true;
+  receivedAt: number;
+  nativeSessionId: string;
+}
+
+export interface NativeStatusResult {
+  service: NativeServiceStatus;
+  overlayStatus: NativeOverlayStatus;
+  transport: 'ipc';
+  nativeSessionId: string;
+  restartCount: number;
+  platform: string;
+  supportedFeatures: string[];
+}
+
+export interface NativeEventParams {
+  type:
+    | 'service.started'
+    | 'service.ready'
+    | 'overlay.started'
+    | 'overlay.unsupported'
+    | 'transport.reconnected';
+  nativeSessionId: string;
+  emittedAt: number;
+  detail?: string;
+}
+
 export type ContentPart =
   | { type: 'text'; text: string }
   | { type: 'file_data'; mimeType: string; fileUri: string };
@@ -147,7 +271,8 @@ export type ExtensionMessage =
   | StopGenerationRequest
   | AgentdropAnimateRequest
   | GetMemoryStatsRequest
-  | GetCurrentTabRequest;
+  | GetCurrentTabRequest
+  | NativeCompanionStatusRequest;
 
 export interface LLMResponse {
   reply?: string;
@@ -185,4 +310,5 @@ export type ExtensionResponse =
   | CheckPinnedTabsResponse
   | GetHistoryResponse
   | MemoryStatsResponse
-  | GetCurrentTabResponse;
+  | GetCurrentTabResponse
+  | NativeCompanionStatusResponse;

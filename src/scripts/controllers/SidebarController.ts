@@ -631,22 +631,23 @@ export class SidebarController {
   private async triggerAgentdrop() {
     this.agentdropButton.disabled = true;
 
-    // Step 1: Ask background to inject the content script and coordinate timing.
-    // Background returns a shared startTime (Date.now() value) that both
-    // the page content script and this sidebar will use so the animations
-    // begin at exactly the same wall-clock instant.
-    const response = await this.messageService
-      .sendMessage<SuccessResponse & { startTime?: number }>({
-        type: MessageTypes.AGENTDROP_ANIMATE,
-      })
-      .catch(() => null);
+    try {
+      // Step 1: Ask background to inject the content script and coordinate timing.
+      const response = await this.messageService
+        .sendMessage<SuccessResponse & { startTime?: number }>({
+          type: MessageTypes.AGENTDROP_ANIMATE,
+        })
+        .catch(() => null);
 
-    const startTime = response?.startTime;
+      const startTime = response?.startTime;
 
-    // Step 2: Run the sidebar animation (overlay-only, no warp) using the
-    // same coordinated start time. Origin = left edge (where page meets sidebar).
-    await runAgentdropAnimation(undefined, startTime, 'left');
-    this.agentdropButton.disabled = false;
+      // Step 2: Run the sidebar animation using the same coordinated start time.
+      await runAgentdropAnimation(undefined, startTime, 'left');
+    } catch (error) {
+      console.error('Agentdrop animation failed:', error);
+    } finally {
+      this.agentdropButton.disabled = false;
+    }
   }
 
   private async pinCurrentTab() {

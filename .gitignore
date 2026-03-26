@@ -8,3 +8,5 @@ work_diary.md
 *.pem
 *.crx
 native/target
+native/overlay-companion/target
+test-harness/native-companion/.tmp
