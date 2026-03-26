@@ -27,7 +27,9 @@ import { MessageTypes, StorageKeys } from '../../src/scripts/constants';
 import {
   GetContextResponse,
   CheckPinnedTabsResponse,
+  NativeCompanionStatusResponse,
 } from '../../src/scripts/types';
+import { NativeCompanionService } from '../../src/scripts/nativeCompanion/nativeCompanionService';
 
 describe('BackgroundController', () => {
   let controller: BackgroundController;
@@ -38,6 +40,7 @@ describe('BackgroundController', () => {
   let mockChatHistory: ChatHistory;
   let mockMemoryPipeline: MemoryPipelineOrchestrator;
   let mockContextManager: ContextManager;
+  let mockNativeCompanionService: NativeCompanionService;
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -106,6 +109,21 @@ describe('BackgroundController', () => {
       setSummarizationService: vi.fn(),
     } as unknown as ContextManager;
 
+    mockNativeCompanionService = {
+      start: vi.fn().mockResolvedValue(undefined),
+      getState: vi.fn().mockReturnValue({
+        connectionState: 'connected',
+        extensionSessionId: 'extension-session',
+        reconnectAttempt: 0,
+        transport: 'native-messaging',
+        hostName: 'com.maceip.native_overlay_companion',
+        diagnostics: [],
+        overlayStatus: 'running',
+        serviceStatus: 'ready',
+        supportedFeatures: ['overlay'],
+      }),
+    } as unknown as NativeCompanionService;
+
     controller = new BackgroundController(
       mockChatHistory,
       mockMemoryPipeline,
@@ -114,6 +132,7 @@ describe('BackgroundController', () => {
       mockTabService,
       mockGeminiService,
       mockMessageService,
+      mockNativeCompanionService,
     );
   });
 
@@ -139,6 +158,7 @@ describe('BackgroundController', () => {
       expect(chrome.tabs.onUpdated.addListener).toHaveBeenCalled();
       expect(chrome.tabs.onRemoved.addListener).toHaveBeenCalled();
       expect(chrome.action.onClicked.addListener).toHaveBeenCalled();
+      expect(mockNativeCompanionService.start).toHaveBeenCalled();
 
       expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
         type: MessageTypes.CURRENT_TAB_INFO,
@@ -759,6 +779,27 @@ describe('BackgroundController', () => {
       })) as CheckPinnedTabsResponse;
       expect(response.success).toBe(true);
       expect(response.pinnedContexts).toEqual([]);
+    });
+
+    it('should return native companion status', async () => {
+      const response = (await controller.handleMessage({
+        type: MessageTypes.NATIVE_COMPANION_STATUS,
+      })) as NativeCompanionStatusResponse;
+
+      expect(response).toEqual({
+        success: true,
+        state: {
+          connectionState: 'connected',
+          extensionSessionId: 'extension-session',
+          reconnectAttempt: 0,
+          transport: 'native-messaging',
+          hostName: 'com.maceip.native_overlay_companion',
+          diagnostics: [],
+          overlayStatus: 'running',
+          serviceStatus: 'ready',
+          supportedFeatures: ['overlay'],
+        },
+      });
     });
 
     it('should handle SAVE_API_KEY correctly', async () => {
