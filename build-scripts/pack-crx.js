@@ -207,7 +207,11 @@ async function main() {
     .export({ type: 'spki', format: 'der' });
   const hash = nodeCrypto.createHash('sha256').update(publicKeyDer).digest();
   const extensionId = Array.from(hash.subarray(0, 16))
-    .map((b) => String.fromCharCode(97 + (b % 26)))
+    .map((b) => {
+      const hi = (b >> 4) & 0xf;
+      const lo = b & 0xf;
+      return String.fromCharCode(97 + hi) + String.fromCharCode(97 + lo);
+    })
     .join('');
   console.log(`Extension ID: ${extensionId}`);
 }
