@@ -95,13 +95,13 @@ This Chrome Extension allows you to interact with Gemini models in a sidebar, us
 
 ### Commands
 
-| Command              | Description                     |
-| :------------------- | :------------------------------ |
-| `npm run build`      | Builds the extension to `dist/` |
-| `npm test`           | Runs unit tests with Vitest     |
-| `npm run lint`       | Runs ESLint                     |
-| `npm run format`     | Formats code with Prettier      |
-| `npm run type-check` | Runs TypeScript type checking   |
+| Command                         | Description                                 |
+| :------------------------------ | :------------------------------------------ |
+| `npm run build`                 | Builds the extension to `dist/`             |
+| `npm test`                      | Runs unit tests with Vitest                 |
+| `npm run lint`                  | Runs ESLint                                 |
+| `npm run format`                | Formats code with Prettier                  |
+| `npm run type-check`            | Runs TypeScript type checking               |
 | `npm run test:native-companion` | Runs the Puppeteer/native companion harness |
 
 ### Native companion foundation
