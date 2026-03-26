@@ -19,11 +19,7 @@ import { ContextManager } from '../../src/scripts/models/ContextManager';
 import { TabContext } from '../../src/scripts/models/TabContext';
 import { ILocalStorageService } from '../../src/scripts/services/storageService';
 import { ITabService, ChromeTab } from '../../src/scripts/services/tabService';
-import {
-  StorageKeys,
-  CONTEXT_MESSAGES,
-  MAX_AUTO_PINNED_TABS,
-} from '../../src/scripts/constants';
+import { StorageKeys, CONTEXT_MESSAGES } from '../../src/scripts/constants';
 
 describe('ContextManager', () => {
   let contextManager: ContextManager;
@@ -739,75 +735,6 @@ describe('ContextManager', () => {
       await contextManager.autoPin(tab);
 
       expect(contextManager.getPinnedTabs()).toHaveLength(0);
-    });
-
-    it('should evict oldest auto-pinned tab when limit exceeded', async () => {
-      // Fill up to the limit
-      for (let i = 0; i < MAX_AUTO_PINNED_TABS; i++) {
-        const tab = new TabContext(
-          i + 1,
-          `https://site${i}.com`,
-          `Site ${i}`,
-          mockTabService,
-        );
-        await contextManager.autoPin(tab);
-      }
-
-      expect(contextManager.getPinnedTabs()).toHaveLength(MAX_AUTO_PINNED_TABS);
-
-      // Add one more — should evict the first
-      const newTab = new TabContext(
-        999,
-        'https://new-site.com',
-        'New Site',
-        mockTabService,
-      );
-      await contextManager.autoPin(newTab);
-
-      const pinned = contextManager.getPinnedTabs();
-      expect(pinned).toHaveLength(MAX_AUTO_PINNED_TABS);
-      // Oldest (id=1) should have been evicted
-      expect(pinned.find((t) => t.tabId === 1)).toBeUndefined();
-      // Newest should be present
-      expect(pinned.find((t) => t.tabId === 999)).toBeDefined();
-    });
-
-    it('should not evict manually pinned tabs during LRU eviction', async () => {
-      // Manually pin a tab first
-      const manualTab = new TabContext(
-        1,
-        'https://manual.com',
-        'Manual',
-        mockTabService,
-      );
-      await contextManager.addTab(manualTab);
-      expect(manualTab.autoPinned).toBe(false);
-
-      // Fill auto-pin up to the limit
-      for (let i = 0; i < MAX_AUTO_PINNED_TABS; i++) {
-        const tab = new TabContext(
-          i + 100,
-          `https://auto${i}.com`,
-          `Auto ${i}`,
-          mockTabService,
-        );
-        await contextManager.autoPin(tab);
-      }
-
-      // Add one more auto-pin — should evict oldest auto-pin, NOT the manual one
-      const overflow = new TabContext(
-        9999,
-        'https://overflow.com',
-        'Overflow',
-        mockTabService,
-      );
-      await contextManager.autoPin(overflow);
-
-      const pinned = contextManager.getPinnedTabs();
-      // Manual tab should still be present
-      expect(pinned.find((t) => t.tabId === 1)).toBeDefined();
-      // Oldest auto-pin (id=100) should be evicted
-      expect(pinned.find((t) => t.tabId === 100)).toBeUndefined();
     });
 
     it('should persist autoPinned flag in save and restore in load', async () => {

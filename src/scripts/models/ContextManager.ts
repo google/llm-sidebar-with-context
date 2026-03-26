@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { StorageKeys, MAX_AUTO_PINNED_TABS } from '../constants';
+import { StorageKeys } from '../constants';
 import { TabContext } from './TabContext';
 import { isRestrictedURL } from '../utils';
 import { TabInfo, ContentPart } from '../types';
@@ -66,12 +66,6 @@ export class ContextManager {
       return;
     }
     this.pinnedTabs.push(tab);
-    // LRU eviction: remove oldest auto-pinned tabs when over limit
-    const autoPinned = this.pinnedTabs.filter((t) => t.autoPinned);
-    while (autoPinned.length > MAX_AUTO_PINNED_TABS) {
-      const oldest = autoPinned.shift()!;
-      this.pinnedTabs = this.pinnedTabs.filter((t) => t.tabId !== oldest.tabId);
-    }
     await this.save();
   }
 
