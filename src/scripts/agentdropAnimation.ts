@@ -102,45 +102,15 @@ void main() {
   float ballVisible = 1.0 - ss(impactTime - 0.02, impactTime + 0.03, p);
   float ballSpeed = ballEase * 2.0;
 
-  // FIX 4: Ball squashes horizontally on impact (compresses into GZ)
-  float squash = 1.0 + ballEase * 0.4; // X stretches to 1.4x near impact
-  float stretch = 1.0 / squash;        // Y compensates (volume preservation)
-  vec2 toBall = (uv - ballPos) * ar * vec2(squash, stretch);
+  vec2 toBall = (uv - ballPos) * ar;
   float ballD = length(toBall);
 
-  // Ball refraction
+  // Ball: very subtle refraction — just enough to notice, not distort
   if (ballD < ballRadius && ballVisible > 0.0) {
     float nd = ballD / ballRadius;
-    float kineticBoost = 1.0 + ballSpeed * 0.5;
-    float refract = (1.0 - nd * nd) * 0.035 * ballVisible * kineticBoost; // FIX 8: stronger glass-marble
+    float refract = (1.0 - nd * nd) * 0.008 * ballVisible; // SUBTLE
     vec2 bDir = ballD > 0.001 ? toBall / ballD : vec2(0.0);
     totalDisp += bDir * refract / ar;
-    totalBlur += (1.0 - nd) * ballVisible * 0.005 * kineticBoost;
-  }
-
-  // FIX 7: Blur zone BETWEEN ball and GZ (ahead of ball, toward GZ)
-  // Content between ball and ground zero gets dragged/smeared
-  if (p < impactTime + 0.05 && ballVisible > 0.1) {
-    vec2 toPixFromBall = (uv - ballPos) * ar;
-    vec2 gzAxis = normalize((uOrigin - ballPos) * ar); // ball→GZ direction
-    float ahead = dot(toPixFromBall, gzAxis); // positive = between ball and GZ
-    float perp = length(toPixFromBall - gzAxis * ahead);
-    float zoneLen = ballDistFromGZ * aspect; // distance from ball to GZ
-    // FIX 14: STRETCH content between ball and GZ — taffy pull
-    if (ahead > 0.0 && ahead < zoneLen && perp < 0.10) { // FIX 21: wider corridor
-      float zoneFade = (1.0 - ahead / max(zoneLen, 0.001)) * exp(-perp * perp / 0.005); // wider falloff
-      float zoneI = zoneFade * ballSpeed * ballVisible * 0.5;
-      totalBlur += zoneI * 0.008;
-      // Stronger displacement — content visibly stretches toward GZ
-      totalDisp += gzAxis / ar * zoneI * 0.015;
-    }
-    // Also keep a small wake trail behind the ball
-    float behind = -ahead;
-    float wakeLen = ballSpeed * 0.1;
-    if (behind > 0.0 && behind < wakeLen && perp < 0.03) {
-      float wakeFade = (1.0 - behind / wakeLen) * exp(-perp * perp / 0.0008);
-      totalBlur += wakeFade * ballSpeed * ballVisible * 0.003;
-    }
   }
 
   // FIX #2: TOP-DOWN PROGRESSIVE BLUR — builds during approach
@@ -286,30 +256,26 @@ void main() {
   // VISUAL EFFECTS
   // ════════════════════════════════════════════════════════════════
 
-  // Ball: RGB hue shift
-  if (ballD < ballRadius * 1.1 && ballVisible > 0.05) {
+  // Ball: subtle RGB colored circle overlay — NOT heavy distortion
+  // Just a thin colored tint circle that moves across the page
+  if (ballD < ballRadius * 1.15 && ballVisible > 0.05) {
     float nd = ballD / ballRadius;
-    float hueAmt = (1.0 - nd) * 0.30 * ballVisible; // FIX 16: more visible prismatic
-    float cosH = cos(hueAmt * 6.28318);
-    float sinH = sin(hueAmt * 6.28318);
-    vec3 shifted = vec3(
-      dot(color, vec3(0.667+cosH*0.333, 0.333-cosH*0.333+sinH*0.577, 0.333-cosH*0.333-sinH*0.577)),
-      dot(color, vec3(0.333-cosH*0.333-sinH*0.577, 0.667+cosH*0.333, 0.333-cosH*0.333+sinH*0.577)),
-      dot(color, vec3(0.333-cosH*0.333+sinH*0.577, 0.333-cosH*0.333-sinH*0.577, 0.667+cosH*0.333))
+    float edgeSoft = 1.0 - ss(ballRadius * 0.85, ballRadius * 1.1, ballD);
+
+    // RGB tint: red on one side, green center, blue on other side
+    float angle = atan(toBall.y, toBall.x);
+    vec3 rgbTint = vec3(
+      0.5 + 0.5 * cos(angle),              // R
+      0.5 + 0.5 * cos(angle + 2.094),      // G (120 deg offset)
+      0.5 + 0.5 * cos(angle + 4.189)       // B (240 deg offset)
     );
-    float edgeSoft = ss(ballRadius, ballRadius * 0.75, ballD);
-    color = mix(color, shifted, edgeSoft * ballVisible * 0.65);
-    // Fresnel rim darkening — edges of sphere darken like real glass
-    float fresnel = pow(nd, 3.0);
-    color = mix(color, color * 0.7, fresnel * ballVisible * 0.4);
-    // Bright rim highlight at edge
-    float rim = ss(ballRadius*0.8, ballRadius, ballD) * (1.0-ss(ballRadius, ballRadius*1.1, ballD));
-    color += vec3(0.5, 0.6, 1.0) * rim * ballVisible * 0.45;
-    // Specular highlight — bright white dot on upper-left of sphere
-    vec2 specPos = ballPos + vec2(-0.02, -0.02) / ar;
-    float specDist = length((uv - specPos) * ar);
-    float spec = exp(-specDist * specDist / (0.0004));
-    color += vec3(1.0, 1.0, 1.0) * spec * ballVisible * 0.7;
+    // Very subtle overlay — just enough to see the circle
+    color += rgbTint * edgeSoft * ballVisible * 0.08;
+
+    // Thin rim line
+    float rim = ss(ballRadius*0.88, ballRadius, ballD)
+              * (1.0 - ss(ballRadius, ballRadius*1.08, ballD));
+    color += vec3(0.6, 0.7, 1.0) * rim * ballVisible * 0.2;
   }
 
   // FIX #3: Supernova — soft organic blob, NOT geometric spikes
@@ -541,15 +507,15 @@ function runOverlayAnimation(
     overlay.appendChild(canvas);
     document.body.appendChild(overlay);
 
-    // Apply blur to sidebar content
-    const sidebarContent = (document.querySelector('.sidebar-container') ||
-      document.querySelector('#chat-container') ||
+    // Apply blur/transform to sidebar content container
+    const sidebarContent = (document.querySelector('.container') ||
       document.body.firstElementChild ||
       document.body) as HTMLElement;
     const origFilter = sidebarContent.style.filter;
     const origTransform = sidebarContent.style.transform;
     const origTransition = sidebarContent.style.transition;
-    sidebarContent.style.transition = 'filter 0.1s ease, transform 0.1s ease';
+    // No transition delay — update every frame for tight sync
+    sidebarContent.style.transition = 'none';
 
     const ctx = canvas.getContext('2d')!;
     ctx.scale(dpr, dpr);
@@ -779,7 +745,7 @@ function runOverlayAnimation(
 //  Used by the sidebar to capture its own content for WebGL warp.
 // ═══════════════════════════════════════════════════════════════════════════
 
-function captureSelf(): Promise<string> {
+function _captureSelf(): Promise<string> {
   return new Promise((resolve, reject) => {
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -834,13 +800,15 @@ export function runAgentdropAnimation(
     originSide === 'right' ? [1.0, 0.5] : [0.0, 0.5];
 
   if (screenshotUrl) {
+    // Page mode: WebGL2 warp on captured screenshot
     return runWebGLAnimation(screenshotUrl, scheduledStart, originUV).catch(
       () => runOverlayAnimation(scheduledStart, originUV),
     );
   }
 
-  // Sidebar mode: self-capture then WebGL, fallback to overlay
-  return captureSelf()
-    .then((selfUrl) => runWebGLAnimation(selfUrl, scheduledStart, originUV))
-    .catch(() => runOverlayAnimation(scheduledStart, originUV));
+  // Sidebar mode: use overlay directly — applies CSS blur/transform to
+  // the real sidebar DOM. SVG foreignObject capture is unreliable in
+  // extension contexts, so we skip it and go straight to overlay which
+  // gives us direct control over the sidebar content.
+  return runOverlayAnimation(scheduledStart, originUV);
 }
