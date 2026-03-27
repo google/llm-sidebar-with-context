@@ -43,6 +43,7 @@ import {
   ContentPart,
   MemoryStatsResponse,
   NativeCompanionStatusResponse,
+  ContextRetrievalSnapshot,
 } from '../types';
 
 export class BackgroundController {
@@ -221,6 +222,8 @@ export class BackgroundController {
           return this.handleGetMemoryStats();
         case MessageTypes.GET_CURRENT_TAB:
           return await this.handleGetCurrentTab();
+        case MessageTypes.GET_CONTEXT_SNAPSHOT:
+          return this.handleGetContextSnapshot();
         case MessageTypes.NATIVE_COMPANION_STATUS:
           return this.handleNativeCompanionStatus();
         default:
@@ -323,6 +326,10 @@ export class BackgroundController {
         return { aborted: true };
       }
 
+      const snapshot = this.memoryPipeline.getLastRetrievalSnapshot();
+      if (snapshot) {
+        return { ...response, contextSnapshot: snapshot };
+      }
       return response;
     } catch (error: unknown) {
       const err = error as Error;
@@ -533,6 +540,16 @@ export class BackgroundController {
     } catch (error) {
       console.error('Auto-pin failed:', error);
     }
+  }
+
+  private handleGetContextSnapshot(): {
+    success: boolean;
+    snapshot: ContextRetrievalSnapshot | null;
+  } {
+    return {
+      success: true,
+      snapshot: this.memoryPipeline.getLastRetrievalSnapshot(),
+    };
   }
 
   private handleNativeCompanionStatus(): NativeCompanionStatusResponse {

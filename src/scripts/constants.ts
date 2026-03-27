@@ -157,6 +157,7 @@ export const MessageTypes = {
   AGENTDROP_ANIMATE: 'agentdropAnimate',
   GET_MEMORY_STATS: 'getMemoryStats',
   GET_CURRENT_TAB: 'getCurrentTab',
+  GET_CONTEXT_SNAPSHOT: 'getContextSnapshot',
   NATIVE_COMPANION_STATUS: 'nativeCompanionStatus',
 } as const;
 

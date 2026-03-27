@@ -1448,3 +1448,248 @@ body {
   background: var(--bg-alt);
   font-weight: 600;
 }
+
+/* --- Context Pulse: Inline Context Ribbon --- */
+
+.context-ribbon {
+  margin-top: var(--spacing-sm);
+  border-top: 1px solid var(--border-light);
+  padding-top: var(--spacing-sm);
+  animation: fadeIn 0.4s ease;
+}
+
+.context-ribbon-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+  user-select: none;
+}
+
+.context-ribbon-summary:hover {
+  background: var(--bg-alt);
+}
+
+.context-ribbon-icon {
+  color: var(--accent-primary);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.context-ribbon-text {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.context-ribbon-budget-pill {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--accent-primary);
+  background: var(--accent-primary-light);
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.context-ribbon-budget-pill.warn {
+  color: var(--accent-warning);
+  background: var(--accent-warning-light);
+}
+
+.context-ribbon-budget-pill.high {
+  color: var(--accent-error);
+  background: var(--accent-error-light);
+}
+
+.context-ribbon-chevron {
+  color: var(--text-dim);
+  transition: transform var(--transition-fast);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.context-ribbon.expanded .context-ribbon-chevron {
+  transform: rotate(180deg);
+}
+
+.context-ribbon-detail {
+  animation: slideDown 0.25s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
+}
+
+/* --- Canvas Visualization --- */
+
+.context-ribbon-viz-container,
+.memory-panel-viz-container {
+  position: relative;
+  width: 100%;
+  margin: var(--spacing-sm) 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.memory-viz-canvas {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-sm);
+}
+
+.memory-viz-tooltip {
+  position: absolute;
+  z-index: 10;
+  background: #1e1e2e;
+  border: 1px solid rgba(124, 92, 252, 0.3);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+  max-width: 200px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  animation: fadeIn 0.15s ease;
+}
+
+.memory-viz-tooltip-kind {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.memory-viz-tooltip-kind.turn {
+  color: #a78bfa;
+}
+
+.memory-viz-tooltip-kind.summary {
+  color: #7dd3fc;
+}
+
+.memory-viz-tooltip-summary {
+  font-size: 11px;
+  color: #cdd6f4;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.memory-viz-tooltip-meta {
+  font-size: 9px;
+  color: #8b90a0;
+}
+
+/* --- Retrieved Episode List --- */
+
+.context-ribbon-episodes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--spacing-xs) 0;
+}
+
+.context-ribbon-episode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  transition: background var(--transition-fast);
+}
+
+.context-ribbon-episode:hover {
+  background: var(--bg-alt);
+}
+
+.context-ribbon-episode-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.context-ribbon-episode-icon.turn {
+  color: var(--accent-primary);
+  background: var(--accent-primary-light);
+}
+
+.context-ribbon-episode-icon.summary {
+  color: var(--accent-secondary);
+  background: rgba(91, 141, 239, 0.1);
+}
+
+.context-ribbon-episode-text {
+  font-size: 10px;
+  color: var(--text-secondary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.context-ribbon-episode-score {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--accent-primary);
+  flex-shrink: 0;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* --- Status Pill Pulse --- */
+
+.status-pill.memory.pulse {
+  animation: memoryPulse 0.6s ease;
+}
+
+@keyframes memoryPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 12px rgba(124, 92, 252, 0.4);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+}
+
+/* --- Memory Panel: Last Retrieval Section --- */
+
+.memory-last-retrieval {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.memory-section-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--accent-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.memory-panel-viz-container {
+  min-height: 100px;
+}
