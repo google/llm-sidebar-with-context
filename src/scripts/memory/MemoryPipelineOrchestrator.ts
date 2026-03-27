@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-import { ChatMessage, ContentPart } from '../types';
+import {
+  ChatMessage,
+  ContentPart,
+  ContextRetrievalSnapshot,
+  RetrievalSnapshotEpisode,
+} from '../types';
 import { ILocalStorageService } from '../services/storageService';
 import {
   DEFAULT_MEMORY_REQUESTER,
@@ -45,6 +50,7 @@ export class MemoryPipelineOrchestrator {
   private forgettingPolicyService = new ForgettingPolicyService();
   private promptAssemblerService = new PromptAssemblerService();
   private telemetryService = new MemoryTelemetryService();
+  private lastRetrievalSnapshot: ContextRetrievalSnapshot | null = null;
 
   constructor(private localStorageService: ILocalStorageService) {
     this.longTermMemoryService = new LongTermMemoryService(localStorageService);
@@ -52,6 +58,10 @@ export class MemoryPipelineOrchestrator {
 
   getTelemetry(): IMemoryTelemetryService {
     return this.telemetryService;
+  }
+
+  getLastRetrievalSnapshot(): ContextRetrievalSnapshot | null {
+    return this.lastRetrievalSnapshot;
   }
 
   async load(): Promise<void> {
@@ -191,6 +201,40 @@ export class MemoryPipelineOrchestrator {
         budgetUsedRatio: assembled.text.length / MEMORY_PROMPT_CHAR_BUDGET,
       });
     }
+
+    // Build retrieval snapshot for UI visualization
+    const snapshotEpisodes: RetrievalSnapshotEpisode[] = ranked
+      .map((candidate) => {
+        const ep = episodes.find((item) => item.id === candidate.episodeId);
+        if (!ep) return null;
+        return {
+          id: ep.id,
+          kind: ep.kind,
+          summary:
+            ep.summary.length > 80
+              ? ep.summary.slice(0, 80) + '...'
+              : ep.summary,
+          keywords: ep.keywords,
+          score: candidate.score,
+          matchedKeywords: candidate.matchedKeywords,
+          createdAt: ep.createdAt,
+        };
+      })
+      .filter((e): e is RetrievalSnapshotEpisode => e !== null);
+
+    this.lastRetrievalSnapshot = {
+      queryKeywords: diagnostics.queryKeywords,
+      retrievedEpisodes: snapshotEpisodes,
+      totalEpisodeCount: episodes.length,
+      candidateCount: diagnostics.candidateCount,
+      budgetUsedRatio:
+        assembled && assembled.type === 'text'
+          ? assembled.text.length / MEMORY_PROMPT_CHAR_BUDGET
+          : 0,
+      totalChars:
+        assembled && assembled.type === 'text' ? assembled.text.length : 0,
+      timestamp: Date.now(),
+    };
 
     if (!assembled) {
       return null;

@@ -108,6 +108,10 @@ export interface GetCurrentTabResponse {
   tab: TabInfo | null;
 }
 
+export interface GetContextSnapshotRequest {
+  type: typeof MessageTypes.GET_CONTEXT_SNAPSHOT;
+}
+
 export interface NativeCompanionStatusRequest {
   type: typeof MessageTypes.NATIVE_COMPANION_STATUS;
 }
@@ -272,12 +276,34 @@ export type ExtensionMessage =
   | AgentdropAnimateRequest
   | GetMemoryStatsRequest
   | GetCurrentTabRequest
+  | GetContextSnapshotRequest
   | NativeCompanionStatusRequest;
+
+export interface RetrievalSnapshotEpisode {
+  id: string;
+  kind: 'turn' | 'summary';
+  summary: string;
+  keywords: string[];
+  score: number;
+  matchedKeywords: string[];
+  createdAt: number;
+}
+
+export interface ContextRetrievalSnapshot {
+  queryKeywords: string[];
+  retrievedEpisodes: RetrievalSnapshotEpisode[];
+  totalEpisodeCount: number;
+  candidateCount: number;
+  budgetUsedRatio: number;
+  totalChars: number;
+  timestamp: number;
+}
 
 export interface LLMResponse {
   reply?: string;
   error?: string;
   aborted?: boolean;
+  contextSnapshot?: ContextRetrievalSnapshot;
 }
 
 /** @deprecated Use LLMResponse instead */

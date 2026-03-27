@@ -28,7 +28,12 @@ import {
   CheckPinnedTabsResponse,
   GetHistoryResponse,
   MemoryStatsResponse,
+  ContextRetrievalSnapshot,
 } from '../types';
+import {
+  createContextRibbon,
+  MemoryVisualization,
+} from '../memoryVisualization';
 import {
   ISyncStorageService,
   ILocalStorageService,
@@ -59,6 +64,10 @@ export class SidebarController {
   private memoryCount: HTMLElement | null;
   private memoryBadge: HTMLElement | null;
   private memoryEpisodes: HTMLElement | null;
+  private memoryLastRetrieval: HTMLElement | null;
+  private memoryPanelVizContainer: HTMLElement | null;
+  private memoryPanelViz: MemoryVisualization | null = null;
+  private lastSnapshot: ContextRetrievalSnapshot | null = null;
 
   private pinnedContexts: TabInfo[] = [];
   private currentTab: TabInfo | null = null;
@@ -115,6 +124,10 @@ export class SidebarController {
     this.memoryCount = document.getElementById('memory-count');
     this.memoryBadge = document.getElementById('memory-badge');
     this.memoryEpisodes = document.getElementById('memory-episodes');
+    this.memoryLastRetrieval = document.getElementById(
+      'memory-last-retrieval',
+    );
+    this.memoryPanelVizContainer = document.getElementById('memory-panel-viz');
 
     this.setupEventListeners();
   }
@@ -451,6 +464,22 @@ export class SidebarController {
     } catch {
       // Silently ignore - stats are non-critical
     }
+
+    // Update memory panel visualization with last retrieval snapshot
+    try {
+      const snapResponse = await this.messageService.sendMessage<{
+        success: boolean;
+        snapshot: ContextRetrievalSnapshot | null;
+      }>({
+        type: MessageTypes.GET_CONTEXT_SNAPSHOT,
+      });
+      if (snapResponse?.success && snapResponse.snapshot) {
+        this.lastSnapshot = snapResponse.snapshot;
+        this.updateMemoryPanelViz(snapResponse.snapshot);
+      }
+    } catch {
+      // Non-critical
+    }
   }
 
   private formatTimeAgo(timestamp: number): string {
@@ -468,6 +497,52 @@ export class SidebarController {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  private updateMemoryPanelViz(snapshot: ContextRetrievalSnapshot): void {
+    if (!this.memoryLastRetrieval || !this.memoryPanelVizContainer) return;
+
+    this.memoryLastRetrieval.style.display = '';
+
+    if (!this.memoryPanelViz) {
+      this.memoryPanelViz = new MemoryVisualization(
+        this.memoryPanelVizContainer,
+      );
+    }
+    this.memoryPanelViz.update(snapshot);
+  }
+
+  private attachContextRibbon(
+    messageEl: HTMLDivElement,
+    snapshot: ContextRetrievalSnapshot,
+  ): void {
+    const ribbon = createContextRibbon(snapshot);
+    messageEl.appendChild(ribbon);
+    this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
+  }
+
+  private pulseMemoryStatus(snapshot: ContextRetrievalSnapshot): void {
+    if (!this.statusMemory) return;
+
+    const count = snapshot.retrievedEpisodes.length;
+    const originalHTML = this.statusMemory.innerHTML;
+
+    this.statusMemory.classList.add('pulse');
+    this.statusMemory.innerHTML = `<span class="status-dot"></span>${count} recalled`;
+
+    this.statusMemory.addEventListener(
+      'animationend',
+      () => {
+        this.statusMemory?.classList.remove('pulse');
+      },
+      { once: true },
+    );
+
+    setTimeout(() => {
+      if (this.statusMemory) {
+        this.statusMemory.innerHTML = originalHTML;
+      }
+    }, 3000);
   }
 
   private async saveApiKey() {
@@ -546,9 +621,13 @@ export class SidebarController {
           this.showWelcomeMessage();
         }
       } else if (response && response.reply) {
-        this.appendMessage('model', response.reply, duration);
+        const msgEl = await this.appendMessage('model', response.reply, duration);
+        if (response.contextSnapshot && response.contextSnapshot.retrievedEpisodes.length > 0) {
+          this.attachContextRibbon(msgEl, response.contextSnapshot);
+          this.pulseMemoryStatus(response.contextSnapshot);
+        }
       } else if (response && response.error) {
-        this.appendMessage('error', `Error: ${response.error}`);
+        await this.appendMessage('error', `Error: ${response.error}`);
       }
     } catch (error) {
       clearInterval(timerInterval);
@@ -581,7 +660,11 @@ export class SidebarController {
     return thinkingMessageElement;
   }
 
-  private async appendMessage(sender: string, text: string, duration?: number) {
+  private async appendMessage(
+    sender: string,
+    text: string,
+    duration?: number,
+  ): Promise<HTMLDivElement> {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', sender);
     if (sender === 'model') {
@@ -610,6 +693,7 @@ export class SidebarController {
     }
     this.messagesDiv.appendChild(messageElement);
     this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
+    return messageElement;
   }
 
   private async copyToClipboard(text: string, button: HTMLButtonElement) {
