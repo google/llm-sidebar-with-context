@@ -16,6 +16,30 @@ const key = fs
   .readFileSync(path.join(harnessRoot, 'dev-extension-key.txt'), 'utf8')
   .trim();
 
+function resolveCommand(baseName) {
+  if (process.platform === 'win32') {
+    if (baseName === 'npm') {
+      return 'npm.cmd';
+    }
+    if (baseName === 'npx') {
+      return 'npx.cmd';
+    }
+    if (baseName === 'cargo') {
+      return 'cargo.exe';
+    }
+  }
+  return baseName;
+}
+
+function resolveNativeBinaryPath() {
+  const extension = process.platform === 'win32' ? '.exe' : '';
+  return path.join(
+    workspaceRoot,
+    'native/overlay-companion/target/debug',
+    `overlay-companion${extension}`,
+  );
+}
+
 function deriveExtensionId(publicKey) {
   const hash = nodeCrypto
     .createHash('sha256')
@@ -29,7 +53,7 @@ function deriveExtensionId(publicKey) {
 }
 
 async function buildExtension() {
-  execFileSync('npm', ['run', 'build'], {
+  execFileSync(resolveCommand('npm'), ['run', 'build'], {
     cwd: workspaceRoot,
     stdio: 'inherit',
     env: {
@@ -42,7 +66,7 @@ async function buildExtension() {
 }
 
 async function buildNativeBinary() {
-  execFileSync('cargo', ['+stable', 'build', '--manifest-path', path.join(workspaceRoot, 'native/overlay-companion/Cargo.toml')], {
+  execFileSync(resolveCommand('cargo'), ['+stable', 'build', '--manifest-path', path.join(workspaceRoot, 'native/overlay-companion/Cargo.toml')], {
     cwd: workspaceRoot,
     stdio: 'inherit',
     env: process.env,
@@ -72,7 +96,7 @@ async function prepareExtension(extensionId) {
     path.join(configHome, 'chromium', 'NativeMessagingHosts'),
     path.join(userDataDir, 'NativeMessagingHosts'),
   ];
-  const nativeBinary = path.join(workspaceRoot, 'native/overlay-companion/target/debug/overlay-companion');
+  const nativeBinary = resolveNativeBinaryPath();
   const hostManifest = {
     name: 'com.maceip.native_overlay_companion',
     description: 'Native overlay companion test harness host',

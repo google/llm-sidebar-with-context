@@ -20,4 +20,6 @@ Chrome talks to the stdio host process via native messaging. The host process fo
 - a launchd LaunchAgent plist template for macOS,
 - a Task Scheduler XML template for Windows.
 
+On Windows, native messaging host discovery still requires registry registration (`HKCU`/`HKLM` NativeMessagingHosts`). The current harness foundation fixes command execution issues on Windows but does not yet automate registry registration there.
+
 The daemon answers `hello`, `ping`, and `status` JSON-RPC methods. The intended extension heartbeat cadence is 22 seconds.

@@ -112,6 +112,8 @@ The native companion is designed around a durable daemon + native-messaging brid
 
 The harness builds the extension, builds the Rust binary, registers native messaging manifests in an isolated browser home, launches Chrome headless with the unpacked extension, and waits for the extension to report a connected native companion session.
 
+Cross-platform note: the harness now resolves `npm.cmd` / `cargo.exe` correctly on Windows, but the fully automated native messaging registration path is currently validated end-to-end on Linux. Windows still needs registry-based native host registration before the full harness can be considered production-ready there.
+
 ### Environment Variables
 
 To populate legal links in the Settings panel, create a `.env` file in the root:
