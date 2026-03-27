@@ -666,7 +666,7 @@ mod overlay {
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     impl OverlayApp {
         fn new(event_loop: &EventLoop<()>) -> Result<Self> {
-            let context = Some(SoftContext::new(event_loop.owned_display_handle())?);
+            let context = Some(SoftContext::new(event_loop.owned_display_handle()).map_err(|e| anyhow::anyhow!("{e}"))?);
             Ok(Self {
                 context,
                 window: None,
@@ -700,10 +700,10 @@ mod overlay {
                 let _ = window.set_simple_fullscreen(false);
             }
 
-            let mut surface = Surface::new(self.context.as_ref().unwrap(), Arc::clone(&window))?;
+            let mut surface = Surface::new(self.context.as_ref().unwrap(), Arc::clone(&window)).map_err(|e| anyhow::anyhow!("{e}"))?;
             let width = NonZeroU32::new(self.size.0).unwrap();
             let height = NonZeroU32::new(self.size.1).unwrap();
-            surface.resize(width, height)?;
+            surface.resize(width, height).map_err(|e| anyhow::anyhow!("{e}"))?;
             self.surface = Some(surface);
             self.window = Some(window);
             Ok(())
@@ -713,7 +713,7 @@ mod overlay {
             let Some(surface) = self.surface.as_mut() else {
                 return Ok(());
             };
-            let mut buffer = surface.buffer_mut()?;
+            let mut buffer = surface.buffer_mut().map_err(|e| anyhow::anyhow!("{e}"))?;
             let width = buffer.width().get() as usize;
             let height = buffer.height().get() as usize;
             for y in 0..height {
@@ -734,7 +734,7 @@ mod overlay {
             if let Some(window) = &self.window {
                 window.pre_present_notify();
             }
-            buffer.present()?;
+            buffer.present().map_err(|e| anyhow::anyhow!("{e}"))?;
             Ok(())
         }
     }

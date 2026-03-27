@@ -35,6 +35,7 @@ import {
   ExtensionMessage,
   ExtensionResponse,
   GetContextResponse,
+  GetCurrentTabResponse,
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
@@ -97,7 +98,10 @@ export class BackgroundController {
     });
 
     // Update context when active tab changes
-    chrome.tabs.onActivated.addListener(() => this.broadcastCurrentTabInfo());
+    chrome.tabs.onActivated.addListener((activeInfo) => {
+      this.broadcastCurrentTabInfo();
+      this.autoPinTab(activeInfo.tabId);
+    });
 
     // Update context when tab URL or Title changes
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -121,6 +125,9 @@ export class BackgroundController {
 
         if (tab.active) {
           this.broadcastCurrentTabInfo();
+          if (changeInfo.url || changeInfo.status === 'complete') {
+            this.autoPinTab(tabId);
+          }
         }
       }
     });
@@ -212,6 +219,8 @@ export class BackgroundController {
           return await this.handleAgentdropAnimate();
         case MessageTypes.GET_MEMORY_STATS:
           return this.handleGetMemoryStats();
+        case MessageTypes.GET_CURRENT_TAB:
+          return await this.handleGetCurrentTab();
         case MessageTypes.NATIVE_COMPANION_STATUS:
           return this.handleNativeCompanionStatus();
         default:
@@ -347,6 +356,7 @@ export class BackgroundController {
         url: context.url,
         title: context.title,
         favIconUrl: context.favIconUrl,
+        autoPinned: context.autoPinned,
       }));
 
     return {
@@ -411,6 +421,7 @@ export class BackgroundController {
         url: context.url,
         title: context.title,
         favIconUrl: context.favIconUrl,
+        autoPinned: context.autoPinned,
       }));
     return { success: true, pinnedContexts };
   }
@@ -474,6 +485,54 @@ export class BackgroundController {
       pinnedTabCount: this.contextManager.getPinnedTabs().length,
       recentEpisodes: this.memoryPipeline.getRecentEpisodes(5),
     };
+  }
+
+  private async handleGetCurrentTab(): Promise<GetCurrentTabResponse> {
+    const [tab] = await this.tabService.query({
+      active: true,
+      currentWindow: true,
+    });
+
+    if (tab && tab.url && tab.id !== undefined) {
+      return {
+        tab: {
+          id: tab.id,
+          title: tab.title || 'Untitled',
+          url: tab.url,
+          favIconUrl: tab.favIconUrl,
+        },
+      };
+    }
+    return { tab: null };
+  }
+
+  private async autoPinTab(tabId: number): Promise<void> {
+    try {
+      await this.contextManager.load();
+      const tab = await this.tabService.getTab(tabId);
+      if (
+        !tab ||
+        !tab.url ||
+        tab.id === undefined ||
+        isRestrictedURL(tab.url)
+      ) {
+        return;
+      }
+      const tabContext = new TabContext(
+        tab.id,
+        tab.url,
+        tab.title || 'Untitled',
+        this.tabService,
+        tab.favIconUrl,
+        true,
+      );
+      await this.contextManager.autoPin(tabContext);
+      this.messageService
+        .sendMessage({ type: MessageTypes.CHECK_PINNED_TABS })
+        .catch(() => {});
+    } catch (error) {
+      console.error('Auto-pin failed:', error);
+    }
   }
 
   private handleNativeCompanionStatus(): NativeCompanionStatusResponse {

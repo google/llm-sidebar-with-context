@@ -122,10 +122,9 @@ export class NativeCompanionService {
   }
 
   private async restoreState() {
-    const saved =
-      await this.localStorageService.get<NativeCompanionState>(
-        StorageKeys.NATIVE_COMPANION_STATE,
-      );
+    const saved = await this.localStorageService.get<NativeCompanionState>(
+      StorageKeys.NATIVE_COMPANION_STATE,
+    );
 
     if (!saved) {
       await this.persistState();
@@ -177,13 +176,16 @@ export class NativeCompanionService {
 
   private async sayHello() {
     const manifest = chrome.runtime.getManifest();
-    const result = await this.call<NativeHelloResult, NativeHelloParams>('hello', {
-      extensionSessionId: this.state.extensionSessionId,
-      extensionVersion: manifest.version,
-      browser: 'chrome',
-      capabilities: ['overlay', 'boot-start', 'json-rpc', 'heartbeat'],
-      platform: navigator.platform,
-    });
+    const result = await this.call<NativeHelloResult, NativeHelloParams>(
+      'hello',
+      {
+        extensionSessionId: this.state.extensionSessionId,
+        extensionVersion: manifest.version,
+        browser: 'chrome',
+        capabilities: ['overlay', 'boot-start', 'json-rpc', 'heartbeat'],
+        platform: navigator.platform,
+      },
+    );
 
     this.state.connectionState = 'connected';
     this.state.nativeSessionId = result.nativeSessionId;

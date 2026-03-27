@@ -66,11 +66,20 @@ async function buildExtension() {
 }
 
 async function buildNativeBinary() {
-  execFileSync(resolveCommand('cargo'), ['+stable', 'build', '--manifest-path', path.join(workspaceRoot, 'native/overlay-companion/Cargo.toml')], {
-    cwd: workspaceRoot,
-    stdio: 'inherit',
-    env: process.env,
-  });
+  execFileSync(
+    resolveCommand('cargo'),
+    [
+      '+stable',
+      'build',
+      '--manifest-path',
+      path.join(workspaceRoot, 'native/overlay-companion/Cargo.toml'),
+    ],
+    {
+      cwd: workspaceRoot,
+      stdio: 'inherit',
+      env: process.env,
+    },
+  );
 }
 
 async function prepareExtension(extensionId) {
@@ -83,7 +92,10 @@ async function prepareExtension(extensionId) {
   manifest.key = key;
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 
-  const nativePagePath = path.join(extensionRoot, 'src/pages/native-companion-test.html');
+  const nativePagePath = path.join(
+    extensionRoot,
+    'src/pages/native-companion-test.html',
+  );
   await fse.ensureDir(path.dirname(nativePagePath));
   await fse.copy(
     path.join(workspaceRoot, 'src/pages/native-companion-test.html'),
@@ -117,9 +129,12 @@ async function prepareExtension(extensionId) {
 
 async function waitForCompanion(extensionId, browser) {
   const page = await browser.newPage();
-  await page.goto(`chrome-extension://${extensionId}/src/pages/native-companion-test.html`, {
-    waitUntil: 'networkidle0',
-  });
+  await page.goto(
+    `chrome-extension://${extensionId}/src/pages/native-companion-test.html`,
+    {
+      waitUntil: 'networkidle0',
+    },
+  );
 
   const timeoutAt = Date.now() + 60000;
   let lastStatusText = '';
@@ -131,7 +146,12 @@ async function waitForCompanion(extensionId, browser) {
             { type: 'nativeCompanionStatus' },
             (response) => {
               const error = chrome.runtime.lastError?.message;
-              resolve(JSON.stringify({ response: response || null, error: error || null }));
+              resolve(
+                JSON.stringify({
+                  response: response || null,
+                  error: error || null,
+                }),
+              );
             },
           );
         }),

@@ -12,3 +12,6 @@ coverage/
 
 # Icons
 *.png
+
+# Rust
+native/

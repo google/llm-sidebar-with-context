@@ -1,0 +1,294 @@
+name: Build & Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  LEGAL_NOTICE_URL: ${{ vars.LEGAL_NOTICE_URL || 'https://example.com/legal' }}
+  PRIVACY_POLICY_URL: ${{ vars.PRIVACY_POLICY_URL || 'https://example.com/privacy' }}
+  LICENSE_URL: ${{ vars.LICENSE_URL || 'https://github.com/maceip/llm-sidebar-infinite-context/blob/main/LICENSE' }}
+
+jobs:
+  # ── 1. Build the Chrome extension + CRX ───────────────────────────────
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+      - name: Pack CRX
+        if: ${{ env.CRX_PRIVATE_KEY != '' }}
+        env:
+          CRX_PRIVATE_KEY: ${{ secrets.CRX_PRIVATE_KEY }}
+        run: node build-scripts/pack-crx.js
+
+      - name: Pack CRX (unsigned, for PRs)
+        if: ${{ env.CRX_PRIVATE_KEY == '' }}
+        run: node build-scripts/pack-crx.js --generate-key
+        env:
+          CRX_PRIVATE_KEY: ''
+
+      - name: Zip dist for release
+        run: cd dist && zip -r ../llm-sidebar-extension.zip . -x "*.crx" "*.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension
+          path: |
+            dist/llm-sidebar.crx
+            llm-sidebar-extension.zip
+
+  # ── 2. Build native host + installer (matrix) ────────────────────────
+  native:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: linux-amd64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: windows-amd64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact: macos-amd64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: macos-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/target
+          key: ${{ matrix.target }}-cargo-${{ hashFiles('native/**/Cargo.lock') }}
+
+      - name: Build native host
+        working-directory: native
+        run: cargo build --release --target ${{ matrix.target }} -p llm-sidebar-host
+
+      - name: Build installer
+        working-directory: native
+        run: cargo build --release --target ${{ matrix.target }} -p llm-sidebar-installer
+
+      - name: Stage artifacts (unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p staging
+          cp native/target/${{ matrix.target }}/release/llm-sidebar-host staging/
+          cp native/target/${{ matrix.target }}/release/llm-sidebar-installer staging/
+
+      - name: Stage artifacts (windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir -p staging
+          cp native/target/${{ matrix.target }}/release/llm-sidebar-host.exe staging/
+          cp native/target/${{ matrix.target }}/release/llm-sidebar-installer.exe staging/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.artifact }}
+          path: staging/
+
+  # ── 3. Build .deb package ─────────────────────────────────────────────
+  deb:
+    needs: [extension, native]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-linux-amd64
+          path: native-bin/
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension
+          path: ext/
+
+      - name: Build .deb
+        run: |
+          PKG=llm-sidebar
+          VER=1.0.0
+          ARCH=amd64
+          ROOT=deb-root
+
+          # Directory layout
+          mkdir -p $ROOT/DEBIAN
+          mkdir -p $ROOT/usr/lib/$PKG
+          mkdir -p $ROOT/usr/bin
+
+          # Binaries
+          cp native-bin/llm-sidebar-host   $ROOT/usr/lib/$PKG/
+          cp native-bin/llm-sidebar-installer $ROOT/usr/bin/
+          chmod 755 $ROOT/usr/lib/$PKG/llm-sidebar-host
+          chmod 755 $ROOT/usr/bin/llm-sidebar-installer
+
+          # CRX
+          cp ext/dist/llm-sidebar.crx $ROOT/usr/lib/$PKG/ 2>/dev/null || true
+
+          # Control file
+          cat > $ROOT/DEBIAN/control << 'CTRL'
+          Package: llm-sidebar
+          Version: 1.0.0
+          Architecture: amd64
+          Maintainer: maceip
+          Description: LLM Sidebar Chrome extension with native messaging host
+           AI sidebar for Chrome with infinite context via pinned tabs,
+           agent memory, and a native messaging companion.
+          CTRL
+          # Remove leading whitespace from heredoc
+          sed -i 's/^          //' $ROOT/DEBIAN/control
+
+          # postinst — register native host after install
+          cat > $ROOT/DEBIAN/postinst << 'POST'
+          #!/bin/sh
+          set -e
+          MANIFEST_DIR=/etc/opt/chrome/native-messaging-hosts
+          mkdir -p "$MANIFEST_DIR"
+          cat > "$MANIFEST_DIR/com.llm_sidebar.native_host.json" << MANIFEST
+          {
+            "name": "com.llm_sidebar.native_host",
+            "description": "Native messaging host for LLM Sidebar",
+            "path": "/usr/lib/llm-sidebar/llm-sidebar-host",
+            "type": "stdio",
+            "allowed_origins": [
+              "chrome-extension://hecgmgkofmopdcjlbaegcaanaadhomhb/"
+            ]
+          }
+          MANIFEST
+          POST
+          sed -i 's/^          //' $ROOT/DEBIAN/postinst
+          chmod 755 $ROOT/DEBIAN/postinst
+
+          # postrm — clean up on uninstall
+          cat > $ROOT/DEBIAN/postrm << 'REM'
+          #!/bin/sh
+          set -e
+          rm -f /etc/opt/chrome/native-messaging-hosts/com.llm_sidebar.native_host.json
+          REM
+          sed -i 's/^          //' $ROOT/DEBIAN/postrm
+          chmod 755 $ROOT/DEBIAN/postrm
+
+          dpkg-deb --build $ROOT ${PKG}_${VER}_${ARCH}.deb
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: '*.deb'
+
+  # ── 4. Bundle release archives ────────────────────────────────────────
+  package:
+    needs: [extension, native]
+    strategy:
+      matrix:
+        include:
+          - artifact: linux-amd64
+            ext: tar.gz
+          - artifact: windows-amd64
+            ext: zip
+          - artifact: macos-amd64
+            ext: tar.gz
+          - artifact: macos-arm64
+            ext: tar.gz
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-${{ matrix.artifact }}
+          path: native-bin/
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension
+          path: ext/
+
+      - name: Bundle archive
+        run: |
+          mkdir -p bundle
+          cp native-bin/* bundle/
+          cp ext/dist/llm-sidebar.crx bundle/ 2>/dev/null || true
+          cp ext/llm-sidebar-extension.zip bundle/ 2>/dev/null || true
+
+          NAME=llm-sidebar-${{ matrix.artifact }}
+          if [ "${{ matrix.ext }}" = "tar.gz" ]; then
+            tar czf ${NAME}.tar.gz -C bundle .
+          else
+            cd bundle && zip -r ../${NAME}.zip . && cd ..
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.artifact }}
+          path: 'llm-sidebar-*.${{ matrix.ext }}'
+
+  # ── 5. GitHub Release (only on tags) ──────────────────────────────────
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [package, deb]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Collect release files
+        run: |
+          mkdir -p release
+          find artifacts/ -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.deb" -o -name "*.crx" \) -exec cp {} release/ \;
+          ls -la release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+
+  # ── 6. Publish to Chrome Web Store ────────────────────────────────────
+  chrome-web-store:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [extension]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension
+          path: ext/
+
+      - name: Publish to Chrome Web Store
+        uses: mnao305/chrome-extension-upload@v5.0.0
+        with:
+          file-path: ext/llm-sidebar-extension.zip
+          extension-id: ${{ vars.CHROME_EXTENSION_ID }}
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          publish: true

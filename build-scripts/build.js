@@ -12,7 +12,8 @@ const legalLinks = {
   PRIVACY_POLICY_URL:
     process.env.PRIVACY_POLICY_URL || 'https://example.com/privacy-policy',
   LICENSE_URL:
-    process.env.LICENSE_URL || 'https://github.com/google/llm-sidebar-with-context/blob/main/LICENSE',
+    process.env.LICENSE_URL ||
+    'https://github.com/google/llm-sidebar-with-context/blob/main/LICENSE',
 };
 
 async function build() {
@@ -22,9 +23,7 @@ async function build() {
     .map(([key]) => key);
 
   if (missingVars.length > 0) {
-    console.warn(
-      `Using fallback legal links for: ${missingVars.join(', ')}`,
-    );
+    console.warn(`Using fallback legal links for: ${missingVars.join(', ')}`);
   }
 
   // 2. Clean dist directory
@@ -100,7 +99,9 @@ async function build() {
     target: ['es2022'],
     sourcemap: true,
     define: {
-      'process.env.LEGAL_NOTICE_URL': JSON.stringify(legalLinks.LEGAL_NOTICE_URL),
+      'process.env.LEGAL_NOTICE_URL': JSON.stringify(
+        legalLinks.LEGAL_NOTICE_URL,
+      ),
       'process.env.PRIVACY_POLICY_URL': JSON.stringify(
         legalLinks.PRIVACY_POLICY_URL,
       ),
