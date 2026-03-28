@@ -86,6 +86,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             native/target
+            native/overlay-companion/target
           key: ${{ matrix.target }}-cargo-${{ hashFiles('native/**/Cargo.lock') }}
 
       - name: Build native host
@@ -96,12 +97,20 @@ jobs:
         working-directory: native
         run: cargo build --release --target ${{ matrix.target }} -p llm-sidebar-installer
 
+      - name: Build overlay companion
+        if: runner.os != 'Linux'
+        working-directory: native/overlay-companion
+        run: cargo build --release --target ${{ matrix.target }}
+
       - name: Stage artifacts (unix)
         if: runner.os != 'Windows'
         run: |
           mkdir -p staging
           cp native/target/${{ matrix.target }}/release/llm-sidebar-host staging/
           cp native/target/${{ matrix.target }}/release/llm-sidebar-installer staging/
+          if [ -f native/overlay-companion/target/${{ matrix.target }}/release/overlay-companion ]; then
+            cp native/overlay-companion/target/${{ matrix.target }}/release/overlay-companion staging/
+          fi
 
       - name: Stage artifacts (windows)
         if: runner.os == 'Windows'
@@ -110,6 +119,9 @@ jobs:
           mkdir -p staging
           cp native/target/${{ matrix.target }}/release/llm-sidebar-host.exe staging/
           cp native/target/${{ matrix.target }}/release/llm-sidebar-installer.exe staging/
+          if [ -f native/overlay-companion/target/${{ matrix.target }}/release/overlay-companion.exe ]; then
+            cp native/overlay-companion/target/${{ matrix.target }}/release/overlay-companion.exe staging/
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
