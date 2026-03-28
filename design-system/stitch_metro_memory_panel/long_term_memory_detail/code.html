@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-bright": "#2c2c2c",
+                        "on-primary-fixed": "#001932",
+                        "on-primary-container": "#002444",
+                        "on-tertiary-fixed-variant": "#780600",
+                        "on-tertiary-fixed": "#390100",
+                        "secondary-container": "#006e00",
+                        "inverse-on-surface": "#565555",
+                        "secondary": "#82f76c",
+                        "on-primary-fixed-variant": "#003b6a",
+                        "surface-dim": "#0e0e0e",
+                        "secondary-fixed-dim": "#74e860",
+                        "outline": "#767575",
+                        "on-secondary-container": "#e7ffda",
+                        "inverse-primary": "#1361a5",
+                        "on-background": "#ffffff",
+                        "primary-fixed-dim": "#6aa6ef",
+                        "tertiary-container": "#fe2c15",
+                        "tertiary-dim": "#e71602",
+                        "on-error-container": "#ffa8a3",
+                        "secondary-dim": "#74e860",
+                        "on-secondary-fixed": "#004700",
+                        "on-tertiary-container": "#000000",
+                        "primary-dim": "#6aa6ef",
+                        "primary": "#78b4fe",
+                        "surface-container-high": "#1f2020",
+                        "on-secondary-fixed-variant": "#006700",
+                        "tertiary": "#ff725b",
+                        "primary-container": "#67a4ec",
+                        "error-dim": "#d7383b",
+                        "tertiary-fixed-dim": "#ff7c66",
+                        "tertiary-fixed": "#ff9380",
+                        "inverse-surface": "#fcf9f8",
+                        "surface-container-lowest": "#000000",
+                        "error-container": "#9f0519",
+                        "on-tertiary": "#490200",
+                        "error": "#ff716c",
+                        "surface-container": "#191a1a",
+                        "surface-variant": "#262626",
+                        "background": "#0e0e0e",
+                        "secondary-fixed": "#82f76c",
+                        "on-error": "#490006",
+                        "surface-container-low": "#131313",
+                        "primary-fixed": "#78b4fe",
+                        "on-surface": "#ffffff",
+                        "on-secondary": "#005c00",
+                        "surface-tint": "#78b4fe",
+                        "outline-variant": "#484848",
+                        "surface-container-highest": "#262626",
+                        "on-surface-variant": "#adaaaa",
+                        "on-primary": "#00325b",
+                        "surface": "#0e0e0e"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0e0e0e; }
+        ::-webkit-scrollbar-thumb { background: #2c2c2c; }
+        ::-webkit-scrollbar-thumb:hover { background: #78b4fe; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center w-full px-6 h-16 bg-[#131313] border-b-0">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-black text-white tracking-tighter uppercase font-['Inter']">KINETIC_MEMORANDUM</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="relative hidden md:block">
+<input class="bg-surface-container border-0 border-b border-outline-variant focus:border-primary focus:ring-0 text-sm w-64 px-4 py-2 font-['Inter'] uppercase tracking-widest text-on-surface-variant" placeholder="QUERY_SYSTEM..." type="text"/>
+</div>
+<button class="p-2 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0">
+<span class="material-symbols-outlined">memory</span>
+</button>
+<button class="p-2 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0">
+<span class="material-symbols-outlined">history</span>
+</button>
+<button class="p-2 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0">
+<span class="material-symbols-outlined">terminal</span>
+</button>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="h-full w-64 fixed left-0 top-0 pt-16 hidden md:flex flex-col bg-[#131313] z-40">
+<div class="p-6 mb-4">
+<h2 class="text-white font-black font-['Inter'] uppercase text-xl">MEMORY_OS</h2>
+<p class="text-primary text-[10px] font-bold tracking-widest">V.01_ARCHITECT</p>
+</div>
+<nav class="flex flex-col h-full space-y-1">
+<a class="flex items-center gap-3 px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-colors duration-0" href="#">
+<span class="material-symbols-outlined">bolt</span>
+                Short-term Context
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 bg-[#78b4fe] text-[#00325b] font-['Inter'] font-bold uppercase text-[12px] border-l-4 border-[#78b4fe]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">database</span>
+                Long-term Memory
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-colors duration-0" href="#">
+<span class="material-symbols-outlined">filter_list</span>
+                Retriever + Ranker
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-colors duration-0" href="#">
+<span class="material-symbols-outlined">compress</span>
+                Consolidator
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-colors duration-0" href="#">
+<span class="material-symbols-outlined">delete_sweep</span>
+                Forgetting Policy
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-colors duration-0" href="#">
+<span class="material-symbols-outlined">edit_note</span>
+                Prompt Assembler
+            </a>
+<div class="mt-auto pb-8">
+<a class="flex items-center gap-3 px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-colors duration-0" href="#">
+<span class="material-symbols-outlined">settings</span>
+                    System Settings
+                </a>
+</div>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 pt-16 min-h-screen bg-surface flex flex-col">
+<!-- Large Emerald Hero Header -->
+<header class="w-full bg-secondary-container p-8 md:p-12 flex flex-col md:flex-row justify-between items-end gap-6">
+<div class="max-w-4xl">
+<span class="text-on-secondary-container font-black uppercase tracking-[0.2em] text-xs mb-4 block">MODULE_02 // PERSISTENT_STORAGE</span>
+<h1 class="text-6xl md:text-8xl font-black text-on-secondary-container leading-[0.85] tracking-tighter uppercase font-headline">LONG_TERM_MEMORY</h1>
+</div>
+<div class="flex flex-col items-end text-right">
+<div class="text-4xl font-black text-on-secondary-container">2.4 TB</div>
+<div class="text-xs font-bold text-on-secondary-container opacity-70 uppercase tracking-widest">ALLOCATED_CAPACITY</div>
+</div>
+</header>
+<!-- Dynamic Grid Layout -->
+<section class="grid grid-cols-1 lg:grid-cols-12 w-full flex-grow p-0 gap-0">
+<!-- Left Panel: Search & Facts (Bento Styled) -->
+<div class="lg:col-span-8 bg-surface-container-low flex flex-col">
+<!-- Search & Filter Bar -->
+<div class="p-6 bg-surface-container-high flex flex-wrap gap-4 items-center">
+<div class="flex-grow relative">
+<span class="material-symbols-outlined absolute left-0 top-1/2 -translate-y-1/2 text-primary">search</span>
+<input class="w-full pl-10 pr-4 py-3 bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0 text-on-surface uppercase font-bold tracking-widest text-sm" placeholder="FILTER_KNOWLEDGE_BASE..." type="text"/>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 bg-surface-bright text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-colors">ALL_TAGS</button>
+<button class="px-4 py-2 bg-surface-bright text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-colors">RANK_HIGH</button>
+</div>
+</div>
+<!-- Content Area: Facts & Preferences -->
+<div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Fact Card 01 -->
+<div class="bg-surface p-5 flex flex-col justify-between min-h-[160px] border-l-4 border-secondary transition-all hover:bg-surface-bright group">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold text-secondary uppercase tracking-[0.2em]">FACT_ID: 992-A</span>
+<span class="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity">push_pin</span>
+</div>
+<p class="text-on-surface font-bold uppercase leading-tight text-lg">USER_PREF: PREFERS DARK MODE IN ALL ARCHITECTURAL INTERFACES.</p>
+</div>
+<div class="mt-6 flex items-center justify-between">
+<span class="text-[10px] text-on-surface-variant font-black">IMPORTANCE_WEIGHT</span>
+<div class="h-1 w-24 bg-surface-container">
+<div class="h-full bg-secondary w-[85%]"></div>
+</div>
+</div>
+</div>
+<!-- Fact Card 02 -->
+<div class="bg-surface p-5 flex flex-col justify-between min-h-[160px] border-l-4 border-primary transition-all hover:bg-surface-bright group">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">KNOWLEDGE_NODE: LOGISTICS</span>
+<span class="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition-opacity">share</span>
+</div>
+<p class="text-on-surface font-bold uppercase leading-tight text-lg">GLOBAL_SUPPLY_CHAIN: LITHIUM RESERVES LOCATED IN THE SALAR DE UYUNI.</p>
+</div>
+<div class="mt-6 flex items-center justify-between">
+<span class="text-[10px] text-on-surface-variant font-black">IMPORTANCE_WEIGHT</span>
+<div class="h-1 w-24 bg-surface-container">
+<div class="h-full bg-primary w-[40%]"></div>
+</div>
+</div>
+</div>
+<!-- Knowledge Graph Visualization Placeholder -->
+<div class="md:col-span-2 bg-surface-container-lowest h-96 relative flex items-center justify-center overflow-hidden">
+<img alt="digital nexus graph" class="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-screen" data-alt="abstract digital connection network with glowing blue lines and data nodes against a black architectural grid background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_DnkkSv69SAhP-XaIlvBXbe_Y2tvrJekVGLTVHQNauLd_9TlG5k0T9f7Ipojr2UBagh2w9Z1XB6ACMY0b5f-Re2vsQ43jATqUapNnc35YywX11GXfld-7G0DCS-mi-Q9EwMMW0dt1RHcqXddYzBHcxzSx7-Hqxj1UjPUG2SxCNx-21hNDwRSDDhcBHcWf4ZEVKUt_8pROrfjffqAz5WpwgmZA1C0gkveO0z0EdyP_uPCxtTud1TGLC2HwjxevSw3-J8cnANmaxYc"/>
+<div class="relative z-10 text-center">
+<h3 class="text-primary font-black text-4xl uppercase tracking-tighter mb-2">GRAPH_VISUALIZER</h3>
+<p class="text-on-surface-variant text-[10px] uppercase font-bold tracking-[0.4em]">ACTIVE_RENDER_001_BETA</p>
+</div>
+<!-- UI Overlays on Graph -->
+<div class="absolute top-4 left-4 p-4 border border-outline-variant/20 bg-surface/80 backdrop-blur-md">
+<div class="flex items-center gap-2 mb-2">
+<div class="w-2 h-2 bg-secondary animate-pulse"></div>
+<span class="text-[10px] font-bold text-white">NODES: 14,802</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-primary"></div>
+<span class="text-[10px] font-bold text-white">EDGES: 52,119</span>
+</div>
+</div>
+</div>
+<!-- Fact Card 03 -->
+<div class="bg-surface p-5 flex flex-col justify-between min-h-[160px] border-l-4 border-tertiary transition-all hover:bg-surface-bright group">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold text-tertiary uppercase tracking-[0.2em]">URGENT_CONTEXT: LEGAL</span>
+<span class="material-symbols-outlined text-tertiary opacity-0 group-hover:opacity-100 transition-opacity">warning</span>
+</div>
+<p class="text-on-surface font-bold uppercase leading-tight text-lg">COMPLIANCE: RECENT GDPR UPDATES REQUIRE IMMEDIATE DATABASE ARCHIVING POLICY REVISION.</p>
+</div>
+<div class="mt-6 flex items-center justify-between">
+<span class="text-[10px] text-on-surface-variant font-black">IMPORTANCE_WEIGHT</span>
+<div class="h-1 w-24 bg-surface-container">
+<div class="h-full bg-tertiary w-[95%]"></div>
+</div>
+</div>
+</div>
+<!-- Fact Card 04 -->
+<div class="bg-surface p-5 flex flex-col justify-between min-h-[160px] border-l-4 border-surface-bright transition-all hover:bg-surface-bright group">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">HISTORICAL_DATA</span>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">history</span>
+</div>
+<p class="text-on-surface font-bold uppercase leading-tight text-lg">SYSTEM_EVENT: INITIAL BOOT SEQUENCE COMPLETED ON 2024-01-01T00:00:01Z.</p>
+</div>
+<div class="mt-6 flex items-center justify-between">
+<span class="text-[10px] text-on-surface-variant font-black">IMPORTANCE_WEIGHT</span>
+<div class="h-1 w-24 bg-surface-container">
+<div class="h-full bg-on-surface-variant w-[15%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Panel: Controls & Add (Metro Style) -->
+<div class="lg:col-span-4 bg-surface-container border-l-0 lg:border-l lg:border-surface-variant p-8 flex flex-col gap-10">
+<!-- Add Memory Form -->
+<div>
+<h2 class="text-2xl font-black uppercase tracking-tighter mb-6">ADD_MEMORY_BLOCK</h2>
+<form class="space-y-6">
+<div class="group">
+<label class="block text-[10px] font-black text-on-surface-variant mb-2 uppercase tracking-widest">DATA_INPUT_FIELD</label>
+<textarea class="w-full bg-surface-container-low border-0 border-b border-outline-variant focus:border-primary focus:ring-0 text-on-surface placeholder:text-outline-variant uppercase text-sm font-bold p-4" placeholder="ENTER NEW FACT OR PREFERENCE..." rows="4"></textarea>
+</div>
+<div>
+<label class="block text-[10px] font-black text-on-surface-variant mb-4 uppercase tracking-widest">IMPORTANCE_COEFFICIENT</label>
+<input class="w-full h-1 bg-surface-container-high appearance-none cursor-pointer accent-primary" max="100" min="0" type="range"/>
+<div class="flex justify-between mt-2 text-[10px] font-black uppercase">
+<span>LOW</span>
+<span>SYSTEM_CRITICAL</span>
+</div>
+</div>
+<div>
+<label class="block text-[10px] font-black text-on-surface-variant mb-2 uppercase tracking-widest">CATEGORY_TAG</label>
+<select class="w-full bg-surface-container-low border-0 border-b border-outline-variant focus:border-primary focus:ring-0 text-on-surface uppercase text-sm font-bold py-3">
+<option>USER_PREF</option>
+<option>KNOWLEDGE_BASE</option>
+<option>SYSTEM_EVENT</option>
+<option>LEGAL_CONTEXT</option>
+</select>
+</div>
+<button class="w-full py-4 bg-primary text-on-primary font-black uppercase tracking-widest text-sm hover:bg-on-primary hover:text-primary transition-all flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined">add</span>
+                            COMMIT_TO_STORAGE
+                        </button>
+</form>
+</div>
+<!-- System Stats Cards -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-bright p-4">
+<span class="text-[10px] font-black text-primary uppercase">QUERY_SPEED</span>
+<div class="text-2xl font-black mt-2">12ms</div>
+</div>
+<div class="bg-surface-bright p-4">
+<span class="text-[10px] font-black text-secondary uppercase">ENTROPY</span>
+<div class="text-2xl font-black mt-2">0.02%</div>
+</div>
+<div class="bg-surface-bright p-4">
+<span class="text-[10px] font-black text-tertiary uppercase">FRAG_INDEX</span>
+<div class="text-2xl font-black mt-2">4.1</div>
+</div>
+<div class="bg-surface-bright p-4">
+<span class="text-[10px] font-black text-on-surface-variant uppercase">REF_LOCK</span>
+<div class="text-2xl font-black mt-2 text-secondary">TRUE</div>
+</div>
+</div>
+<!-- Visual Accent -->
+<div class="mt-auto pt-8 border-t border-surface-variant">
+<p class="text-[9px] text-on-surface-variant font-medium leading-relaxed uppercase">
+                        NOTICE: LONG_TERM_MEMORY IS SUBJECT TO THE DEFINED 'FORGETTING_POLICY'. SYSTEM_CRITICAL ITEMS SHOULD BE PINNED TO AVOID DECAY. UNAUTHORIZED MODIFICATION OF CORE DIRECTIVES MAY CAUSE COGNITIVE INSTABILITY.
+                    </p>
+</div>
+</div>
+</section>
+</main>
+</body></html>

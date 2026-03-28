@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-bright": "#2c2c2c",
+              "on-primary-fixed": "#001932",
+              "on-primary-container": "#002444",
+              "on-tertiary-fixed-variant": "#780600",
+              "on-tertiary-fixed": "#390100",
+              "secondary-container": "#006e00",
+              "inverse-on-surface": "#565555",
+              "secondary": "#82f76c",
+              "on-primary-fixed-variant": "#003b6a",
+              "surface-dim": "#0e0e0e",
+              "secondary-fixed-dim": "#74e860",
+              "outline": "#767575",
+              "on-secondary-container": "#e7ffda",
+              "inverse-primary": "#1361a5",
+              "on-background": "#ffffff",
+              "primary-fixed-dim": "#6aa6ef",
+              "tertiary-container": "#fe2c15",
+              "tertiary-dim": "#e71602",
+              "on-error-container": "#ffa8a3",
+              "secondary-dim": "#74e860",
+              "on-secondary-fixed": "#004700",
+              "on-tertiary-container": "#000000",
+              "primary-dim": "#6aa6ef",
+              "primary": "#78b4fe",
+              "surface-container-high": "#1f2020",
+              "on-secondary-fixed-variant": "#006700",
+              "tertiary": "#ff725b",
+              "primary-container": "#67a4ec",
+              "error-dim": "#d7383b",
+              "tertiary-fixed-dim": "#ff7c66",
+              "tertiary-fixed": "#ff9380",
+              "inverse-surface": "#fcf9f8",
+              "surface-container-lowest": "#000000",
+              "error-container": "#9f0519",
+              "on-tertiary": "#490200",
+              "error": "#ff716c",
+              "surface-container": "#191a1a",
+              "surface-variant": "#262626",
+              "background": "#0e0e0e",
+              "secondary-fixed": "#82f76c",
+              "on-error": "#490006",
+              "surface-container-low": "#131313",
+              "primary-fixed": "#78b4fe",
+              "on-surface": "#ffffff",
+              "on-secondary": "#005c00",
+              "surface-tint": "#78b4fe",
+              "outline-variant": "#484848",
+              "surface-container-highest": "#262626",
+              "on-surface-variant": "#adaaaa",
+              "on-primary": "#00325b",
+              "surface": "#0e0e0e"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"],
+              "mono": ["JetBrains Mono"]
+            },
+            borderRadius: {"DEFAULT": "0", "lg": "0", "xl": "0", "full": "0"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0e0e0e; }
+        ::-webkit-scrollbar-thumb { background: #2c2c2c; }
+        ::-webkit-scrollbar-thumb:hover { background: #78b4fe; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body overflow-hidden">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-[#131313] flex justify-between items-center px-6 h-16">
+<div class="text-2xl font-black text-white tracking-tighter uppercase font-['Inter']">KINETIC_MEMORANDUM</div>
+<div class="flex items-center space-x-4">
+<div class="hidden md:flex items-center bg-surface-container px-3 py-1">
+<span class="material-symbols-outlined text-on-surface-variant text-sm mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-xs font-mono text-primary uppercase placeholder-outline w-48" placeholder="QUERY_SYSTEM..." type="text"/>
+</div>
+<div class="flex space-x-2">
+<button class="p-2 text-[#78b4fe] hover:bg-[#2c2c2c] transition-colors duration-0">
+<span class="material-symbols-outlined">memory</span>
+</button>
+<button class="p-2 text-[#78b4fe] hover:bg-[#2c2c2c] transition-colors duration-0">
+<span class="material-symbols-outlined">history</span>
+</button>
+<button class="p-2 text-[#78b4fe] hover:bg-[#2c2c2c] transition-colors duration-0">
+<span class="material-symbols-outlined">terminal</span>
+</button>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="h-full w-64 fixed left-0 top-0 bg-[#131313] pt-20 flex flex-col z-40">
+<div class="px-6 mb-8">
+<div class="text-white font-black text-xl tracking-tighter uppercase">MEMORY_OS</div>
+<div class="text-[#78b4fe] font-bold uppercase text-[10px] tracking-widest">V.01_ARCHITECT</div>
+</div>
+<nav class="flex flex-col space-y-1">
+<a class="flex items-center px-6 py-3 bg-[#78b4fe] text-[#00325b] font-bold uppercase text-[12px] font-['Inter']" href="#">
+<span class="material-symbols-outlined mr-3">bolt</span>
+                Short-term Context
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0 uppercase text-[12px] font-['Inter'] font-bold" href="#">
+<span class="material-symbols-outlined mr-3">database</span>
+                Long-term Memory
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0 uppercase text-[12px] font-['Inter'] font-bold" href="#">
+<span class="material-symbols-outlined mr-3">filter_list</span>
+                Retriever + Ranker
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0 uppercase text-[12px] font-['Inter'] font-bold" href="#">
+<span class="material-symbols-outlined mr-3">compress</span>
+                Consolidator
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0 uppercase text-[12px] font-['Inter'] font-bold" href="#">
+<span class="material-symbols-outlined mr-3">delete_sweep</span>
+                Forgetting Policy
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0 uppercase text-[12px] font-['Inter'] font-bold" href="#">
+<span class="material-symbols-outlined mr-3">edit_note</span>
+                Prompt Assembler
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0 uppercase text-[12px] font-['Inter'] font-bold" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+                System Settings
+            </a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 h-screen overflow-y-auto">
+<div class="flex flex-col h-full">
+<!-- Large Cobalt Header -->
+<section class="bg-primary p-12 flex flex-col justify-end min-h-[300px]">
+<div class="max-w-6xl w-full">
+<span class="text-on-primary font-black uppercase tracking-[0.2em] text-sm mb-4 block">CORE_MODULE_01</span>
+<h1 class="text-on-primary text-8xl md:text-9xl font-black uppercase leading-none tracking-tighter">SHORT_TERM_CONTEXT</h1>
+<div class="flex flex-wrap gap-4 mt-8">
+<button class="bg-on-primary text-primary px-8 py-4 font-black uppercase text-sm flex items-center hover:bg-white transition-colors">
+<span class="material-symbols-outlined mr-2">cleaning_services</span>
+                            Flush Buffer
+                        </button>
+<div class="flex items-center bg-on-primary-container px-6 py-4">
+<span class="text-primary font-black uppercase text-sm mr-4">Freeze Context</span>
+<div class="w-12 h-6 bg-surface-bright flex items-center p-1 cursor-pointer">
+<div class="w-4 h-4 bg-primary"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Content Grid (Bento Style) -->
+<section class="flex-1 grid grid-cols-12 gap-0">
+<!-- Live Context Buffer (Scrolling Streams) -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-low p-8 border-r border-surface-container">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-white font-black uppercase tracking-widest text-xs flex items-center">
+<span class="w-2 h-2 bg-secondary mr-2"></span>
+                            LIVE_CONTEXT_BUFFER_STREAM
+                        </h2>
+<span class="font-mono text-[10px] text-secondary">TTL: 420s</span>
+</div>
+<div class="h-[500px] overflow-y-scroll pr-4 font-mono text-sm leading-relaxed space-y-4">
+<div class="bg-surface-container p-4 border-l-4 border-primary">
+<span class="text-primary font-bold text-[10px] block mb-1">USER_INPUT // 14:02:11</span>
+<p class="text-on-surface">System, analyze the spectral density of the current memory cluster and identify potential bottlenecks in the Retriever + Ranker pipeline.</p>
+</div>
+<div class="bg-surface p-4">
+<span class="text-secondary font-bold text-[10px] block mb-1">SYSTEM_RESPONSE // 14:02:12</span>
+<p class="text-on-surface-variant">Accessing retrieval matrices... Calculating latency per node... Identification of a 14ms lag in the Ranker stage due to high embedding dimensionality.</p>
+</div>
+<div class="bg-surface-container p-4 border-l-4 border-primary">
+<span class="text-primary font-bold text-[10px] block mb-1">USER_INPUT // 14:03:45</span>
+<p class="text-on-surface">Initiate compression on historical tokens older than 3 cycles. Keep current context buffer active.</p>
+</div>
+<div class="bg-surface p-4">
+<span class="text-secondary font-bold text-[10px] block mb-1">SYSTEM_RESPONSE // 14:03:46</span>
+<p class="text-on-surface-variant">Compression protocols initiated. Consolidator active. 4.2k tokens flagged for long-term storage. Short-term buffer stabilized at 812 tokens.</p>
+</div>
+<div class="bg-surface-container p-4 border-l-4 border-primary opacity-60">
+<span class="text-primary font-bold text-[10px] block mb-1">USER_INPUT // 13:58:02</span>
+<p class="text-on-surface">Load the KINETIC_GRID design specification into the primary focus window.</p>
+</div>
+<div class="bg-surface p-4 opacity-60">
+<span class="text-secondary font-bold text-[10px] block mb-1">SYSTEM_RESPONSE // 13:58:03</span>
+<p class="text-on-surface-variant">Design spec loaded. 0px corner mandate enforced. Tonal stacking hierarchy verified.</p>
+</div>
+</div>
+</div>
+<!-- Metrics & Metadata (Dense Grid) -->
+<div class="col-span-12 lg:col-span-4 flex flex-col divide-y divide-surface-container">
+<!-- Tile: Token Count -->
+<div class="p-8 bg-surface-container-high group hover:bg-primary transition-colors cursor-pointer">
+<span class="text-on-surface-variant group-hover:text-on-primary font-black uppercase text-[10px] tracking-widest block mb-4">TOTAL_TOKENS_ACTIVE</span>
+<div class="text-6xl font-black group-hover:text-on-primary">812</div>
+<div class="mt-4 h-1 bg-surface-bright group-hover:bg-on-primary w-full relative">
+<div class="absolute top-0 left-0 h-full bg-secondary w-[18%] group-hover:bg-white"></div>
+</div>
+<span class="text-[10px] font-mono mt-2 block text-secondary group-hover:text-on-primary">18% OF MAX_CAPACITY</span>
+</div>
+<!-- Tile: Attention Map -->
+<div class="p-8 bg-surface-container">
+<span class="text-on-surface-variant font-black uppercase text-[10px] tracking-widest block mb-4">ATTENTION_HEATMAP</span>
+<div class="grid grid-cols-8 gap-1 h-32">
+<div class="bg-primary"></div><div class="bg-primary-dim"></div><div class="bg-primary"></div><div class="bg-on-primary-container"></div>
+<div class="bg-surface-bright"></div><div class="bg-surface-bright"></div><div class="bg-primary-dim"></div><div class="bg-primary"></div>
+<div class="bg-on-primary-container"></div><div class="bg-surface-bright"></div><div class="bg-primary"></div><div class="bg-primary"></div>
+<div class="bg-primary-dim"></div><div class="bg-on-primary-container"></div><div class="bg-surface-bright"></div><div class="bg-surface-bright"></div>
+</div>
+<p class="text-[10px] font-mono mt-4 text-on-surface-variant uppercase">Spatial density focused on recent tokens [Index: 720-812]</p>
+</div>
+<!-- Tile: System Health -->
+<div class="p-8 bg-secondary-container">
+<div class="flex justify-between items-start">
+<div>
+<span class="text-on-secondary-container font-black uppercase text-[10px] tracking-widest block mb-4">BUFFER_HEALTH</span>
+<div class="text-4xl font-black text-on-secondary-container uppercase">OPTIMAL</div>
+</div>
+<span class="material-symbols-outlined text-on-secondary-container text-4xl">check_circle</span>
+</div>
+<p class="text-[10px] font-mono mt-6 text-on-secondary-container opacity-80 uppercase leading-tight">No overflow detected. Neural weights synchronized. Ready for high-velocity inference.</p>
+</div>
+<!-- Tile: Recent Image Data -->
+<div class="flex-1 bg-surface-container-highest relative overflow-hidden min-h-[200px]">
+<img alt="Digital circuit grid" class="absolute inset-0 w-full h-full object-cover opacity-30 grayscale hover:grayscale-0 transition-all duration-500" data-alt="abstract close-up of a high-tech glowing circuit board with blue neon lines and futuristic digital interface elements" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHkZTR2Z1HiKk5ojQLYNhO4qeg8ksQKdqVBdSL2ilYX_-pPpwr2UD4LqlfPfv3XJPIj1_Ov0crN8B3huUj4-QxcApB1eaP7BWrm6mL56cY_KPHqS0h10KA_GOclg0ekcPCiCIvjn45f8sDh1izjp4-BZqxdCgj3LcsYpKiPFJA-SLHyIVoDAAzo3PE7suwfL9uSarU-EAKqn7EXjsL-F2iG4hKQSK92geMBmF299yUB-LGh01O8a90APpWKxdLyv79_gCDUmR0LkE"/>
+<div class="absolute inset-0 p-8 flex flex-col justify-end pointer-events-none">
+<span class="text-white font-black uppercase text-[10px] tracking-widest block mb-2">LAST_ENCODED_FRAME</span>
+<div class="text-xs font-mono text-primary bg-on-primary-container px-2 py-1 w-fit">FRAME_ID: 0x8849F</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Context Meta Overlay (Fixed Bottom Right) -->
+<div class="fixed bottom-0 right-0 p-4 z-50 pointer-events-none">
+<div class="bg-surface px-4 py-2 flex items-center space-x-6 border-l-4 border-secondary pointer-events-auto">
+<div class="flex items-center">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse mr-2"></span>
+<span class="font-mono text-[10px] text-on-surface uppercase font-bold">Inference_Active</span>
+</div>
+<div class="font-mono text-[10px] text-on-surface-variant uppercase">
+                LATENCY: <span class="text-on-surface">12ms</span>
+</div>
+<div class="font-mono text-[10px] text-on-surface-variant uppercase">
+                UPTIME: <span class="text-on-surface">11:02:44</span>
+</div>
+</div>
+</div>
+</body></html>

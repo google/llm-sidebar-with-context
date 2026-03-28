@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MemoryManager - KINETIC_GRID</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary": "#ff725b",
+              "on-secondary": "#005c00",
+              "surface-bright": "#2c2c2c",
+              "secondary-dim": "#74e860",
+              "on-surface-variant": "#adaaaa",
+              "on-background": "#ffffff",
+              "secondary-fixed-dim": "#74e860",
+              "secondary-container": "#006e00",
+              "surface-container": "#191a1a",
+              "outline-variant": "#484848",
+              "on-primary-fixed-variant": "#003b6a",
+              "background": "#0e0e0e",
+              "on-secondary-fixed": "#004700",
+              "error-container": "#9f0519",
+              "secondary-fixed": "#82f76c",
+              "surface-dim": "#0e0e0e",
+              "on-primary-container": "#002444",
+              "secondary": "#82f76c",
+              "tertiary-fixed-dim": "#ff7c66",
+              "primary-fixed": "#78b4fe",
+              "surface-container-low": "#131313",
+              "on-primary": "#00325b",
+              "on-primary-fixed": "#001932",
+              "on-error-container": "#ffa8a3",
+              "surface-variant": "#262626",
+              "on-tertiary-fixed": "#390100",
+              "error": "#ff716c",
+              "error-dim": "#d7383b",
+              "primary": "#78b4fe",
+              "on-tertiary": "#490200",
+              "on-error": "#490006",
+              "on-secondary-container": "#e7ffda",
+              "primary-fixed-dim": "#6aa6ef",
+              "surface-container-highest": "#262626",
+              "surface-container-high": "#1f2020",
+              "inverse-primary": "#1361a5",
+              "inverse-on-surface": "#565555",
+              "outline": "#767575",
+              "on-surface": "#ffffff",
+              "primary-dim": "#6aa6ef",
+              "on-tertiary-container": "#000000",
+              "primary-container": "#67a4ec",
+              "surface": "#0e0e0e",
+              "tertiary-container": "#fe2c15",
+              "tertiary-dim": "#e71602",
+              "surface-container-lowest": "#000000",
+              "tertiary-fixed": "#ff9380",
+              "surface-tint": "#78b4fe",
+              "inverse-surface": "#fcf9f8",
+              "on-secondary-fixed-variant": "#006700",
+              "on-tertiary-fixed-variant": "#780600",
+              "mango": "#ffb900",
+              "on-mango": "#3e2d00",
+              "violet": "#b479ff",
+              "on-violet": "#2a005e",
+              "steel": "#717d7e",
+              "on-steel": "#171a1a"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0", "lg": "0", "xl": "0", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0e0e0e;
+        }
+        /* Hide scrollbar for clean metro look */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen overflow-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e0e] flex items-center justify-between px-6 h-16 w-full font-['Inter'] font-bold tracking-tighter uppercase">
+<div class="text-xl font-black text-white tracking-widest">MemoryManager</div>
+<div class="flex gap-4">
+<button class="p-2 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-150 active:scale-95">
+<span class="material-symbols-outlined">grid_view</span>
+</button>
+<button class="p-2 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-150 active:scale-95">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas (Left Side) -->
+<main class="fixed left-0 top-16 bottom-0 w-1/2 p-10 overflow-y-auto">
+<div class="max-w-2xl">
+<h1 class="text-6xl font-black uppercase tracking-tighter leading-none mb-8 text-on-surface">
+                SYSTEM<br/>OVERVIEW
+            </h1>
+<div class="grid grid-cols-1 gap-6">
+<div class="bg-surface-container p-8">
+<h2 class="text-sm font-bold uppercase tracking-[0.2em] text-primary mb-4">Neural Architecture</h2>
+<p class="text-on-surface-variant leading-relaxed">
+                        Operating on CONTEXT_OS_V1. Active memory shards are synchronized across the KINETIC_GRID. 
+                        Optimization protocols are currently running at 98.4% efficiency. No latency detected in prompt assembly.
+                    </p>
+</div>
+<div class="bg-surface-container-low p-8">
+<h2 class="text-sm font-bold uppercase tracking-[0.2em] text-secondary mb-4">Live Stream</h2>
+<div class="space-y-4">
+<div class="flex justify-between items-center bg-surface p-4">
+<span class="text-xs font-bold opacity-50">09:42:11</span>
+<span class="text-xs font-black uppercase">Consolidation_Success</span>
+</div>
+<div class="flex justify-between items-center bg-surface p-4">
+<span class="text-xs font-bold opacity-50">09:41:05</span>
+<span class="text-xs font-black uppercase">Cache_Purge_Initiated</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- SideNavBar (The Right-Aligned Metro Panel) -->
+<aside class="fixed right-0 top-0 h-full w-1/2 z-40 bg-[#0e0e0e] border-l border-[#484848]/20 flex flex-col pt-20 px-8">
+<!-- Header Section -->
+<div class="mb-10 px-2">
+<h2 class="text-lg font-black text-white font-['Inter'] uppercase tracking-widest">KINETIC_GRID</h2>
+<p class="text-[11px] font-bold text-[#adaaaa] uppercase tracking-[0.1em]">CONTEXT_OS_V1</p>
+</div>
+<!-- Live Tile Grid -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-2 h-auto overflow-y-auto pr-2 flex-shrink-0">
+<!-- Tile 1: Context (Cobalt/Primary) -->
+<div class="bg-primary text-on-primary p-5 flex flex-col justify-between aspect-square group cursor-pointer hover:bg-primary-fixed transition-colors duration-100 active:scale-95">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">layers</span>
+<span class="font-['Inter'] font-black text-xs uppercase tracking-tighter leading-none">Context</span>
+</div>
+<!-- Tile 2: Memory (Emerald/Secondary) -->
+<div class="bg-secondary-container text-on-secondary-container p-5 flex flex-col justify-between aspect-square group cursor-pointer hover:bg-secondary transition-colors duration-100 active:scale-95">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">database</span>
+<span class="font-['Inter'] font-black text-xs uppercase tracking-tighter leading-none">Memory</span>
+</div>
+<!-- Tile 3: Retriever (Mango) -->
+<div class="bg-mango text-on-mango p-5 flex flex-col justify-between aspect-square group cursor-pointer hover:opacity-90 transition-colors duration-100 active:scale-95">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">travel_explore</span>
+<span class="font-['Inter'] font-black text-xs uppercase tracking-tighter leading-none">Retriever</span>
+</div>
+<!-- Tile 4: Consolidator (Crimson/Tertiary) -->
+<div class="bg-tertiary-container text-on-tertiary-container p-5 flex flex-col justify-between aspect-square group cursor-pointer hover:bg-tertiary transition-colors duration-100 active:scale-95">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="font-['Inter'] font-black text-xs uppercase tracking-tighter leading-none">Consolidator</span>
+</div>
+<!-- Tile 5: Forgetting (Violet) -->
+<div class="bg-violet text-on-violet p-5 flex flex-col justify-between aspect-square group cursor-pointer hover:opacity-90 transition-colors duration-100 active:scale-95">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">delete_sweep</span>
+<span class="font-['Inter'] font-black text-xs uppercase tracking-tighter leading-none">Forgetting</span>
+</div>
+<!-- Tile 6: Assembler (Steel) -->
+<div class="bg-steel text-on-steel p-5 flex flex-col justify-between aspect-square group cursor-pointer hover:opacity-90 transition-colors duration-100 active:scale-95">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">terminal</span>
+<span class="font-['Inter'] font-black text-xs uppercase tracking-tighter leading-none">Assembler</span>
+</div>
+<!-- Tile 7: System (Charcoal/Surface Bright) -->
+<div class="bg-surface-bright text-on-surface p-5 flex flex-col justify-between aspect-square group cursor-pointer hover:bg-outline-variant transition-colors duration-100 active:scale-95">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-['Inter'] font-black text-xs uppercase tracking-tighter leading-none">System</span>
+</div>
+<!-- Empty Placeholder to maintain grid rhythm -->
+<div class="bg-surface-container-low p-5 flex flex-col justify-center items-center aspect-square opacity-20">
+<div class="w-4 h-4 border border-on-surface-variant rotate-45"></div>
+</div>
+</div>
+<!-- System Health Section -->
+<div class="mt-8 mb-8 px-2">
+<h3 class="text-xs font-bold text-[#adaaaa] uppercase tracking-[0.2em] mb-4">System Health</h3>
+<div class="grid grid-cols-1 gap-4">
+<div class="space-y-1">
+<div class="flex justify-between text-[10px] font-black uppercase">
+<span>Buffer Usage</span>
+<span class="text-primary">74%</span>
+</div>
+<div class="h-1.5 bg-surface-container">
+<div class="h-full bg-primary" style="width: 74%"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-[10px] font-black uppercase">
+<span>Neural Load</span>
+<span class="text-secondary">42%</span>
+</div>
+<div class="h-1.5 bg-surface-container">
+<div class="h-full bg-secondary" style="width: 42%"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-[10px] font-black uppercase">
+<span>API Latency</span>
+<span class="text-mango">12ms</span>
+</div>
+<div class="h-1.5 bg-surface-container">
+<div class="h-full bg-mango" style="width: 15%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Activity Section -->
+<div class="px-2 flex-grow overflow-hidden flex flex-col mb-8">
+<h3 class="text-xs font-bold text-[#adaaaa] uppercase tracking-[0.2em] mb-4">Recent Activity</h3>
+<div class="overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+<div class="bg-surface-container-low p-3 border-l-4 border-primary">
+<p class="text-[10px] font-black text-on-surface uppercase">Memory Pruning Executed</p>
+<p class="text-[9px] text-[#adaaaa] uppercase mt-1 tracking-wider">Shard_Delta: -142MB</p>
+</div>
+<div class="bg-surface-container-low p-3 border-l-4 border-secondary">
+<p class="text-[10px] font-black text-on-surface uppercase">Vector Embedding Generated</p>
+<p class="text-[9px] text-[#adaaaa] uppercase mt-1 tracking-wider">Node_ID: VX_772</p>
+</div>
+<div class="bg-surface-container-low p-3 border-l-4 border-mango">
+<p class="text-[10px] font-black text-on-surface uppercase">Context Block ID_9982 processed</p>
+<p class="text-[9px] text-[#adaaaa] uppercase mt-1 tracking-wider">Latency: 4ms</p>
+</div>
+<div class="bg-surface-container-low p-3 border-l-4 border-primary">
+<p class="text-[10px] font-black text-on-surface uppercase">Sync_Engine_Cycle_Complete</p>
+<p class="text-[9px] text-[#adaaaa] uppercase mt-1 tracking-wider">09:44:01</p>
+</div>
+</div>
+</div>
+<!-- Footer Action -->
+<div class="mt-auto pb-10">
+<button class="w-full bg-[#131313] text-[#adaaaa] hover:bg-[#2c2c2c] p-6 flex items-center justify-between group transition-all duration-100 active:scale-95">
+<span class="font-['Inter'] font-bold text-[11px] uppercase tracking-[0.2em]">PURGE_CACHE</span>
+<span class="material-symbols-outlined">restart_alt</span>
+</button>
+</div>
+</aside>
+<!-- Visual Background Element -->
+<div class="fixed inset-0 z-[-1] opacity-20 pointer-events-none overflow-hidden">
+<div class="absolute right-0 bottom-0 w-[800px] h-[800px] bg-primary blur-[200px] opacity-10"></div>
+<div class="grid grid-cols-12 h-full w-full">
+<div class="border-r border-white/5 h-full"></div>
+<div class="border-r border-white/5 h-full"></div>
+<div class="border-r border-white/5 h-full"></div>
+<div class="border-r border-white/5 h-full"></div>
+<div class="border-r border-white/5 h-full"></div>
+<div class="border-r border-white/5 h-full"></div>
+<div class="border-r border-white/5 h-full"></div>
+<div class="border-r border-white/5 h-full"></div>
+<div class="border-r border-white/5 h-full"></div>
+<div class="border-r border-white/5 h-full"></div>
+<div class="border-r border-white/5 h-full"></div>
+<div class="border-r border-white/5 h-full"></div>
+</div>
+</div>
+</body></html>

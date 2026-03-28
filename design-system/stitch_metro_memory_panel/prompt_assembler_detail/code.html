@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-bright": "#2c2c2c",
+            "on-primary-fixed": "#001932",
+            "on-primary-container": "#002444",
+            "on-tertiary-fixed-variant": "#780600",
+            "on-tertiary-fixed": "#390100",
+            "secondary-container": "#006e00",
+            "inverse-on-surface": "#565555",
+            "secondary": "#82f76c",
+            "on-primary-fixed-variant": "#003b6a",
+            "surface-dim": "#0e0e0e",
+            "secondary-fixed-dim": "#74e860",
+            "outline": "#767575",
+            "on-secondary-container": "#e7ffda",
+            "inverse-primary": "#1361a5",
+            "on-background": "#ffffff",
+            "primary-fixed-dim": "#6aa6ef",
+            "tertiary-container": "#fe2c15",
+            "tertiary-dim": "#e71602",
+            "on-error-container": "#ffa8a3",
+            "secondary-dim": "#74e860",
+            "on-secondary-fixed": "#004700",
+            "on-tertiary-container": "#000000",
+            "primary-dim": "#6aa6ef",
+            "primary": "#78b4fe",
+            "surface-container-high": "#1f2020",
+            "on-secondary-fixed-variant": "#006700",
+            "tertiary": "#ff725b",
+            "primary-container": "#67a4ec",
+            "error-dim": "#d7383b",
+            "tertiary-fixed-dim": "#ff7c66",
+            "tertiary-fixed": "#ff9380",
+            "inverse-surface": "#fcf9f8",
+            "surface-container-lowest": "#000000",
+            "error-container": "#9f0519",
+            "on-tertiary": "#490200",
+            "error": "#ff716c",
+            "surface-container": "#191a1a",
+            "surface-variant": "#262626",
+            "background": "#0e0e0e",
+            "secondary-fixed": "#82f76c",
+            "on-error": "#490006",
+            "surface-container-low": "#131313",
+            "primary-fixed": "#78b4fe",
+            "on-surface": "#ffffff",
+            "on-secondary": "#005c00",
+            "surface-tint": "#78b4fe",
+            "outline-variant": "#484848",
+            "surface-container-highest": "#262626",
+            "on-surface-variant": "#adaaaa",
+            "on-primary": "#00325b",
+            "surface": "#0e0e0e"
+          },
+          fontFamily: {
+            "headline": ["Inter"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          },
+          borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+    }
+    body {
+      background-color: #0e0e0e;
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0e0e0e;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #484848;
+    }
+  </style>
+</head>
+<body class="overflow-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#131313] border-b-0">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-black text-white tracking-tighter uppercase font-['Inter']">KINETIC_MEMORANDUM</span>
+</div>
+<div class="flex items-center space-x-2">
+<button class="p-2 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+</button>
+<button class="p-2 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+</button>
+<button class="p-2 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</button>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="h-full w-64 fixed left-0 top-0 bg-[#131313] border-r-0 pt-16 flex flex-col z-40">
+<div class="px-6 py-8">
+<div class="text-white font-black uppercase text-xl font-['Inter']">MEMORY_OS</div>
+<div class="text-[#78b4fe] font-bold uppercase text-[10px] tracking-[0.2em]">V.01_ARCHITECT</div>
+</div>
+<nav class="flex flex-col h-full space-y-1 overflow-y-auto px-2">
+<a class="flex items-center gap-3 px-4 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+<span>Short-term Context</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+<span>Long-term Memory</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+<span>Retriever + Ranker</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined" data-icon="compress">compress</span>
+<span>Consolidator</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined" data-icon="delete_sweep">delete_sweep</span>
+<span>Forgetting Policy</span>
+</a>
+<a class="bg-[#78b4fe] text-[#00325b] flex items-center gap-3 px-4 py-3 font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span>Prompt Assembler</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>System Settings</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 h-screen overflow-y-auto bg-surface">
+<!-- Hero Header: Steel Style -->
+<div class="p-10 border-b-0 bg-[#2c2c2c] flex flex-col justify-end min-h-[300px] relative overflow-hidden">
+<div class="absolute top-0 right-0 p-10 opacity-10">
+<span class="material-symbols-outlined text-[200px]" data-icon="edit_note">edit_note</span>
+</div>
+<div class="relative z-10">
+<h1 class="text-8xl font-black uppercase tracking-tighter leading-none mb-4 text-white">PROMPT_ASSEMBLER</h1>
+<div class="flex items-center gap-6">
+<div class="bg-primary text-on-primary px-4 py-2 font-black uppercase text-sm">Status: Building...</div>
+<div class="text-on-surface-variant font-mono text-sm tracking-widest">SEQ_UUID: 8829-FF-KINETIC</div>
+</div>
+</div>
+</div>
+<!-- Content Grid -->
+<div class="grid grid-cols-12 gap-0">
+<!-- Assembly Logic Toggles (Left Column) -->
+<div class="col-span-12 lg:col-span-3 bg-surface-container-low p-6 flex flex-col gap-6">
+<div>
+<h2 class="text-xs font-black text-primary uppercase tracking-[0.3em] mb-6">Assembly Logic</h2>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-surface hover:bg-surface-bright cursor-pointer group">
+<span class="text-xs font-bold uppercase tracking-tight">Dynamic Pruning</span>
+<div class="w-10 h-5 bg-secondary-container relative flex items-center px-1">
+<div class="w-3 h-3 bg-secondary"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface hover:bg-surface-bright cursor-pointer group">
+<span class="text-xs font-bold uppercase tracking-tight">Context Window 2.0</span>
+<div class="w-10 h-5 bg-surface-variant relative flex items-center px-1">
+<div class="w-3 h-3 bg-on-surface-variant"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface hover:bg-surface-bright cursor-pointer group">
+<span class="text-xs font-bold uppercase tracking-tight">Temporal Weighting</span>
+<div class="w-10 h-5 bg-secondary-container relative flex items-center px-1">
+<div class="w-3 h-3 bg-secondary"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface hover:bg-surface-bright cursor-pointer group">
+<span class="text-xs font-bold uppercase tracking-tight">Safety Wrappers</span>
+<div class="w-10 h-5 bg-secondary-container relative flex items-center px-1">
+<div class="w-3 h-3 bg-secondary"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-6 border-t border-outline-variant/20">
+<h3 class="text-[10px] font-black text-on-surface-variant uppercase mb-4">Injected Assets</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface text-[10px] font-mono border border-outline-variant/20">#SYSTEM_ROLE</span>
+<span class="px-2 py-1 bg-surface text-[10px] font-mono border border-outline-variant/20">#USER_CONTEXT</span>
+<span class="px-2 py-1 bg-surface text-[10px] font-mono border border-outline-variant/20">#RAG_DATA</span>
+<span class="px-2 py-1 bg-surface text-[10px] font-mono border border-outline-variant/20">#LAST_5_TURNS</span>
+</div>
+</div>
+</div>
+<!-- Main Build View (Center Column) -->
+<div class="col-span-12 lg:col-span-6 bg-surface p-8">
+<div class="flex items-center justify-between mb-8">
+<h2 class="text-xs font-black text-primary uppercase tracking-[0.3em]">Live Construction Canvas</h2>
+<div class="flex gap-2">
+<button class="bg-surface-bright text-on-surface px-4 py-2 text-[10px] font-bold uppercase">Clear</button>
+<button class="bg-primary text-on-primary px-4 py-2 text-[10px] font-bold uppercase hover:bg-white hover:text-black transition-colors duration-0">Assemble Final</button>
+</div>
+</div>
+<!-- Assembly Visualizer -->
+<div class="space-y-4">
+<!-- Block: System Prompt -->
+<div class="bg-[#131313] p-5 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] font-black uppercase text-primary">01_SYSTEM_INSTRUCTIONS</span>
+<span class="text-[10px] font-mono text-on-surface-variant">154 TOKENS</span>
+</div>
+<p class="text-xs font-mono text-on-surface-variant leading-relaxed">
+              YOU ARE AN ARCHITECTURAL AI SYSTEM DESIGNED TO MANAGE HIGH-DENSITY KNOWLEDGE GRAPHS. MAINTAIN CONCISE RESPONSES. DO NOT SPECULATE BEYOND THE PROVIDED CONTEXT WINDOW.
+            </p>
+</div>
+<!-- Block: Long Term Memory -->
+<div class="bg-[#131313] p-5 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary"></div>
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] font-black uppercase text-secondary">02_RETRIEVED_MEMORY</span>
+<span class="text-[10px] font-mono text-on-surface-variant">1,024 TOKENS</span>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-container-high p-3 text-[10px] font-mono text-secondary border-l border-secondary/30">
+                [RETRIEVED 2023-11-14] Project Phoenix phase 1 concluded with 44% efficiency gain in token usage.
+              </div>
+<p class="text-xs font-mono text-on-surface-variant leading-relaxed">
+                User previously requested a deep dive into vector database sharding techniques. Preference detected for highly technical, jargon-heavy documentation.
+              </p>
+</div>
+</div>
+<!-- Block: Current Input -->
+<div class="bg-[#131313] p-5 relative overflow-hidden border border-primary/20">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] font-black uppercase text-primary">03_ACTIVE_INPUT</span>
+<span class="text-[10px] font-mono text-on-surface-variant">42 TOKENS</span>
+</div>
+<p class="text-sm font-bold text-white leading-relaxed">
+              "How should we optimize the consolidator for the current project scale?"
+            </p>
+</div>
+</div>
+</div>
+<!-- Token Monitor & Stats (Right Column) -->
+<div class="col-span-12 lg:col-span-3 bg-surface-container-low p-6 border-l-0">
+<h2 class="text-xs font-black text-primary uppercase tracking-[0.3em] mb-6">Token Monitor</h2>
+<div class="space-y-8">
+<!-- Circular Chart Emulation with Grids -->
+<div class="aspect-square bg-surface flex items-center justify-center relative">
+<div class="absolute inset-4 border border-outline-variant/20 rounded-full"></div>
+<div class="absolute inset-8 border border-outline-variant/40 rounded-full"></div>
+<div class="text-center">
+<div class="text-4xl font-black text-white">42%</div>
+<div class="text-[10px] font-black text-on-surface-variant uppercase">Fullness</div>
+</div>
+<!-- Marker -->
+<div class="absolute top-4 left-1/2 -translate-x-1/2 w-4 h-4 bg-primary"></div>
+</div>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-[10px] font-black uppercase mb-1">
+<span>System</span>
+<span>12.5%</span>
+</div>
+<div class="h-1 bg-surface-variant">
+<div class="h-full bg-primary w-[12.5%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] font-black uppercase mb-1">
+<span>Memory</span>
+<span>68.2%</span>
+</div>
+<div class="h-1 bg-surface-variant">
+<div class="h-full bg-secondary w-[68.2%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] font-black uppercase mb-1">
+<span>Buffer</span>
+<span>19.3%</span>
+</div>
+<div class="h-1 bg-surface-variant">
+<div class="h-full bg-tertiary w-[19.3%]"></div>
+</div>
+</div>
+</div>
+<div class="bg-primary text-on-primary p-4">
+<div class="text-[10px] font-black uppercase opacity-70">Estimated Cost</div>
+<div class="text-2xl font-black">$0.00421</div>
+<div class="text-[10px] font-mono mt-2">PER_GENERATION_EST</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Assembly Log -->
+<section class="p-8 bg-surface-container-lowest border-t border-outline-variant/10">
+<div class="flex items-center gap-4 mb-6">
+<span class="material-symbols-outlined text-primary" data-icon="terminal">terminal</span>
+<h3 class="text-xs font-black text-white uppercase tracking-[0.2em]">Assembly_Stream_Log</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="p-4 bg-surface-container text-[10px] font-mono text-on-surface-variant">
+<span class="text-secondary">[SUCCESS]</span> Memory_Ranker completed in 12ms.
+        </div>
+<div class="p-4 bg-surface-container text-[10px] font-mono text-on-surface-variant">
+<span class="text-primary">[INFO]</span> Applying temporal decay to context IDs.
+        </div>
+<div class="p-4 bg-surface-container text-[10px] font-mono text-on-surface-variant">
+<span class="text-primary">[INFO]</span> Token limit verified. 4,096 left.
+        </div>
+<div class="p-4 bg-surface-container text-[10px] font-mono text-on-surface-variant">
+<span class="text-tertiary">[WARN]</span> Overlapping intent detected in query.
+        </div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Suppressed for Detailed Context Focus -->
+</body></html>

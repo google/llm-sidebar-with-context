@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>METRO_CONTEXT_V3</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-bright": "#2c2c2c",
+              "on-primary-fixed": "#001932",
+              "on-primary-container": "#002444",
+              "on-tertiary-fixed-variant": "#780600",
+              "on-tertiary-fixed": "#390100",
+              "secondary-container": "#006e00",
+              "inverse-on-surface": "#565555",
+              "secondary": "#82f76c",
+              "on-primary-fixed-variant": "#003b6a",
+              "surface-dim": "#0e0e0e",
+              "secondary-fixed-dim": "#74e860",
+              "outline": "#767575",
+              "on-secondary-container": "#e7ffda",
+              "inverse-primary": "#1361a5",
+              "on-background": "#ffffff",
+              "primary-fixed-dim": "#6aa6ef",
+              "tertiary-container": "#fe2c15",
+              "tertiary-dim": "#e71602",
+              "on-error-container": "#ffa8a3",
+              "secondary-dim": "#74e860",
+              "on-secondary-fixed": "#004700",
+              "on-tertiary-container": "#000000",
+              "primary-dim": "#6aa6ef",
+              "primary": "#78b4fe",
+              "surface-container-high": "#1f2020",
+              "on-secondary-fixed-variant": "#006700",
+              "tertiary": "#ff725b",
+              "primary-container": "#67a4ec",
+              "error-dim": "#d7383b",
+              "tertiary-fixed-dim": "#ff7c66",
+              "tertiary-fixed": "#ff9380",
+              "inverse-surface": "#fcf9f8",
+              "surface-container-lowest": "#000000",
+              "error-container": "#9f0519",
+              "on-tertiary": "#490200",
+              "error": "#ff716c",
+              "surface-container": "#191a1a",
+              "surface-variant": "#262626",
+              "background": "#0e0e0e",
+              "secondary-fixed": "#82f76c",
+              "on-error": "#490006",
+              "surface-container-low": "#131313",
+              "primary-fixed": "#78b4fe",
+              "on-surface": "#ffffff",
+              "on-secondary": "#005c00",
+              "surface-tint": "#78b4fe",
+              "outline-variant": "#484848",
+              "surface-container-highest": "#262626",
+              "on-surface-variant": "#adaaaa",
+              "on-primary": "#00325b",
+              "surface": "#0e0e0e"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body overflow-hidden">
+<!-- Side Navigation (Shared Component JSON Source) -->
+<nav class="h-full w-64 fixed left-0 top-0 bg-[#0e0e0e] flex flex-col z-50">
+<div class="p-6 mb-8">
+<h1 class="text-white font-black text-xl tracking-tighter">MEMORY_OS</h1>
+<p class="text-primary text-[10px] font-bold tracking-[0.2em]">V.01_ARCHITECT</p>
+</div>
+<div class="flex flex-col flex-1 px-3 space-y-1">
+<!-- Active State Logic: Memory Panel Context -->
+<a class="flex items-center space-x-3 px-4 py-3 bg-[#78b4fe] text-[#00325b] font-bold" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px]">Short-term Context</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#adaaaa] hover:bg-[#191a1a] transition-colors" href="#">
+<span class="material-symbols-outlined">database</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px]">Long-term Memory</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#adaaaa] hover:bg-[#191a1a] transition-colors" href="#">
+<span class="material-symbols-outlined">filter_list</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px]">Retriever + Ranker</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#adaaaa] hover:bg-[#191a1a] transition-colors" href="#">
+<span class="material-symbols-outlined">compress</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px]">Consolidator</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#adaaaa] hover:bg-[#191a1a] transition-colors" href="#">
+<span class="material-symbols-outlined">delete_sweep</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px]">Forgetting Policy</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#adaaaa] hover:bg-[#191a1a] transition-colors" href="#">
+<span class="material-symbols-outlined">edit_note</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px]">Prompt Assembler</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#adaaaa] hover:bg-[#191a1a] transition-colors mt-auto mb-6" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px]">System Settings</span>
+</a>
+</div>
+</nav>
+<!-- Top AppBar (Shared Component JSON Source) -->
+<header class="fixed top-0 right-0 left-64 h-16 flex justify-between items-center px-8 bg-[#131313] z-40 border-b border-white/5">
+<div class="flex items-center space-x-4">
+<span class="font-['Inter'] font-black uppercase tracking-tighter text-white text-lg">METRO_CONTEXT_V3</span>
+</div>
+<div class="flex items-center space-x-6">
+<div class="relative group">
+<input class="bg-transparent border-b border-outline/20 focus:border-primary outline-none py-1 px-2 text-xs font-bold w-48 transition-all" placeholder="SEARCH_MEMORIES..." type="text"/>
+<span class="material-symbols-outlined absolute right-2 top-1 text-sm text-on-surface-variant">search</span>
+</div>
+<div class="flex items-center space-x-4">
+<span class="material-symbols-outlined text-[#adaaaa] cursor-pointer hover:text-primary transition-colors">memory</span>
+<span class="material-symbols-outlined text-[#adaaaa] cursor-pointer hover:text-primary transition-colors">history</span>
+<span class="material-symbols-outlined text-[#adaaaa] cursor-pointer hover:text-primary transition-colors">terminal</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 p-8 h-[calc(100vh-64px)] overflow-y-auto no-scrollbar grid grid-cols-12 gap-0 relative">
+<!-- Avant-Garde Grid of 7 Functional Squares -->
+<div class="col-span-12 grid grid-cols-7 h-96 mb-12 relative overflow-hidden">
+<!-- 1. Cobalt: Short-term -->
+<div class="bg-primary group relative overflow-hidden p-6 flex flex-col justify-between transition-all duration-300 hover:scale-[0.98]">
+<span class="text-on-primary font-black text-4xl leading-none">01</span>
+<div class="vertical-text absolute top-6 right-4 text-[10px] font-black tracking-widest text-on-primary/40">CONTEXT_BUFFER</div>
+<div class="mt-auto">
+<p class="text-on-primary font-black text-lg leading-tight uppercase">Short-term<br/>Context</p>
+<div class="h-[2px] w-8 bg-on-primary mt-4"></div>
+</div>
+</div>
+<!-- 2. Emerald: Long-term -->
+<div class="bg-secondary group relative overflow-hidden p-6 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] z-10 translate-y-8">
+<span class="text-on-secondary font-black text-4xl leading-none">02</span>
+<div class="vertical-text absolute top-6 right-4 text-[10px] font-black tracking-widest text-on-secondary/40">DEEP_STORAGE</div>
+<div class="mt-auto">
+<p class="text-on-secondary font-black text-lg leading-tight uppercase">Long-term<br/>Memory</p>
+<div class="h-[2px] w-8 bg-on-secondary mt-4"></div>
+</div>
+</div>
+<!-- 3. Mango: Retriever -->
+<div class="bg-tertiary-fixed group relative overflow-hidden p-6 flex flex-col justify-between transition-all duration-300 hover:scale-[0.98]">
+<span class="text-on-tertiary-container font-black text-4xl leading-none">03</span>
+<div class="vertical-text absolute top-6 right-4 text-[10px] font-black tracking-widest text-on-tertiary-container/40">QUERY_RANKER</div>
+<div class="mt-auto">
+<p class="text-on-tertiary-container font-black text-lg leading-tight uppercase">Retriever<br/>+ Ranker</p>
+<div class="h-[2px] w-8 bg-on-tertiary-container mt-4"></div>
+</div>
+</div>
+<!-- 4. Crimson: Consolidator -->
+<div class="bg-error-container group relative overflow-hidden p-6 flex flex-col justify-between transition-all duration-300 hover:scale-[1.05] z-20 -translate-y-4">
+<span class="text-on-error-container font-black text-4xl leading-none">04</span>
+<div class="vertical-text absolute top-6 right-4 text-[10px] font-black tracking-widest text-on-error-container/40">VECTOR_COMPRESS</div>
+<div class="mt-auto">
+<p class="text-on-error-container font-black text-lg leading-tight uppercase">Memory<br/>Consolidator</p>
+<div class="h-[2px] w-8 bg-on-error-container mt-4"></div>
+</div>
+</div>
+<!-- 5. Violet: Forgetting -->
+<div class="bg-tertiary-dim group relative overflow-hidden p-6 flex flex-col justify-between transition-all duration-300 hover:scale-[0.98]">
+<span class="text-white font-black text-4xl leading-none">05</span>
+<div class="vertical-text absolute top-6 right-4 text-[10px] font-black tracking-widest text-white/40">TTL_POLICY</div>
+<div class="mt-auto">
+<p class="text-white font-black text-lg leading-tight uppercase">Forgetting<br/>Policy</p>
+<div class="h-[2px] w-8 bg-white mt-4"></div>
+</div>
+</div>
+<!-- 6. Steel: Prompt -->
+<div class="bg-outline-variant group relative overflow-hidden p-6 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] z-10 translate-y-6">
+<span class="text-white font-black text-4xl leading-none">06</span>
+<div class="vertical-text absolute top-6 right-4 text-[10px] font-black tracking-widest text-white/40">SEMANTIC_ASSEMBLY</div>
+<div class="mt-auto">
+<p class="text-white font-black text-lg leading-tight uppercase">Prompt<br/>Assembler</p>
+<div class="h-[2px] w-8 bg-white mt-4"></div>
+</div>
+</div>
+<!-- 7. Charcoal: Settings -->
+<div class="bg-surface-bright group relative overflow-hidden p-6 flex flex-col justify-between transition-all duration-300 hover:scale-[0.98]">
+<span class="text-on-surface-variant font-black text-4xl leading-none">07</span>
+<div class="vertical-text absolute top-6 right-4 text-[10px] font-black tracking-widest text-white/20">GLOBAL_CONFIG</div>
+<div class="mt-auto">
+<p class="text-on-surface font-black text-lg leading-tight uppercase">System<br/>Settings</p>
+<div class="h-[2px] w-8 bg-primary mt-4"></div>
+</div>
+</div>
+</div>
+<!-- Staggered Analytical Section -->
+<div class="col-span-8 pr-12">
+<div class="flex items-center space-x-4 mb-8">
+<div class="h-[1px] flex-1 bg-outline-variant/30"></div>
+<h2 class="text-[10px] font-black tracking-[0.5em] text-on-surface-variant uppercase">Neural_Architecture_Overview</h2>
+<div class="h-[1px] flex-1 bg-outline-variant/30"></div>
+</div>
+<div class="grid grid-cols-2 gap-8">
+<!-- Staggered Card 1 -->
+<div class="bg-surface-container-low p-8 relative border-l-4 border-secondary">
+<div class="absolute -top-4 -right-4 w-24 h-24 overflow-hidden opacity-40">
+<img class="w-full h-full object-cover" data-alt="close-up of complex digital particle nodes connected by thin glowing lines on black background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpribJwDiF2YBi-U6YVKkhZlXjYxjQbgcSXTTLG0TmJyxa3pVL8fiqCMk67D4L6T_r0HPLN7Lsg4E0dGyJkD6Q3lablr8b_pm9Yneaifav_bRzWrm2UCVnMi87CIpcmGlBl568rW0zotMfZ7fsNw2uLA8xKdnWvjnaZmsrMRQ5FTaYcLbpq-2bEduSxEr7Eag_KsR-o7ESnG4_lPtkb4uqptkihSqOfg-Z3gdvcXGi8QmWrBSuhERJ213ses_bl-Zr1yYF8K0cUN8"/>
+</div>
+<span class="text-[10px] font-black text-secondary tracking-widest mb-4 block">PHASE_01 // INGESTION</span>
+<h3 class="text-2xl font-black text-white mb-4 leading-none tracking-tighter">SEMANTIC_DECODER</h3>
+<p class="text-on-surface-variant text-xs leading-relaxed">
+                        Input streams are normalized into 1536-dimensional vectors using the latest KINETIC_MEMO transformer. All context is scrubbed of noise before being committed to the Short-term buffer.
+                    </p>
+<div class="mt-8 flex justify-between items-center">
+<span class="text-[10px] font-mono text-outline uppercase tracking-tighter">Status: OPTIMIZED</span>
+<span class="material-symbols-outlined text-secondary">analytics</span>
+</div>
+</div>
+<!-- Staggered Card 2 (Offset) -->
+<div class="bg-surface-container p-8 relative mt-12 border-l-4 border-primary">
+<div class="absolute -top-4 -right-4 w-24 h-24 overflow-hidden opacity-40">
+<img class="w-full h-full object-cover" data-alt="server rack detail with glowing blue led lights and dark industrial textures in shallow focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5-yV9jCPhl3zgPt_5a6MPmbxql3qedlkWDXlNx6rchFjcJ0882nJOduKRueQDrJKB6GjhojI2edAcUeo9e7gJDtJdGnJTyEEzUK0YOZOHtzJzHp1Q7irtT3JsgJ7EtjiMy0rIgWkP21gdXiDSW6N5jcAQeXUyn0zZu-XYxbvrszT0L9EcNADJP6wpopWCGZMSOmSbXKX3UfebgG-dfdysVLjhoxgYbD3ihEoK2AEkcyzf33Z0g4xTpiEXryIeHBGbruhozsOAyNg"/>
+</div>
+<span class="text-[10px] font-black text-primary tracking-widest mb-4 block">PHASE_02 // PERSISTENCE</span>
+<h3 class="text-2xl font-black text-white mb-4 leading-none tracking-tighter">VECTOR_ANCHOR</h3>
+<p class="text-on-surface-variant text-xs leading-relaxed">
+                        Persistent storage utilization stands at 42%. Memory clusters are dynamically re-indexed every 300ms to ensure sub-10ms retrieval times across 4 petabytes of indexed data.
+                    </p>
+<div class="mt-8 flex justify-between items-center">
+<span class="text-[10px] font-mono text-outline uppercase tracking-tighter">Status: ACTIVE</span>
+<span class="material-symbols-outlined text-primary">dynamic_form</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Vertical Sidebar Metadata -->
+<div class="col-span-4 border-l border-outline-variant/20 pl-8">
+<div class="mb-12">
+<div class="flex justify-between items-end mb-4">
+<h4 class="text-[10px] font-black tracking-widest text-on-surface-variant">NODE_ACTIVITY</h4>
+<span class="text-[10px] font-mono text-primary">LIVE_FEED</span>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest">
+<div class="flex items-center space-x-3">
+<div class="w-2 h-2 bg-secondary animate-pulse"></div>
+<span class="text-[10px] font-bold">NODE_0x77AF</span>
+</div>
+<span class="text-[10px] font-mono text-outline">Ingesting...</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest">
+<div class="flex items-center space-x-3">
+<div class="w-2 h-2 bg-tertiary"></div>
+<span class="text-[10px] font-bold">NODE_0x12BC</span>
+</div>
+<span class="text-[10px] font-mono text-outline">Compiling...</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest">
+<div class="flex items-center space-x-3">
+<div class="w-2 h-2 bg-primary"></div>
+<span class="text-[10px] font-bold">NODE_0x99D1</span>
+</div>
+<span class="text-[10px] font-mono text-outline">Idle</span>
+</div>
+</div>
+</div>
+<div class="relative group">
+<img class="w-full h-48 object-cover grayscale group-hover:grayscale-0 transition-all duration-500" data-alt="minimalist 3d abstract terrain map in dark grey with bright blue neon topological lines" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFfEb6KuykGiq-1nQnQSjVeKJMFzW92rcgFk0dD2CzTaZMcxQu-9p1IUfqx8vZ_tWD5lGKadjccDbKdM84tWvg61YB2q8DWhYM0CB9lo5kArUgLaHizirw9pskF4C4iB5zdoKHAfzZ8vip870A0wDrxRxh7pB5uMN6oSfKH2GOBb7qk0QIMgxQ_t_viqRg3pG1ChFu1pp4UZeqksgwj0BhdRFmgLBR6Uz_LHzdw8hIvRTr_VjX6M_L9uY9nbmXZsl5CzSldYfdfVU"/>
+<div class="absolute inset-0 bg-primary/20 mix-blend-overlay"></div>
+<div class="absolute bottom-4 left-4">
+<p class="text-[10px] font-black text-white tracking-[0.3em]">LOC_DATA_VIS</p>
+</div>
+</div>
+<div class="mt-8 space-y-6">
+<div>
+<div class="flex justify-between text-[10px] font-black mb-1">
+<span>CPU_THROTTLE</span>
+<span>12%</span>
+</div>
+<div class="h-1 w-full bg-surface-container">
+<div class="h-full bg-secondary w-[12%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] font-black mb-1">
+<span>LATENCY_STABILITY</span>
+<span>98%</span>
+</div>
+<div class="h-1 w-full bg-surface-container">
+<div class="h-full bg-primary w-[98%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- System Pulse Visualization (Bottom Bar) -->
+<div class="col-span-12 mt-12 h-32 bg-surface-container-low flex items-center px-12 space-x-8 border-t border-outline-variant/10">
+<div class="flex flex-col">
+<span class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">System Pulse</span>
+<span class="text-2xl font-black text-white leading-none">60.00 Hz</span>
+</div>
+<div class="flex-1 h-12 flex items-center space-x-1">
+<!-- Visual equalizer/pulse simulation -->
+<div class="w-1 bg-primary h-4"></div>
+<div class="w-1 bg-primary h-6"></div>
+<div class="w-1 bg-primary h-8"></div>
+<div class="w-1 bg-primary h-3"></div>
+<div class="w-1 bg-primary h-5"></div>
+<div class="w-1 bg-secondary h-10"></div>
+<div class="w-1 bg-secondary h-12"></div>
+<div class="w-1 bg-secondary h-8"></div>
+<div class="w-1 bg-primary h-4"></div>
+<div class="w-1 bg-primary h-6"></div>
+<div class="w-1 bg-primary h-8"></div>
+<div class="w-1 bg-primary h-3"></div>
+<div class="w-1 bg-primary h-5"></div>
+<div class="w-1 bg-tertiary h-6"></div>
+<div class="w-1 bg-tertiary h-4"></div>
+<div class="w-1 bg-primary h-4"></div>
+<div class="w-1 bg-primary h-6"></div>
+<div class="w-1 bg-primary h-8"></div>
+<div class="w-1 bg-primary h-3"></div>
+<div class="w-1 bg-primary h-5"></div>
+<div class="w-1 bg-secondary h-10"></div>
+<div class="w-1 bg-secondary h-12"></div>
+<div class="w-1 bg-secondary h-8"></div>
+<div class="w-1 bg-primary h-4"></div>
+<div class="w-1 bg-primary h-6"></div>
+<div class="w-1 bg-primary h-8"></div>
+<div class="w-1 bg-primary h-3"></div>
+<div class="w-1 bg-primary h-5"></div>
+<div class="w-1 bg-error-container h-12"></div>
+<div class="w-1 bg-error-container h-10"></div>
+<div class="w-1 bg-primary h-4"></div>
+<div class="w-1 bg-primary h-6"></div>
+<div class="w-1 bg-primary h-8"></div>
+<div class="w-1 bg-primary h-3"></div>
+<div class="w-1 bg-primary h-5"></div>
+</div>
+<div class="flex space-x-12">
+<div class="text-right">
+<p class="text-[10px] font-black text-on-surface-variant">UPLINK_STRENGTH</p>
+<p class="text-xs font-mono font-bold text-secondary">MAX_SIGNAL</p>
+</div>
+<div class="text-right">
+<p class="text-[10px] font-black text-on-surface-variant">PACKET_LOSS</p>
+<p class="text-xs font-mono font-bold text-white">0.0001%</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Trigger (FAB) - Suppressed for Details view, but here for utility -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary flex items-center justify-center group hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl group-hover:rotate-90 transition-transform">add</span>
+</button>
+</body></html>

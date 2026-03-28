@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0e0e0e;
+            color: #ffffff;
+            margin: 0;
+        }
+        /* Custom scrollbar for data-heavy feeds */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0e0e0e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2c2c2c;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "surface-bright": "#2c2c2c",
+                "on-primary-fixed": "#001932",
+                "on-primary-container": "#002444",
+                "on-tertiary-fixed-variant": "#780600",
+                "on-tertiary-fixed": "#390100",
+                "secondary-container": "#006e00",
+                "inverse-on-surface": "#565555",
+                "secondary": "#82f76c",
+                "on-primary-fixed-variant": "#003b6a",
+                "surface-dim": "#0e0e0e",
+                "secondary-fixed-dim": "#74e860",
+                "outline": "#767575",
+                "on-secondary-container": "#e7ffda",
+                "inverse-primary": "#1361a5",
+                "on-background": "#ffffff",
+                "primary-fixed-dim": "#6aa6ef",
+                "tertiary-container": "#fe2c15",
+                "tertiary-dim": "#e71602",
+                "on-error-container": "#ffa8a3",
+                "secondary-dim": "#74e860",
+                "on-secondary-fixed": "#004700",
+                "on-tertiary-container": "#000000",
+                "primary-dim": "#6aa6ef",
+                "primary": "#78b4fe",
+                "surface-container-high": "#1f2020",
+                "on-secondary-fixed-variant": "#006700",
+                "tertiary": "#ff725b",
+                "primary-container": "#67a4ec",
+                "error-dim": "#d7383b",
+                "tertiary-fixed-dim": "#ff7c66",
+                "tertiary-fixed": "#ff9380",
+                "inverse-surface": "#fcf9f8",
+                "surface-container-lowest": "#000000",
+                "error-container": "#9f0519",
+                "on-tertiary": "#490200",
+                "error": "#ff716c",
+                "surface-container": "#191a1a",
+                "surface-variant": "#262626",
+                "background": "#0e0e0e",
+                "secondary-fixed": "#82f76c",
+                "on-error": "#490006",
+                "surface-container-low": "#131313",
+                "primary-fixed": "#78b4fe",
+                "on-surface": "#ffffff",
+                "on-secondary": "#005c00",
+                "surface-tint": "#78b4fe",
+                "outline-variant": "#484848",
+                "surface-container-highest": "#262626",
+                "on-surface-variant": "#adaaaa",
+                "on-primary": "#00325b",
+                "surface": "#0e0e0e"
+              },
+              fontFamily: {
+                "headline": ["Inter"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+              },
+              borderRadius: {"DEFAULT": "0rem", "lg": "0rem", "xl": "0rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#131313] flex justify-between items-center px-6 h-16">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-black text-white tracking-tighter uppercase">KINETIC_MEMORANDUM</span>
+</div>
+<div class="flex items-center space-x-6">
+<div class="flex items-center bg-surface-container px-3 py-1">
+<span class="material-symbols-outlined text-primary text-sm mr-2">search</span>
+<input class="bg-transparent border-none text-xs focus:ring-0 text-on-surface-variant placeholder:text-outline-variant uppercase font-bold tracking-widest" placeholder="QUERY_RECALL..." type="text"/>
+</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer hover:bg-[#2c2c2c] p-1 transition-colors">memory</span>
+<span class="material-symbols-outlined text-primary cursor-pointer hover:bg-[#2c2c2c] p-1 transition-colors">history</span>
+<span class="material-symbols-outlined text-primary cursor-pointer hover:bg-[#2c2c2c] p-1 transition-colors">terminal</span>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="h-full w-64 fixed left-0 top-0 bg-[#131313] pt-20 flex flex-col z-40">
+<div class="px-6 mb-8">
+<h2 class="text-white font-black text-xl tracking-tighter">MEMORY_OS</h2>
+<p class="text-[10px] text-primary font-bold tracking-[0.2em]">V.01_ARCHITECT</p>
+</div>
+<nav class="flex flex-col space-y-1">
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-colors" href="#">
+<span class="material-symbols-outlined mr-4 text-sm">bolt</span> Short-term Context
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-colors" href="#">
+<span class="material-symbols-outlined mr-4 text-sm">database</span> Long-term Memory
+            </a>
+<!-- Active Tab: Retriever + Ranker -->
+<a class="flex items-center px-6 py-3 bg-[#78b4fe] text-[#00325b] font-['Inter'] font-black uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined mr-4 text-sm" style="font-variation-settings: 'FILL' 1;">filter_list</span> Retriever + Ranker
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-colors" href="#">
+<span class="material-symbols-outlined mr-4 text-sm">compress</span> Consolidator
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-colors" href="#">
+<span class="material-symbols-outlined mr-4 text-sm">delete_sweep</span> Forgetting Policy
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-colors" href="#">
+<span class="material-symbols-outlined mr-4 text-sm">edit_note</span> Prompt Assembler
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-colors" href="#">
+<span class="material-symbols-outlined mr-4 text-sm">settings</span> System Settings
+            </a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 min-h-screen bg-surface">
+<!-- Large Mango Header Section -->
+<header class="bg-[#ff9380] p-10 flex justify-between items-end">
+<div>
+<span class="text-[12px] font-black text-on-tertiary tracking-[0.3em] uppercase block mb-2">SYSTEM_MODULE_03</span>
+<h1 class="text-7xl font-black text-on-tertiary tracking-tighter leading-none uppercase">RETRIEVER_RANKER</h1>
+</div>
+<div class="text-right">
+<div class="text-4xl font-black text-on-tertiary tracking-tighter">0.024ms</div>
+<div class="text-[10px] font-bold text-on-tertiary uppercase tracking-widest">LATENCY_CORE</div>
+</div>
+</header>
+<div class="p-6 grid grid-cols-12 gap-1">
+<!-- Left Column: Retrieval Tuning (Controls) -->
+<section class="col-span-12 lg:col-span-4 space-y-1">
+<div class="bg-surface-container-low p-6">
+<h3 class="text-primary font-black uppercase text-sm tracking-widest mb-6">RETUNING_CONTROLS</h3>
+<div class="space-y-8">
+<div>
+<div class="flex justify-between mb-2">
+<label class="text-[10px] font-bold uppercase text-on-surface-variant">Semantic_Density</label>
+<span class="text-[10px] font-bold text-primary">0.82</span>
+</div>
+<div class="h-1 bg-surface-bright relative">
+<div class="absolute h-full bg-primary w-[82%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between mb-2">
+<label class="text-[10px] font-bold uppercase text-on-surface-variant">Temporal_Weight</label>
+<span class="text-[10px] font-bold text-primary">0.45</span>
+</div>
+<div class="h-1 bg-surface-bright relative">
+<div class="absolute h-full bg-primary w-[45%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between mb-2">
+<label class="text-[10px] font-bold uppercase text-on-surface-variant">Recency_Bias</label>
+<span class="text-[10px] font-bold text-primary">0.15</span>
+</div>
+<div class="h-1 bg-surface-bright relative">
+<div class="absolute h-full bg-primary w-[15%]"></div>
+</div>
+</div>
+<div class="pt-4 space-y-2">
+<button class="w-full bg-primary text-on-primary py-4 font-black uppercase text-xs tracking-widest hover:bg-on-primary hover:text-primary transition-all">
+                                RECALIBRATE_VECTORS
+                            </button>
+<button class="w-full bg-surface-bright text-on-surface py-4 font-black uppercase text-xs tracking-widest hover:bg-on-surface hover:text-surface transition-all">
+                                RESET_DEFAULTS
+                            </button>
+</div>
+</div>
+</div>
+<div class="bg-surface-container p-6">
+<h3 class="text-secondary font-black uppercase text-sm tracking-widest mb-4">LIVE_HEARTBEAT</h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="border-l-2 border-secondary pl-3 py-1">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase">Candidate_Pool</div>
+<div class="text-xl font-black text-on-surface">14,209</div>
+</div>
+<div class="border-l-2 border-secondary pl-3 py-1">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase">Filtered_Hits</div>
+<div class="text-xl font-black text-on-surface">128</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Column: Candidate Memories Feed -->
+<section class="col-span-12 lg:col-span-8 space-y-1">
+<!-- Feed Header -->
+<div class="bg-surface-container-low p-4 flex justify-between items-center">
+<h3 class="text-on-surface font-black uppercase text-sm tracking-widest">CANDIDATE_MEMORIES_RECALL_STREAM</h3>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-surface-bright text-[10px] font-bold">STATUS: STREAMING</span>
+<span class="px-2 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold">MODE: HIGH_PRECISION</span>
+</div>
+</div>
+<!-- Memory Tile 1 -->
+<div class="grid grid-cols-12 bg-surface-container-low group cursor-pointer hover:bg-surface-container transition-colors">
+<div class="col-span-1 flex items-center justify-center bg-primary text-on-primary">
+<span class="font-black text-lg">98</span>
+</div>
+<div class="col-span-8 p-6">
+<div class="text-[10px] font-bold text-primary uppercase mb-1">REF: SEC_4412_ALPHA</div>
+<h4 class="text-lg font-black tracking-tight mb-2">PROJECT_X_ARCHITECTURAL_MANIFESTO</h4>
+<p class="text-sm text-on-surface-variant font-medium leading-relaxed">System documentation regarding the transition from centralized to distributed vector storage clusters. Includes latency benchmarks from the Q3 audit.</p>
+</div>
+<div class="col-span-3 bg-surface-container border-l border-surface-bright p-6 flex flex-col justify-center">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase">RANK_CONFIDENCE</div>
+<div class="h-1 w-full bg-surface-bright mt-2 mb-4">
+<div class="h-full bg-primary w-[98%]"></div>
+</div>
+<div class="text-[10px] text-on-surface-variant font-bold uppercase">TIMESTAMP</div>
+<div class="text-xs font-bold text-on-surface">2023.11.14_14:02</div>
+</div>
+</div>
+<!-- Memory Tile 2 -->
+<div class="grid grid-cols-12 bg-surface-container-low group cursor-pointer hover:bg-surface-container transition-colors">
+<div class="col-span-1 flex items-center justify-center bg-primary-container text-on-primary-container">
+<span class="font-black text-lg">84</span>
+</div>
+<div class="col-span-8 p-6">
+<div class="text-[10px] font-bold text-primary-container uppercase mb-1">REF: COM_9901_BETA</div>
+<h4 class="text-lg font-black tracking-tight mb-2">QUARTERLY_REVENUE_METRIC_RECOVERY</h4>
+<p class="text-sm text-on-surface-variant font-medium leading-relaxed">Email thread discussing the recovery protocols for the financial ledger during the 'Kinetic' system upgrade. Explicit mention of shard redundancy.</p>
+</div>
+<div class="col-span-3 bg-surface-container border-l border-surface-bright p-6 flex flex-col justify-center">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase">RANK_CONFIDENCE</div>
+<div class="h-1 w-full bg-surface-bright mt-2 mb-4">
+<div class="h-full bg-primary-container w-[84%]"></div>
+</div>
+<div class="text-[10px] text-on-surface-variant font-bold uppercase">TIMESTAMP</div>
+<div class="text-xs font-bold text-on-surface">2023.12.01_09:45</div>
+</div>
+</div>
+<!-- Memory Tile 3 -->
+<div class="grid grid-cols-12 bg-surface-container-low group cursor-pointer hover:bg-surface-container transition-colors">
+<div class="col-span-1 flex items-center justify-center bg-surface-bright text-on-surface-variant">
+<span class="font-black text-lg">61</span>
+</div>
+<div class="col-span-8 p-6">
+<div class="text-[10px] font-bold text-on-surface-variant uppercase mb-1">REF: LOG_1102_THETA</div>
+<h4 class="text-lg font-black tracking-tight mb-2">ROUTINE_SYSTEM_FLUSH_LOG</h4>
+<p class="text-sm text-on-surface-variant font-medium leading-relaxed">Automated log capturing the deletion of temporary cache files and the recalibration of the ranker's initial weights. Marginal relevance.</p>
+</div>
+<div class="col-span-3 bg-surface-container border-l border-surface-bright p-6 flex flex-col justify-center">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase">RANK_CONFIDENCE</div>
+<div class="h-1 w-full bg-surface-bright mt-2 mb-4">
+<div class="h-full bg-surface-bright w-[61%]"></div>
+</div>
+<div class="text-[10px] text-on-surface-variant font-bold uppercase">TIMESTAMP</div>
+<div class="text-xs font-bold text-on-surface">2024.01.12_23:59</div>
+</div>
+</div>
+<!-- Memory Tile 4 -->
+<div class="grid grid-cols-12 bg-surface-container-low group cursor-pointer hover:bg-surface-container transition-colors">
+<div class="col-span-1 flex items-center justify-center bg-surface-bright text-on-surface-variant">
+<span class="font-black text-lg">42</span>
+</div>
+<div class="col-span-8 p-6">
+<div class="text-[10px] font-bold text-on-surface-variant uppercase mb-1">REF: MEM_5521_GAMMA</div>
+<h4 class="text-lg font-black tracking-tight mb-2">USER_PREFERENCE_FRAGMENT_01</h4>
+<p class="text-sm text-on-surface-variant font-medium leading-relaxed">Fragmented data packet containing legacy user UI preferences from the pre-architect version. Marked for eventual forgetting policy review.</p>
+</div>
+<div class="col-span-3 bg-surface-container border-l border-surface-bright p-6 flex flex-col justify-center">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase">RANK_CONFIDENCE</div>
+<div class="h-1 w-full bg-surface-bright mt-2 mb-4">
+<div class="h-full bg-surface-bright w-[42%]"></div>
+</div>
+<div class="text-[10px] text-on-surface-variant font-bold uppercase">TIMESTAMP</div>
+<div class="text-xs font-bold text-on-surface">2022.05.20_11:12</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer Visual Metric -->
+<footer class="mt-1 px-6 pb-12">
+<div class="bg-surface-container-low p-6 flex items-center gap-12">
+<div class="flex-1">
+<div class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4">GLOBAL_RECALL_PRECISION_MAP</div>
+<div class="flex items-end gap-1 h-20">
+<div class="w-2 bg-primary h-[40%]"></div>
+<div class="w-2 bg-primary h-[60%]"></div>
+<div class="w-2 bg-primary h-[85%]"></div>
+<div class="w-2 bg-primary h-[70%]"></div>
+<div class="w-2 bg-primary h-[95%]"></div>
+<div class="w-2 bg-primary h-[80%]"></div>
+<div class="w-2 bg-primary h-[45%]"></div>
+<div class="w-2 bg-primary h-[65%]"></div>
+<div class="w-2 bg-primary h-[90%]"></div>
+<div class="w-2 bg-primary h-[100%]"></div>
+<div class="w-2 bg-primary h-[75%]"></div>
+<div class="w-2 bg-primary h-[55%]"></div>
+<div class="w-2 bg-primary h-[30%]"></div>
+<div class="w-2 bg-primary h-[45%]"></div>
+<div class="w-2 bg-primary h-[80%]"></div>
+<div class="w-2 bg-primary h-[90%]"></div>
+<div class="w-2 bg-primary h-[60%]"></div>
+<div class="w-2 bg-primary h-[40%]"></div>
+<div class="w-2 bg-primary h-[20%]"></div>
+<div class="w-2 bg-primary h-[50%]"></div>
+</div>
+</div>
+<div class="w-48 text-right">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">AGGREGATE_SCORE</div>
+<div class="text-5xl font-black text-white italic">0.91</div>
+</div>
+</div>
+</footer>
+</main>
+</body></html>

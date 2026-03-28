@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0e0e0e;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary": "#00325b",
+                        "surface-container-highest": "#262626",
+                        "tertiary-container": "#fe2c15",
+                        "secondary-dim": "#74e860",
+                        "surface-container-lowest": "#000000",
+                        "surface-bright": "#2c2c2c",
+                        "on-primary-fixed-variant": "#003b6a",
+                        "secondary-fixed-dim": "#74e860",
+                        "on-secondary-fixed-variant": "#006700",
+                        "on-error-container": "#ffa8a3",
+                        "error": "#ff716c",
+                        "on-secondary": "#005c00",
+                        "error-dim": "#d7383b",
+                        "surface-variant": "#262626",
+                        "on-tertiary-fixed-variant": "#780600",
+                        "tertiary-fixed": "#ff9380",
+                        "on-error": "#490006",
+                        "on-secondary-fixed": "#004700",
+                        "surface-container": "#191a1a",
+                        "primary-container": "#67a4ec",
+                        "on-surface": "#ffffff",
+                        "surface-container-high": "#1f2020",
+                        "primary-fixed-dim": "#6aa6ef",
+                        "on-surface-variant": "#adaaaa",
+                        "tertiary-dim": "#e71602",
+                        "surface-container-low": "#131313",
+                        "primary": "#78b4fe",
+                        "on-tertiary-fixed": "#390100",
+                        "on-background": "#ffffff",
+                        "inverse-on-surface": "#565555",
+                        "on-tertiary-container": "#000000",
+                        "secondary": "#82f76c",
+                        "inverse-surface": "#fcf9f8",
+                        "outline": "#767575",
+                        "on-primary-container": "#002444",
+                        "surface": "#0e0e0e",
+                        "inverse-primary": "#1361a5",
+                        "on-primary-fixed": "#001932",
+                        "surface-tint": "#78b4fe",
+                        "outline-variant": "#484848",
+                        "error-container": "#9f0519",
+                        "primary-dim": "#6aa6ef",
+                        "background": "#0e0e0e",
+                        "on-secondary-container": "#e7ffda",
+                        "tertiary-fixed-dim": "#ff7c66",
+                        "tertiary": "#ff725b",
+                        "surface-dim": "#0e0e0e",
+                        "secondary-container": "#006e00",
+                        "on-tertiary": "#490200",
+                        "secondary-fixed": "#82f76c",
+                        "primary-fixed": "#78b4fe"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary selection:text-on-primary">
+<!-- Top Navigation Anchor -->
+<header class="bg-[#0e0e0e] flex items-center justify-between px-5 h-16 w-full fixed top-0 z-[60] border-none">
+<div class="flex items-center gap-3">
+<span class="font-['Inter'] font-black uppercase tracking-tighter text-2xl text-white">MEMORY_OS</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors p-2 flex items-center">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</button>
+<button class="text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors p-2 flex items-center">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-16 pr-[320px] min-h-screen bg-surface">
+<div class="p-10 max-w-5xl">
+<div class="mb-12">
+<h1 class="text-8xl font-black tracking-tighter uppercase leading-none mb-4">Architecture</h1>
+<p class="text-on-surface-variant text-xl max-w-2xl font-medium">NEURAL_NET_V0.1 STABLE OVERVIEW. SYSTEM RESOURCE ALLOCATION AND SYNAPTIC TRACE ROUTING IN PROGRESS.</p>
+</div>
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-12 gap-1">
+<div class="col-span-8 bg-surface-container-low h-[400px] relative overflow-hidden">
+<img class="w-full h-full object-cover opacity-50 grayscale hover:grayscale-0 transition-all duration-700" data-alt="Abstract digital visualization of complex neural network nodes connecting in a dark cybernetic environment with glowing blue lines" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdHfX3Pdw2OuId-vR4lHPOk5H_7dhF5BIf4D5uY8blGJ9AAaXg_G6p1s1grzF_zD9Ciu_ourMXaxMekZSCzk0tpcoNSbeeQI5pj_0Ju83-FMjerncmMQUn8_gMbxT6MiCBRpvvMThqmPXehwCNIu3m8HgvXCBm9BcXzZs67kMICtwd34naJ1YwPXPBv5QuXBQwUHwJ-LVk4kEIVnaLuiGviVV5suH_M1gpByZQ_Jrot1Rh2lEopG7JOcVlWZqZFqNxcDWkJ7xCu_U"/>
+<div class="absolute bottom-0 left-0 p-8 bg-gradient-to-t from-black to-transparent w-full">
+<span class="bg-primary text-on-primary px-3 py-1 text-xs font-bold mb-2 inline-block">LIVE_FEED</span>
+<h2 class="text-4xl font-black uppercase tracking-tight">Synapse Stream</h2>
+</div>
+</div>
+<div class="col-span-4 bg-secondary-container p-6 flex flex-col justify-between">
+<div class="text-on-secondary-container">
+<span class="material-symbols-outlined text-5xl" data-icon="bolt">bolt</span>
+<h3 class="text-2xl font-black uppercase mt-4 leading-none">Processing Velocity</h3>
+</div>
+<div class="text-6xl font-black text-on-secondary-container tracking-tighter">1.22<span class="text-xl">PF</span></div>
+</div>
+<div class="col-span-4 bg-surface-bright p-6 aspect-square flex flex-col justify-between">
+<h3 class="text-on-surface font-bold uppercase text-xs tracking-widest">Global Status</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-end">
+<span class="text-on-surface-variant text-[10px] font-bold uppercase">Uptime</span>
+<span class="text-xl font-black">99.9%</span>
+</div>
+<div class="w-full h-1 bg-surface">
+<div class="h-full bg-primary w-[99.9%]"></div>
+</div>
+</div>
+</div>
+<div class="col-span-8 bg-surface-container-high p-8">
+<div class="flex justify-between items-start mb-8">
+<div>
+<h3 class="text-2xl font-black uppercase tracking-tight">Access Logs</h3>
+<p class="text-on-surface-variant text-xs uppercase font-bold mt-1">Real-time authentication stream</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="list_alt">list_alt</span>
+</div>
+<div class="space-y-2 font-mono text-[11px]">
+<div class="flex justify-between p-2 bg-surface">
+<span class="text-primary">21:04:12</span>
+<span class="text-on-surface">AUTH_SUCCESS :: ROOT_USER</span>
+<span class="text-secondary-dim">SECURE</span>
+</div>
+<div class="flex justify-between p-2 bg-surface">
+<span class="text-primary">21:03:55</span>
+<span class="text-on-surface">TRACE_ROUTE :: NODE_7</span>
+<span class="text-on-surface-variant">IDLE</span>
+</div>
+<div class="flex justify-between p-2 bg-surface">
+<span class="text-primary">21:03:01</span>
+<span class="text-on-surface">CACHE_SYNC :: ALL_SECTORS</span>
+<span class="text-secondary-dim">SYNCED</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- SideNavBar (The Right-Aligned High-Density Shell) -->
+<aside class="flex flex-col h-full w-[320px] bg-[#0e0e0e] fixed right-0 top-0 z-50 border-l border-[#484848]/20 no-scrollbar overflow-y-auto">
+<!-- Header -->
+<div class="px-6 pt-10 pb-6 flex flex-col gap-1">
+<h2 class="text-lg font-black text-white uppercase tracking-widest">MEMORY_OS</h2>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-secondary rounded-full animate-pulse"></div>
+<span class="font-['Inter'] font-bold uppercase text-[11px] tracking-widest text-[#adaaaa]">V-0.1_STABLE</span>
+</div>
+</div>
+<!-- Live Tiles Grid -->
+<nav class="flex-1 px-1 flex flex-col gap-1">
+<!-- 1. SHORT-TERM (Primary/Cobalt) -->
+<div class="bg-primary p-5 min-h-[140px] flex flex-col justify-between hover:brightness-110 cursor-pointer active:invert transition-all group">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-on-primary text-3xl" data-icon="timer">timer</span>
+<span class="text-[10px] font-black bg-on-primary text-primary px-2 py-0.5">ACTIVE</span>
+</div>
+<div>
+<h3 class="font-['Inter'] font-bold uppercase text-[11px] tracking-widest text-on-primary-container">SHORT-TERM</h3>
+<div class="text-3xl font-black text-on-primary tracking-tighter mt-1">812 TOKENS</div>
+</div>
+</div>
+<!-- 2. LONG-TERM (Secondary/Emerald) -->
+<div class="bg-secondary-container p-5 min-h-[140px] flex flex-col justify-between hover:brightness-110 cursor-pointer active:invert transition-all">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-on-secondary-container text-3xl" data-icon="database">database</span>
+</div>
+<div>
+<h3 class="font-['Inter'] font-bold uppercase text-[11px] tracking-widest text-on-secondary-container">LONG-TERM</h3>
+<div class="text-3xl font-black text-on-secondary-container tracking-tighter mt-1">99.2% RECALL</div>
+</div>
+</div>
+<!-- 3. RETRIEVER (Mango/Surface Container High) -->
+<div class="bg-[#ffab00] p-5 min-h-[120px] flex flex-col justify-between hover:brightness-110 cursor-pointer active:invert transition-all">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-black text-3xl" data-icon="search">search</span>
+</div>
+<div>
+<h3 class="font-['Inter'] font-bold uppercase text-[11px] tracking-widest text-black/60">RETRIEVER</h3>
+<div class="text-3xl font-black text-black tracking-tighter mt-1">45ms LATENCY</div>
+</div>
+</div>
+<!-- 4. CONSOLIDATOR (Crimson/Tertiary) -->
+<div class="bg-tertiary-container p-5 min-h-[120px] flex flex-col justify-between hover:brightness-110 cursor-pointer active:invert transition-all">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-white text-3xl" data-icon="merge_type">merge_type</span>
+</div>
+<div>
+<h3 class="font-['Inter'] font-bold uppercase text-[11px] tracking-widest text-white/60">CONSOLIDATOR</h3>
+<div class="text-3xl font-black text-white tracking-tighter mt-1">12 STACKS</div>
+</div>
+</div>
+<!-- 5. FORGETTING (Violet) -->
+<div class="bg-[#7c4dff] p-5 min-h-[120px] flex flex-col justify-between hover:brightness-110 cursor-pointer active:invert transition-all">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-white text-3xl" data-icon="delete_sweep">delete_sweep</span>
+</div>
+<div>
+<h3 class="font-['Inter'] font-bold uppercase text-[11px] tracking-widest text-white/60">FORGETTING</h3>
+<div class="text-3xl font-black text-white tracking-tighter mt-1">2.4GB PURGED</div>
+</div>
+</div>
+<!-- 6. ASSEMBLER (Steel/Outline Variant) -->
+<div class="bg-outline-variant p-5 min-h-[120px] flex flex-col justify-between hover:brightness-110 cursor-pointer active:invert transition-all">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-white text-3xl" data-icon="architecture">architecture</span>
+</div>
+<div>
+<h3 class="font-['Inter'] font-bold uppercase text-[11px] tracking-widest text-white/40">ASSEMBLER</h3>
+<div class="text-3xl font-black text-white tracking-tighter mt-1">0 ERROR_LOGS</div>
+</div>
+</div>
+<!-- 7. SYSTEM (Charcoal/Surface Container) -->
+<div class="bg-surface-container-highest p-5 min-h-[120px] flex flex-col justify-between hover:brightness-110 cursor-pointer active:invert transition-all">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-white text-3xl" data-icon="settings_input_component">settings_input_component</span>
+</div>
+<div>
+<h3 class="font-['Inter'] font-bold uppercase text-[11px] tracking-widest text-on-surface-variant">SYSTEM</h3>
+<div class="text-3xl font-black text-white tracking-tighter mt-1">CPU 12%</div>
+</div>
+</div>
+</nav>
+<!-- Footer Footer -->
+<div class="p-1 mt-1 grid grid-cols-2 gap-1">
+<button class="bg-surface-container-high p-4 flex items-center justify-center gap-2 hover:bg-[#2c2c2c] transition-colors group">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-white" data-icon="list_alt">list_alt</span>
+<span class="font-['Inter'] font-bold uppercase text-[11px] tracking-widest text-[#adaaaa] group-hover:text-white">LOGS</span>
+</button>
+<button class="bg-surface-container-high p-4 flex items-center justify-center gap-2 hover:bg-[#2c2c2c] transition-colors group">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-white" data-icon="analytics">analytics</span>
+<span class="font-['Inter'] font-bold uppercase text-[11px] tracking-widest text-[#adaaaa] group-hover:text-white">STATUS</span>
+</button>
+</div>
+<!-- CTA Anchor -->
+<div class="p-1">
+<button class="w-full bg-error-container hover:bg-error transition-colors text-white font-['Inter'] font-black uppercase text-sm tracking-[0.3em] py-8 flex items-center justify-center gap-3">
+<span class="material-symbols-outlined" data-icon="layers_clear">layers_clear</span>
+                PURGE_CACHE
+            </button>
+</div>
+</aside>
+<!-- Content Overlays -->
+<div class="fixed bottom-10 left-10 z-[100] flex flex-col gap-2">
+<div class="bg-surface-container p-4 border-l-4 border-primary inline-flex items-center gap-4">
+<div class="w-10 h-10 bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary" data-icon="shield">shield</span>
+</div>
+<div>
+<div class="text-[10px] font-black uppercase text-primary tracking-widest">FIREWALL_ACTIVE</div>
+<div class="text-sm font-bold uppercase">SECURE_COMM_ESTABLISHED</div>
+</div>
+</div>
+</div>
+</body></html>

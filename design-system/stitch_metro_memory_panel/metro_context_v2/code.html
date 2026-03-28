@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>METRO_CONTEXT_V2</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0e0e0e;
+            color: #ffffff;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "surface-bright": "#2c2c2c",
+                "on-primary-fixed": "#001932",
+                "on-primary-container": "#002444",
+                "on-tertiary-fixed-variant": "#780600",
+                "on-tertiary-fixed": "#390100",
+                "secondary-container": "#006e00",
+                "inverse-on-surface": "#565555",
+                "secondary": "#82f76c",
+                "on-primary-fixed-variant": "#003b6a",
+                "surface-dim": "#0e0e0e",
+                "secondary-fixed-dim": "#74e860",
+                "outline": "#767575",
+                "on-secondary-container": "#e7ffda",
+                "inverse-primary": "#1361a5",
+                "on-background": "#ffffff",
+                "primary-fixed-dim": "#6aa6ef",
+                "tertiary-container": "#fe2c15",
+                "tertiary-dim": "#e71602",
+                "on-error-container": "#ffa8a3",
+                "secondary-dim": "#74e860",
+                "on-secondary-fixed": "#004700",
+                "on-tertiary-container": "#000000",
+                "primary-dim": "#6aa6ef",
+                "primary": "#78b4fe",
+                "surface-container-high": "#1f2020",
+                "on-secondary-fixed-variant": "#006700",
+                "tertiary": "#ff725b",
+                "primary-container": "#67a4ec",
+                "error-dim": "#d7383b",
+                "tertiary-fixed-dim": "#ff7c66",
+                "tertiary-fixed": "#ff9380",
+                "inverse-surface": "#fcf9f8",
+                "surface-container-lowest": "#000000",
+                "error-container": "#9f0519",
+                "on-tertiary": "#490200",
+                "error": "#ff716c",
+                "surface-container": "#191a1a",
+                "surface-variant": "#262626",
+                "background": "#0e0e0e",
+                "secondary-fixed": "#82f76c",
+                "on-error": "#490006",
+                "surface-container-low": "#131313",
+                "primary-fixed": "#78b4fe",
+                "on-surface": "#ffffff",
+                "on-secondary": "#005c00",
+                "surface-tint": "#78b4fe",
+                "outline-variant": "#484848",
+                "surface-container-highest": "#262626",
+                "on-surface-variant": "#adaaaa",
+                "on-primary": "#00325b",
+                "surface": "#0e0e0e"
+              },
+              fontFamily: {
+                "headline": ["Inter"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+              },
+              borderRadius: {"DEFAULT": "0", "lg": "0", "xl": "0", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-surface selection:bg-primary selection:text-on-primary">
+<!-- Sidebar Navigation (SideNavBar Anchor) -->
+<aside class="h-full w-64 fixed left-0 top-0 bg-[#0e0e0e] flex flex-col z-50">
+<div class="p-6 bg-[#131313]">
+<h1 class="text-white font-black text-xl tracking-tighter">MEMORY_OS</h1>
+<p class="text-primary font-bold text-[10px] tracking-[0.2em] mt-1 opacity-80">V.01_ARCHITECT</p>
+</div>
+<nav class="flex-1 mt-4 space-y-1">
+<!-- Short-term Context (Active) -->
+<a class="flex items-center px-6 py-4 bg-[#78b4fe] text-[#00325b] font-bold group" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="bolt">bolt</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px] tracking-wider">Short-term Context</span>
+</a>
+<a class="flex items-center px-6 py-4 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors group" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="database">database</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px] tracking-wider">Long-term Memory</span>
+</a>
+<a class="flex items-center px-6 py-4 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors group" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="filter_list">filter_list</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px] tracking-wider">Retriever + Ranker</span>
+</a>
+<a class="flex items-center px-6 py-4 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors group" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="compress">compress</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px] tracking-wider">Consolidator</span>
+</a>
+<a class="flex items-center px-6 py-4 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors group" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="delete_sweep">delete_sweep</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px] tracking-wider">Forgetting Policy</span>
+</a>
+<a class="flex items-center px-6 py-4 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors group" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="edit_note">edit_note</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px] tracking-wider">Prompt Assembler</span>
+</a>
+<div class="pt-8">
+<a class="flex items-center px-6 py-4 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors group" href="#">
+<span class="material-symbols-outlined mr-4" data-icon="settings">settings</span>
+<span class="font-['Inter'] font-bold uppercase text-[12px] tracking-wider">System Settings</span>
+</a>
+</div>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="pl-64 min-h-screen">
+<!-- Top Navigation Bar (TopNavBar Anchor) -->
+<header class="fixed top-0 left-64 right-0 h-16 z-40 bg-[#131313] flex justify-between items-center px-8 border-b-0">
+<div class="flex items-center space-x-4">
+<span class="text-2xl font-black text-white tracking-tighter uppercase">METRO_CONTEXT_V2</span>
+<div class="h-4 w-[2px] bg-surface-bright"></div>
+<span class="text-primary font-bold text-xs tracking-widest">ST_CONTEXT_LAYER</span>
+</div>
+<div class="flex items-center space-x-6 text-[#adaaaa]">
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="memory">memory</span></button>
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="history">history</span></button>
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="terminal">terminal</span></button>
+</div>
+</header>
+<!-- Dynamic Content Body -->
+<div class="pt-16 p-8">
+<!-- Tiered Asymmetric Bento Layout -->
+<div class="grid grid-cols-12 grid-rows-2 gap-4 h-[500px]">
+<!-- Tile 1: Short-term Context (Cobalt) -->
+<div class="col-span-5 row-span-2 bg-primary p-6 flex flex-col justify-between group cursor-pointer hover:bg-primary-dim transition-all">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-on-primary text-4xl" data-icon="bolt">bolt</span>
+<span class="text-on-primary text-xs font-black tracking-widest opacity-60">ST_01</span>
+</div>
+<div>
+<h2 class="text-on-primary text-4xl font-black uppercase leading-none tracking-tighter mb-2">Short-term<br/>Context</h2>
+<p class="text-on-primary font-bold text-sm opacity-80 max-w-[200px]">Active focus window: 12.4k tokens. Monitoring real-time input streams.</p>
+</div>
+</div>
+<!-- Tile 2: Long-term Memory (Emerald) -->
+<div class="col-span-4 row-span-1 bg-secondary p-6 flex flex-col justify-between group cursor-pointer hover:bg-secondary-dim transition-all">
+<div class="flex justify-between">
+<span class="text-on-secondary text-xs font-black tracking-widest uppercase">Archive Access</span>
+<span class="material-symbols-outlined text-on-secondary" data-icon="database">database</span>
+</div>
+<h3 class="text-on-secondary text-2xl font-black uppercase tracking-tight">Long-term Memory</h3>
+</div>
+<!-- Tile 3: Retriever + Ranker (Mango-style/Steel) -->
+<div class="col-span-3 row-span-1 bg-surface-bright p-6 flex flex-col justify-between group cursor-pointer hover:bg-on-surface-variant transition-all">
+<div class="flex justify-between">
+<span class="text-white text-xs font-black tracking-widest uppercase">Vector_Search</span>
+<span class="material-symbols-outlined text-white" data-icon="filter_list">filter_list</span>
+</div>
+<h3 class="text-white text-xl font-black uppercase tracking-tight leading-none">Retriever + Ranker</h3>
+</div>
+<!-- Tile 4: Consolidator (Violet) -->
+<div class="col-span-2 row-span-1 bg-[#8b5cf6] p-6 flex flex-col justify-between group cursor-pointer hover:brightness-110 transition-all">
+<div class="flex justify-center flex-1 items-center">
+<span class="material-symbols-outlined text-white text-3xl" data-icon="compress">compress</span>
+</div>
+<h3 class="text-white text-[10px] font-black uppercase tracking-[0.2em] text-center">Consolidator</h3>
+</div>
+<!-- Tile 5: Forgetting Policy (Crimson) -->
+<div class="col-span-3 row-span-1 bg-tertiary-container p-6 flex items-center justify-between group cursor-pointer hover:bg-error-container transition-all">
+<div class="flex flex-col">
+<h3 class="text-black text-lg font-black uppercase tracking-tight">Forgetting Policy</h3>
+<span class="text-black text-[10px] font-bold opacity-60">AUTO_CLEANUP_ACTIVE</span>
+</div>
+<span class="material-symbols-outlined text-black" data-icon="delete_sweep">delete_sweep</span>
+</div>
+<!-- Tile 6: Prompt Assembler (Steel/Deep Charcoal) -->
+<div class="col-span-2 row-span-1 bg-[#191a1a] p-6 flex flex-col justify-between border-l-4 border-primary group cursor-pointer hover:bg-surface-bright transition-all">
+<span class="material-symbols-outlined text-primary" data-icon="edit_note">edit_note</span>
+<h3 class="text-white text-[10px] font-black uppercase tracking-widest">Assembler</h3>
+</div>
+</div>
+<!-- Horizontal Tier (The 7th Square + Dynamic Metrics) -->
+<div class="flex space-x-4 mt-4 overflow-x-auto hide-scrollbar">
+<!-- Tile 7: System Settings (Mango) -->
+<div class="flex-shrink-0 w-48 h-48 bg-[#ffb300] p-6 flex flex-col justify-between group cursor-pointer hover:brightness-110 transition-all">
+<span class="material-symbols-outlined text-black text-4xl" data-icon="settings">settings</span>
+<h3 class="text-black text-xl font-black uppercase leading-tight">System<br/>Settings</h3>
+</div>
+<!-- Visual Data Tile -->
+<div class="flex-shrink-0 w-[400px] h-48 bg-surface-container-low p-6 flex flex-col relative overflow-hidden">
+<div class="z-10">
+<h4 class="text-on-surface-variant text-[10px] font-black tracking-widest uppercase mb-4">Neural_Load_Index</h4>
+<div class="flex items-end space-x-1 h-20">
+<div class="w-2 bg-primary h-[40%]"></div>
+<div class="w-2 bg-primary h-[60%]"></div>
+<div class="w-2 bg-primary h-[55%]"></div>
+<div class="w-2 bg-primary h-[80%]"></div>
+<div class="w-2 bg-primary h-[95%]"></div>
+<div class="w-2 bg-primary h-[70%]"></div>
+<div class="w-2 bg-primary h-[85%]"></div>
+<div class="w-2 bg-primary h-[40%]"></div>
+<div class="w-2 bg-primary h-[60%]"></div>
+<div class="w-2 bg-primary h-[30%]"></div>
+<div class="w-2 bg-primary h-[90%]"></div>
+</div>
+</div>
+<div class="absolute right-0 bottom-0 opacity-10">
+<span class="text-[120px] font-black leading-none -mb-8 -mr-4 select-none">AI</span>
+</div>
+</div>
+<!-- Meta Information Tile -->
+<div class="flex-shrink-0 w-80 h-48 bg-surface-container-high p-6 flex flex-col justify-between">
+<div>
+<div class="flex justify-between text-[10px] font-black tracking-widest mb-1">
+<span class="text-secondary uppercase">Uptime</span>
+<span class="text-white">99.98%</span>
+</div>
+<div class="w-full h-1 bg-surface-bright">
+<div class="w-[99%] h-full bg-secondary"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] font-black tracking-widest mb-1">
+<span class="text-tertiary uppercase">Latency</span>
+<span class="text-white">14ms</span>
+</div>
+<div class="w-full h-1 bg-surface-bright">
+<div class="w-[14%] h-full bg-tertiary"></div>
+</div>
+</div>
+<div class="text-[9px] text-on-surface-variant font-mono">NODE_CLUSTER_ZETA_09 // READY</div>
+</div>
+</div>
+<!-- Live Activity Log Section -->
+<section class="mt-8 bg-surface-container-low p-6">
+<div class="flex justify-between items-center mb-6">
+<div class="flex items-center space-x-3">
+<div class="w-2 h-2 bg-secondary animate-pulse"></div>
+<h2 class="text-white font-black uppercase text-sm tracking-[0.3em]">Live Activity Log</h2>
+</div>
+<span class="text-on-surface-variant text-[10px] font-mono uppercase">Streaming // 1024_bps</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+<!-- Log Entry 1 -->
+<div class="flex items-start space-x-4 py-3 border-l-2 border-surface-bright pl-4 hover:border-primary transition-all cursor-default group">
+<span class="text-primary font-mono text-[10px] pt-1">09:44:12</span>
+<div class="flex flex-col">
+<span class="text-white text-xs font-bold uppercase tracking-tight group-hover:text-primary transition-colors">Vector Embedding Generated</span>
+<span class="text-on-surface-variant text-[10px] leading-relaxed">Context block ID_9982 processed. Dimensionality: 1536.</span>
+</div>
+</div>
+<!-- Log Entry 2 -->
+<div class="flex items-start space-x-4 py-3 border-l-2 border-surface-bright pl-4 hover:border-secondary transition-all cursor-default group">
+<span class="text-secondary font-mono text-[10px] pt-1">09:44:08</span>
+<div class="flex flex-col">
+<span class="text-white text-xs font-bold uppercase tracking-tight group-hover:text-secondary transition-colors">Long-term Recall Successful</span>
+<span class="text-on-surface-variant text-[10px] leading-relaxed">Retrieved cluster: "User Preferences / Aesthetic". Confidence: 0.98.</span>
+</div>
+</div>
+<!-- Log Entry 3 -->
+<div class="flex items-start space-x-4 py-3 border-l-2 border-surface-bright pl-4 hover:border-tertiary transition-all cursor-default group">
+<span class="text-tertiary font-mono text-[10px] pt-1">09:43:55</span>
+<div class="flex flex-col">
+<span class="text-white text-xs font-bold uppercase tracking-tight group-hover:text-tertiary transition-colors">Memory Pruning Executed</span>
+<span class="text-on-surface-variant text-[10px] leading-relaxed">Forgetting policy applied to stale context ID_8821. 40KB cleared.</span>
+</div>
+</div>
+<!-- Log Entry 4 -->
+<div class="flex items-start space-x-4 py-3 border-l-2 border-surface-bright pl-4 hover:border-primary transition-all cursor-default group">
+<span class="text-primary font-mono text-[10px] pt-1">09:43:40</span>
+<div class="flex flex-col">
+<span class="text-white text-xs font-bold uppercase tracking-tight group-hover:text-primary transition-colors">Assembler Priority Shift</span>
+<span class="text-on-surface-variant text-[10px] leading-relaxed">Re-ranking prompt components based on immediate user intent.</span>
+</div>
+</div>
+</div>
+<!-- Terminal-style Bottom Bar -->
+<div class="mt-8 pt-6 border-t border-surface-bright flex justify-between items-center">
+<div class="flex space-x-4">
+<button class="px-4 py-2 bg-surface-bright text-white text-[10px] font-black uppercase hover:bg-white hover:text-black transition-all">Clear Logs</button>
+<button class="px-4 py-2 bg-surface-bright text-white text-[10px] font-black uppercase hover:bg-white hover:text-black transition-all">Export JSON</button>
+</div>
+<div class="flex items-center space-x-4">
+<span class="text-on-surface-variant text-[10px] font-black uppercase">System Status: Optimal</span>
+<div class="w-32 h-2 bg-surface-bright">
+<div class="w-3/4 h-full bg-primary"></div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Visual Accents -->
+<div class="fixed bottom-0 right-0 p-8 z-50 pointer-events-none">
+<div class="text-[12px] font-black text-primary opacity-20 tracking-[1em] rotate-90 origin-bottom-right uppercase">
+            Architectural_Override_Enabled
+        </div>
+</div>
+</body></html>

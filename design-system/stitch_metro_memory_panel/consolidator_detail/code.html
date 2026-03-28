@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CONSOLIDATOR - MEMORY_OS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-bright": "#2c2c2c",
+              "on-primary-fixed": "#001932",
+              "on-primary-container": "#002444",
+              "on-tertiary-fixed-variant": "#780600",
+              "on-tertiary-fixed": "#390100",
+              "secondary-container": "#006e00",
+              "inverse-on-surface": "#565555",
+              "secondary": "#82f76c",
+              "on-primary-fixed-variant": "#003b6a",
+              "surface-dim": "#0e0e0e",
+              "secondary-fixed-dim": "#74e860",
+              "outline": "#767575",
+              "on-secondary-container": "#e7ffda",
+              "inverse-primary": "#1361a5",
+              "on-background": "#ffffff",
+              "primary-fixed-dim": "#6aa6ef",
+              "tertiary-container": "#fe2c15",
+              "tertiary-dim": "#e71602",
+              "on-error-container": "#ffa8a3",
+              "secondary-dim": "#74e860",
+              "on-secondary-fixed": "#004700",
+              "on-tertiary-container": "#000000",
+              "primary-dim": "#6aa6ef",
+              "primary": "#78b4fe",
+              "surface-container-high": "#1f2020",
+              "on-secondary-fixed-variant": "#006700",
+              "tertiary": "#ff725b",
+              "primary-container": "#67a4ec",
+              "error-dim": "#d7383b",
+              "tertiary-fixed-dim": "#ff7c66",
+              "tertiary-fixed": "#ff9380",
+              "inverse-surface": "#fcf9f8",
+              "surface-container-lowest": "#000000",
+              "error-container": "#9f0519",
+              "on-tertiary": "#490200",
+              "error": "#ff716c",
+              "surface-container": "#191a1a",
+              "surface-variant": "#262626",
+              "background": "#0e0e0e",
+              "secondary-fixed": "#82f76c",
+              "on-error": "#490006",
+              "surface-container-low": "#131313",
+              "primary-fixed": "#78b4fe",
+              "on-surface": "#ffffff",
+              "on-secondary": "#005c00",
+              "surface-tint": "#78b4fe",
+              "outline-variant": "#484848",
+              "surface-container-highest": "#262626",
+              "on-surface-variant": "#adaaaa",
+              "on-primary": "#00325b",
+              "surface": "#0e0e0e"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #0e0e0e; color: #ffffff; margin: 0; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0e0e0e; }
+        ::-webkit-scrollbar-thumb { background: #2c2c2c; }
+    </style>
+</head>
+<body class="flex overflow-hidden">
+<!-- SideNavBar Anchor -->
+<aside class="h-full w-64 fixed left-0 top-0 bg-[#0e0e0e] border-r-0 flex flex-col z-50">
+<div class="p-6 bg-[#131313]">
+<h1 class="text-white font-black text-xl tracking-tighter">MEMORY_OS</h1>
+<p class="text-[#78b4fe] font-bold uppercase text-[10px] tracking-widest mt-1">V.01_ARCHITECT</p>
+</div>
+<nav class="flex-1 flex flex-col space-y-1 mt-4">
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="bolt">bolt</span> Short-term Context
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="database">database</span> Long-term Memory
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="filter_list">filter_list</span> Retriever + Ranker
+            </a>
+<!-- Active Tab: Consolidator -->
+<a class="flex items-center px-6 py-3 bg-[#78b4fe] text-[#00325b] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="compress" style="font-variation-settings: 'FILL' 1;">compress</span> Consolidator
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="delete_sweep">delete_sweep</span> Forgetting Policy
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="edit_note">edit_note</span> Prompt Assembler
+            </a>
+<a class="flex items-center px-6 py-3 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px]" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="settings">settings</span> System Settings
+            </a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-64 min-h-screen flex flex-col bg-[#0e0e0e]">
+<!-- TopAppBar Anchor -->
+<header class="fixed top-0 right-0 left-64 h-16 bg-[#131313] flex justify-between items-center px-8 z-40">
+<div class="font-['Inter'] font-black uppercase tracking-tighter text-2xl text-white">
+                KINETIC_MEMORANDUM
+            </div>
+<div class="flex items-center space-x-6">
+<div class="relative group">
+<input class="bg-transparent border-b border-[#767575] focus:border-[#78b4fe] focus:ring-0 text-sm font-bold uppercase py-1 w-48 outline-none transition-all" placeholder="QUERY_SYSTEM..." type="text"/>
+</div>
+<div class="flex space-x-4 text-[#78b4fe]">
+<span class="material-symbols-outlined cursor-pointer hover:bg-[#2c2c2c] p-1" data-icon="memory">memory</span>
+<span class="material-symbols-outlined cursor-pointer hover:bg-[#2c2c2c] p-1" data-icon="history">history</span>
+<span class="material-symbols-outlined cursor-pointer hover:bg-[#2c2c2c] p-1" data-icon="terminal">terminal</span>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<section class="mt-16 p-0 flex-1 grid grid-cols-12 auto-rows-min gap-0">
+<!-- Large Crimson Header Block -->
+<div class="col-span-12 md:col-span-8 bg-tertiary-container p-10 flex flex-col justify-end min-h-[400px]">
+<h2 class="text-[120px] font-black leading-[0.85] tracking-tighter text-on-tertiary-container uppercase">CONSOLIDATOR</h2>
+<div class="mt-8 flex items-center space-x-12">
+<div>
+<p class="text-xs font-black uppercase tracking-widest text-on-tertiary-container/60 mb-1">PROCESS_ID</p>
+<p class="text-2xl font-black text-on-tertiary-container">CN-8802_X</p>
+</div>
+<div>
+<p class="text-xs font-black uppercase tracking-widest text-on-tertiary-container/60 mb-1">STATUS</p>
+<p class="text-2xl font-black text-on-tertiary-container">ACTIVE_STREAM</p>
+</div>
+</div>
+</div>
+<!-- Compression Ratio Display (Live Tile) -->
+<div class="col-span-12 md:col-span-4 bg-surface-container p-10 flex flex-col justify-between">
+<div>
+<h3 class="text-sm font-black uppercase tracking-[0.2em] text-on-surface-variant mb-8">COMPRESSION_RATIO</h3>
+<div class="text-[80px] font-black leading-none text-primary">
+                        84<span class="text-4xl">%</span>
+</div>
+<p class="mt-4 text-on-surface-variant max-w-[200px] text-xs font-medium leading-relaxed">
+                        Total architectural efficiency increase since last epoch. 1.2TB reduced to 192GB semantic anchors.
+                    </p>
+</div>
+<button class="w-full bg-primary text-on-primary font-black uppercase py-6 px-4 hover:bg-on-primary hover:text-primary transition-all duration-0 flex items-center justify-between group">
+<span>RUN CONSOLIDATION</span>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<!-- Compression Engine at Work: Bento Grid Content -->
+<div class="col-span-12 grid grid-cols-12 gap-0">
+<!-- Input Logs Column -->
+<div class="col-span-12 md:col-span-5 bg-surface-container-low p-8 border-r-0">
+<div class="flex justify-between items-center mb-6">
+<h4 class="text-xs font-black uppercase tracking-widest text-on-surface">RAW_TEXT_INFLOW</h4>
+<span class="text-[10px] font-mono text-outline">0.04ms / PACKET</span>
+</div>
+<div class="space-y-4 font-mono text-[11px] leading-relaxed text-on-surface-variant">
+<div class="p-4 bg-surface-container-high border-l-2 border-outline-variant">
+                            [08:44:21] USER_QUERY: "Analyze the implications of quantum entanglement on macro-scale communication protocols." SYSTEM_RETRIEVING: DATABASE_CLUSTER_7. FETCHING_METADATA... SUCCESS.
+                        </div>
+<div class="p-4 bg-surface-container-high border-l-2 border-outline-variant">
+                            [08:44:22] CONTEXT_EXPANSION: Loading nodes 882, 912, 1044. Cross-referencing Einstein-Podolsky-Rosen paradox with modern fiber-optic encryption standards.
+                        </div>
+<div class="p-4 bg-surface-container-high border-l-2 border-outline-variant opacity-60">
+                            [08:44:23] LATENCY_CHECK: Node 1044 reporting 12ms delay. Rerouting through secondary relay. Summary buffer filling. Priority set to HIGH.
+                        </div>
+<div class="p-4 bg-surface-container-high border-l-2 border-outline-variant opacity-40">
+                            [08:44:25] BUFFER_FLUSH: Redundant metadata strings identified. "system_retrieving", "fetching_metadata", "success" - tagging for removal.
+                        </div>
+</div>
+</div>
+<!-- Visualization Column (Center) -->
+<div class="col-span-12 md:col-span-2 bg-[#000000] flex flex-col items-center justify-center p-8">
+<div class="w-full h-[1px] bg-primary relative">
+<div class="absolute -top-1 left-0 w-2 h-2 bg-primary rotate-45"></div>
+<div class="absolute -top-1 right-0 w-2 h-2 bg-primary rotate-45"></div>
+</div>
+<div class="my-10 flex flex-col items-center">
+<span class="material-symbols-outlined text-primary text-5xl" data-icon="settings_input_component">settings_input_component</span>
+<p class="text-[10px] font-black uppercase tracking-[0.3em] text-primary mt-4">COMPRESSING</p>
+</div>
+<div class="w-full h-[1px] bg-tertiary relative">
+<div class="absolute -top-1 left-0 w-2 h-2 bg-tertiary rotate-45"></div>
+<div class="absolute -top-1 right-0 w-2 h-2 bg-tertiary rotate-45"></div>
+</div>
+</div>
+<!-- Compact Summary Column -->
+<div class="col-span-12 md:col-span-5 bg-surface-container p-8">
+<div class="flex justify-between items-center mb-6">
+<h4 class="text-xs font-black uppercase tracking-widest text-tertiary">SEMANTIC_ANCHOR_OUT</h4>
+<span class="text-[10px] font-mono text-tertiary">TOKEN_SAVINGS: 92%</span>
+</div>
+<div class="space-y-6">
+<div class="p-6 bg-tertiary/10 border-l-4 border-tertiary">
+<p class="text-sm font-bold text-on-surface mb-2 uppercase">Q_ENTANGLEMENT_PROTOCOLS</p>
+<p class="text-xs text-on-surface-variant leading-relaxed uppercase italic">
+                                Analysis: Quantum/Macro-comms. Cross-ref: EPR Paradox/Fiber encryption. Status: Cached. Latency: Stabilized.
+                            </p>
+</div>
+<div class="p-4 bg-surface-container-highest border-l-4 border-outline">
+<div class="flex justify-between items-center mb-2">
+<span class="text-[10px] font-black uppercase text-outline">ANCHOR_TAGS</span>
+<span class="text-[10px] font-mono text-outline">V-NODE_882</span>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="bg-surface-bright text-[9px] font-black px-2 py-1 text-on-surface">QUANTUM</span>
+<span class="bg-surface-bright text-[9px] font-black px-2 py-1 text-on-surface">MACRO_SYNC</span>
+<span class="bg-surface-bright text-[9px] font-black px-2 py-1 text-on-surface">EPR_REF</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Stats / Meta Grid -->
+<div class="col-span-12 grid grid-cols-2 md:grid-cols-4 bg-surface-container-low border-t-0">
+<div class="p-8 border-r border-outline-variant/20">
+<p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-4">TOTAL_SAVINGS</p>
+<p class="text-3xl font-black text-white">4.2 PB</p>
+</div>
+<div class="p-8 border-r border-outline-variant/20">
+<p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-4">ENGINE_TEMP</p>
+<p class="text-3xl font-black text-secondary">34°C</p>
+</div>
+<div class="p-8 border-r border-outline-variant/20">
+<p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-4">UPTIME</p>
+<p class="text-3xl font-black text-white">99.98%</p>
+</div>
+<div class="p-8">
+<p class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-4">RECOVERY_INDEX</p>
+<p class="text-3xl font-black text-white">1:1.02</p>
+</div>
+</div>
+<!-- Hero/Background Image Block (Editorial Asymmetry) -->
+<div class="col-span-12 h-96 relative overflow-hidden">
+<img alt="digital compression" class="w-full h-full object-cover grayscale opacity-30 contrast-125" data-alt="Abstract visualization of high-speed data particles condensing into a geometric crystal structure, dark monochrome aesthetic with sharp light trails." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCB_VpaubR7LPVxRtpdAviPu_RzC_P2loCckKKvGXY0flb0DRC2wb_SH2Uec56XDmkhEq_IncHSvtZAGFIF1gjg5opQa6HAgWRCOIbYMy8ac58_AiVNE_xeHDyCeTxH9Ub4Wgxu4pQCB2k6rGD2nGIQdtnv2q5hDNCjuH8Apz40ccb7BONEvoGLEIYqOfS0z0Rrsgz4iYnk0wyiPZhLprGdonMMqsceBAnGQJbxaTvhvmVMmF_7J9JeqpRDN5wriahgSlm8lB6FHIA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0e0e0e] to-transparent"></div>
+<div class="absolute bottom-10 left-10 max-w-xl">
+<h5 class="text-4xl font-black text-white leading-none mb-4 uppercase italic">"Intelligence is the art of strategic forgetting."</h5>
+<p class="text-sm font-bold text-primary uppercase tracking-[0.2em]">Architecture Manual // Section 04.2</p>
+</div>
+</div>
+</section>
+</main>
+</body></html>

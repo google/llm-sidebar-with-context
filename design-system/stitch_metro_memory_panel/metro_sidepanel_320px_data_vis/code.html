@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#00325b",
+            "surface-container-highest": "#262626",
+            "tertiary-container": "#fe2c15",
+            "secondary-dim": "#74e860",
+            "surface-container-lowest": "#000000",
+            "surface-bright": "#2c2c2c",
+            "on-primary-fixed-variant": "#003b6a",
+            "secondary-fixed-dim": "#74e860",
+            "on-secondary-fixed-variant": "#006700",
+            "on-error-container": "#ffa8a3",
+            "error": "#ff716c",
+            "on-secondary": "#005c00",
+            "error-dim": "#d7383b",
+            "surface-variant": "#262626",
+            "on-tertiary-fixed-variant": "#780600",
+            "tertiary-fixed": "#ff9380",
+            "on-error": "#490006",
+            "on-secondary-fixed": "#004700",
+            "surface-container": "#191a1a",
+            "primary-container": "#67a4ec",
+            "on-surface": "#ffffff",
+            "surface-container-high": "#1f2020",
+            "primary-fixed-dim": "#6aa6ef",
+            "on-surface-variant": "#adaaaa",
+            "tertiary-dim": "#e71602",
+            "surface-container-low": "#131313",
+            "primary": "#78b4fe",
+            "on-tertiary-fixed": "#390100",
+            "on-background": "#ffffff",
+            "inverse-on-surface": "#565555",
+            "on-tertiary-container": "#000000",
+            "secondary": "#82f76c",
+            "inverse-surface": "#fcf9f8",
+            "outline": "#767575",
+            "on-primary-container": "#002444",
+            "surface": "#0e0e0e",
+            "inverse-primary": "#1361a5",
+            "on-primary-fixed": "#001932",
+            "surface-tint": "#78b4fe",
+            "outline-variant": "#484848",
+            "error-container": "#9f0519",
+            "primary-dim": "#6aa6ef",
+            "background": "#0e0e0e",
+            "on-secondary-container": "#e7ffda",
+            "tertiary-fixed-dim": "#ff7c66",
+            "tertiary": "#ff725b",
+            "surface-dim": "#0e0e0e",
+            "secondary-container": "#006e00",
+            "on-tertiary": "#490200",
+            "secondary-fixed": "#82f76c",
+            "primary-fixed": "#78b4fe"
+          },
+          fontFamily: {
+            "headline": ["Inter"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          },
+          borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+    }
+    .vertical-text {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0e0e0e;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2c2c2c;
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body overflow-hidden">
+<!-- SideNavBar Anchor (Right-aligned panel as requested) -->
+<aside class="fixed right-0 top-0 h-full w-[320px] bg-[#0e0e0e] flex flex-col z-50 border-l border-[#484848]/20">
+<!-- Header Section -->
+<header class="p-6 bg-[#0e0e0e]">
+<div class="flex flex-col gap-1">
+<h1 class="text-lg font-black text-white tracking-widest font-headline">CONTEXT_OS_V3</h1>
+<span class="text-[10px] text-primary tracking-[0.3em] font-bold opacity-80 uppercase">V-0.1_STABLE</span>
+</div>
+</header>
+<!-- Context Flow Visualization (The 7 Vertical Sections) -->
+<nav class="flex-grow flex flex-col overflow-y-auto">
+<!-- Module 1: SHORT-TERM (Cobalt) -->
+<div class="group flex items-stretch h-20 bg-surface-container-low mb-[2px] transition-colors hover:bg-surface-container">
+<div class="w-12 flex items-center justify-center bg-primary text-on-primary">
+<span class="vertical-text text-[10px] font-black tracking-widest uppercase py-2">SHORT-TERM</span>
+</div>
+<div class="flex-grow p-3 flex flex-col justify-between overflow-hidden">
+<div class="flex justify-between items-start">
+<span class="text-[9px] text-on-surface-variant font-bold tracking-tighter">RETENTION: 450ms</span>
+<span class="material-symbols-outlined text-primary text-sm">timer</span>
+</div>
+<div class="h-6 flex items-end gap-[2px]">
+<div class="w-1 bg-primary/20 h-2"></div>
+<div class="w-1 bg-primary/40 h-4"></div>
+<div class="w-1 bg-primary h-6"></div>
+<div class="w-1 bg-primary h-5"></div>
+<div class="w-1 bg-primary/60 h-3"></div>
+<div class="w-1 bg-primary h-5"></div>
+<div class="w-1 bg-primary/30 h-2"></div>
+<div class="w-1 bg-primary h-4"></div>
+<div class="w-1 bg-primary h-6"></div>
+<div class="w-1 bg-primary/80 h-3"></div>
+</div>
+</div>
+</div>
+<!-- Module 2: LONG-TERM (Emerald) -->
+<div class="group flex items-stretch h-20 bg-surface-container-low mb-[2px] transition-colors hover:bg-surface-container">
+<div class="w-12 flex items-center justify-center bg-secondary-container text-secondary">
+<span class="vertical-text text-[10px] font-black tracking-widest uppercase py-2">LONG-TERM</span>
+</div>
+<div class="flex-grow p-3 flex flex-col justify-between overflow-hidden">
+<div class="flex justify-between items-start">
+<span class="text-[9px] text-on-surface-variant font-bold tracking-tighter">INDEX: 88.2TB</span>
+<span class="material-symbols-outlined text-secondary text-sm">database</span>
+</div>
+<div class="grid grid-cols-12 gap-1 h-6 items-center">
+<div class="col-span-12 h-1 bg-secondary-container relative overflow-hidden">
+<div class="absolute inset-0 bg-secondary w-3/4"></div>
+</div>
+<div class="col-span-12 h-1 bg-secondary-container relative overflow-hidden">
+<div class="absolute inset-0 bg-secondary w-1/2"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Module 3: RETRIEVER (Mango) -->
+<div class="group flex items-stretch h-20 bg-surface-container-low mb-[2px] transition-colors hover:bg-surface-container">
+<div class="w-12 flex items-center justify-center bg-[#FFB900] text-black">
+<span class="vertical-text text-[10px] font-black tracking-widest uppercase py-2">RETRIEVER</span>
+</div>
+<div class="flex-grow p-3 flex flex-col justify-between overflow-hidden">
+<div class="flex justify-between items-start">
+<span class="text-[9px] text-on-surface-variant font-bold tracking-tighter">LATENCY: 12ms</span>
+<span class="material-symbols-outlined text-[#FFB900] text-sm">search</span>
+</div>
+<div class="flex gap-1 h-6 items-center">
+<div class="h-4 w-4 bg-[#FFB900]/20 flex items-center justify-center"><div class="h-2 w-2 bg-[#FFB900]"></div></div>
+<div class="h-4 w-4 bg-[#FFB900]/20 flex items-center justify-center"><div class="h-2 w-2 bg-[#FFB900]"></div></div>
+<div class="h-4 w-4 bg-[#FFB900]/20 flex items-center justify-center"></div>
+<div class="h-4 w-4 bg-[#FFB900]/20 flex items-center justify-center"><div class="h-2 w-2 bg-[#FFB900]"></div></div>
+<div class="h-4 w-4 bg-[#FFB900]/20 flex items-center justify-center"></div>
+</div>
+</div>
+</div>
+<!-- Module 4: CONSOLIDATOR (Crimson) -->
+<div class="group flex items-stretch h-20 bg-surface-container-low mb-[2px] transition-colors hover:bg-surface-container">
+<div class="w-12 flex items-center justify-center bg-tertiary-container text-black">
+<span class="vertical-text text-[10px] font-black tracking-widest uppercase py-2">CONSOLIDATOR</span>
+</div>
+<div class="flex-grow p-3 flex flex-col justify-between overflow-hidden">
+<div class="flex justify-between items-start">
+<span class="text-[9px] text-on-surface-variant font-bold tracking-tighter">MERGE_RATE: 0.94</span>
+<span class="material-symbols-outlined text-tertiary-container text-sm">merge_type</span>
+</div>
+<div class="h-6 flex items-center">
+<div class="flex flex-col gap-1 w-full">
+<div class="h-[2px] bg-tertiary-container w-full"></div>
+<div class="h-[2px] bg-tertiary-container w-2/3"></div>
+<div class="h-[2px] bg-tertiary-container w-1/2"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Module 5: FORGETTING (Violet) -->
+<div class="group flex items-stretch h-20 bg-surface-container-low mb-[2px] transition-colors hover:bg-surface-container">
+<div class="w-12 flex items-center justify-center bg-[#881798] text-white">
+<span class="vertical-text text-[10px] font-black tracking-widest uppercase py-2">FORGETTING</span>
+</div>
+<div class="flex-grow p-3 flex flex-col justify-between overflow-hidden">
+<div class="flex justify-between items-start">
+<span class="text-[9px] text-on-surface-variant font-bold tracking-tighter">DECAY_COEFF: 0.04</span>
+<span class="material-symbols-outlined text-[#881798] text-sm">delete_sweep</span>
+</div>
+<div class="h-6 flex items-center overflow-hidden">
+<div class="flex gap-1 animate-pulse">
+<div class="w-3 h-3 bg-[#881798]/30"></div>
+<div class="w-3 h-3 bg-[#881798]/20"></div>
+<div class="w-3 h-3 bg-[#881798]/10"></div>
+<div class="w-3 h-3 bg-[#881798]/5"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Module 6: ASSEMBLER (Steel) -->
+<div class="group flex items-stretch h-20 bg-surface-container-low mb-[2px] transition-colors hover:bg-surface-container">
+<div class="w-12 flex items-center justify-center bg-outline text-surface-lowest">
+<span class="vertical-text text-[10px] font-black tracking-widest uppercase py-2">ASSEMBLER</span>
+</div>
+<div class="flex-grow p-3 flex flex-col justify-between overflow-hidden">
+<div class="flex justify-between items-start">
+<span class="text-[9px] text-on-surface-variant font-bold tracking-tighter">CONSTRUCTS: 1,429</span>
+<span class="material-symbols-outlined text-outline text-sm">architecture</span>
+</div>
+<div class="h-6 grid grid-cols-4 gap-1">
+<div class="bg-outline/20"></div>
+<div class="bg-outline/40"></div>
+<div class="bg-outline/60"></div>
+<div class="bg-outline"></div>
+</div>
+</div>
+</div>
+<!-- Module 7: SYSTEM (Charcoal) -->
+<div class="group flex items-stretch h-20 bg-surface-container-low mb-[2px] transition-colors hover:bg-surface-container">
+<div class="w-12 flex items-center justify-center bg-surface-bright text-on-surface">
+<span class="vertical-text text-[10px] font-black tracking-widest uppercase py-2">SYSTEM</span>
+</div>
+<div class="flex-grow p-3 flex flex-col justify-between overflow-hidden">
+<div class="flex justify-between items-start">
+<span class="text-[9px] text-on-surface-variant font-bold tracking-tighter">CPU_LOAD: 14%</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">settings_input_component</span>
+</div>
+<div class="h-6 flex items-center gap-1">
+<div class="h-1 w-full bg-surface-variant relative overflow-hidden">
+<div class="absolute inset-0 bg-primary w-[14%]"></div>
+</div>
+</div>
+</div>
+</div>
+</nav>
+<!-- Footer Action -->
+<footer class="p-6 bg-[#0e0e0e] flex flex-col gap-4 border-t border-outline-variant/20">
+<div class="flex justify-between text-[10px] font-bold text-on-surface-variant tracking-widest">
+<div class="flex items-center gap-2 hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px]">list_alt</span>
+<span>LOGS</span>
+</div>
+<div class="flex items-center gap-2 hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px]">analytics</span>
+<span>STATUS</span>
+</div>
+</div>
+<button class="w-full bg-primary text-on-primary py-3 font-black text-[11px] tracking-[0.2em] uppercase hover:bg-white hover:text-black transition-all active:scale-[0.98]">
+        EXPORT_JSON
+      </button>
+<div class="flex justify-between items-center opacity-40">
+<div class="text-[8px] font-bold tracking-widest uppercase">Memory Management Unit</div>
+<div class="text-[8px] font-mono">0x7F_ACTIVE</div>
+</div>
+</footer>
+</aside>
+<!-- Main Canvas (Background Content) -->
+<main class="mr-[320px] h-screen bg-surface p-12 flex flex-col justify-center items-start">
+<div class="max-w-2xl">
+<h2 class="text-6xl font-black text-white tracking-tighter mb-4 leading-none uppercase">Architecting<br/>Cognition.</h2>
+<p class="text-on-surface-variant text-lg tracking-tight font-medium max-w-md">
+        The MEMORY_OS core is monitoring context flow across 7 distinct retrieval pathways. High-velocity data integration in progress.
+      </p>
+<div class="mt-12 grid grid-cols-2 gap-px bg-outline-variant/20 border border-outline-variant/20">
+<div class="bg-surface-container-low p-6">
+<span class="text-[10px] font-bold text-primary tracking-widest block mb-2">ACTIVE_NODE</span>
+<span class="text-2xl font-black text-white">X-RAY_DELTA</span>
+</div>
+<div class="bg-surface-container-low p-6">
+<span class="text-[10px] font-bold text-secondary tracking-widest block mb-2">SYNC_STATUS</span>
+<span class="text-2xl font-black text-white">STABLE_01</span>
+</div>
+</div>
+</div>
+</main>
+</body></html>

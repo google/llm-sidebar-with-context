@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FORGETTING_POLICY - MEMORY_OS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-bright": "#2c2c2c",
+              "on-primary-fixed": "#001932",
+              "on-primary-container": "#002444",
+              "on-tertiary-fixed-variant": "#780600",
+              "on-tertiary-fixed": "#390100",
+              "secondary-container": "#006e00",
+              "inverse-on-surface": "#565555",
+              "secondary": "#82f76c",
+              "on-primary-fixed-variant": "#003b6a",
+              "surface-dim": "#0e0e0e",
+              "secondary-fixed-dim": "#74e860",
+              "outline": "#767575",
+              "on-secondary-container": "#e7ffda",
+              "inverse-primary": "#1361a5",
+              "on-background": "#ffffff",
+              "primary-fixed-dim": "#6aa6ef",
+              "tertiary-container": "#fe2c15",
+              "tertiary-dim": "#e71602",
+              "on-error-container": "#ffa8a3",
+              "secondary-dim": "#74e860",
+              "on-secondary-fixed": "#004700",
+              "on-tertiary-container": "#000000",
+              "primary-dim": "#6aa6ef",
+              "primary": "#78b4fe",
+              "surface-container-high": "#1f2020",
+              "on-secondary-fixed-variant": "#006700",
+              "tertiary": "#ff725b",
+              "primary-container": "#67a4ec",
+              "error-dim": "#d7383b",
+              "tertiary-fixed-dim": "#ff7c66",
+              "tertiary-fixed": "#ff9380",
+              "inverse-surface": "#fcf9f8",
+              "surface-container-lowest": "#000000",
+              "error-container": "#9f0519",
+              "on-tertiary": "#490200",
+              "error": "#ff716c",
+              "surface-container": "#191a1a",
+              "surface-variant": "#262626",
+              "background": "#0e0e0e",
+              "secondary-fixed": "#82f76c",
+              "on-error": "#490006",
+              "surface-container-low": "#131313",
+              "primary-fixed": "#78b4fe",
+              "on-surface": "#ffffff",
+              "on-secondary": "#005c00",
+              "surface-tint": "#78b4fe",
+              "outline-variant": "#484848",
+              "surface-container-highest": "#262626",
+              "on-surface-variant": "#adaaaa",
+              "on-primary": "#00325b",
+              "surface": "#0e0e0e",
+              "accent-violet": "#8b5cf6",
+              "on-accent-violet": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0", "lg": "0", "xl": "0", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0e0e0e; }
+        ::-webkit-scrollbar-thumb { background: #78b4fe; }
+        .digital-decay-bg {
+            background-image: radial-gradient(#2c2c2c 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#131313] flex justify-between items-center w-full px-6 h-16">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-black text-white tracking-tighter uppercase font-['Inter']">KINETIC_MEMORANDUM</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-1">
+<button class="p-2 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+</button>
+<button class="p-2 text-[#adaaaa] hover:bg-[#2c2c2c] transition-colors duration-0">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+</button>
+<button class="p-2 text-[#78b4fe] hover:bg-[#2c2c2c] transition-colors duration-0">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="h-full w-64 fixed left-0 top-0 bg-[#131313] flex flex-col z-40">
+<div class="p-6 pt-20 mb-4">
+<h2 class="text-white font-black text-xl tracking-tighter uppercase font-['Inter']">MEMORY_OS</h2>
+<p class="text-[#78b4fe] text-[10px] font-bold tracking-[0.2em] uppercase">V.01_ARCHITECT</p>
+</div>
+<nav class="flex flex-col h-full space-y-1">
+<a class="flex items-center gap-3 px-6 py-4 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+                Short-term Context
+            </a>
+<a class="flex items-center gap-3 px-6 py-4 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+                Long-term Memory
+            </a>
+<a class="flex items-center gap-3 px-6 py-4 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+                Retriever + Ranker
+            </a>
+<a class="flex items-center gap-3 px-6 py-4 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="compress">compress</span>
+                Consolidator
+            </a>
+<!-- Active State: Forgetting Policy -->
+<a class="flex items-center gap-3 px-6 py-4 bg-[#78b4fe] text-[#00325b] font-['Inter'] font-bold uppercase text-[12px] transition-all border-l-4 border-[#78b4fe]" href="#">
+<span class="material-symbols-outlined" data-icon="delete_sweep" style="font-variation-settings: 'FILL' 1;">delete_sweep</span>
+                Forgetting Policy
+            </a>
+<a class="flex items-center gap-3 px-6 py-4 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+                Prompt Assembler
+            </a>
+<a class="flex items-center gap-3 px-6 py-4 text-[#adaaaa] hover:bg-[#191a1a] font-['Inter'] font-bold uppercase text-[12px] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                System Settings
+            </a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 min-h-screen bg-surface-dim digital-decay-bg">
+<!-- Header Section: Metro Style Large Violet Header -->
+<header class="bg-accent-violet p-10 flex flex-col justify-end min-h-[300px] relative overflow-hidden">
+<div class="absolute top-0 right-0 p-10 opacity-20">
+<span class="material-symbols-outlined text-[160px]" data-icon="delete_sweep">delete_sweep</span>
+</div>
+<p class="text-white text-sm font-black tracking-[0.3em] mb-2">SYSTEM_MODULE // 005</p>
+<h1 class="text-white text-8xl font-black tracking-tighter uppercase leading-none">FORGETTING<br/>POLICY</h1>
+<div class="mt-8 flex gap-4">
+<div class="bg-black/20 p-4 backdrop-blur-sm border-l-4 border-white">
+<p class="text-[10px] text-white/70 uppercase font-bold tracking-widest">Active Purge Rate</p>
+<p class="text-3xl text-white font-black">1.2 GB/HR</p>
+</div>
+<div class="bg-black/20 p-4 backdrop-blur-sm border-l-4 border-white">
+<p class="text-[10px] text-white/70 uppercase font-bold tracking-widest">Memories Preserved</p>
+<p class="text-3xl text-white font-black">84.2%</p>
+</div>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<section class="p-8 grid grid-cols-12 gap-1">
+<!-- Controls Tile -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container p-6 flex flex-col justify-between">
+<div>
+<h3 class="text-primary text-xs font-black uppercase tracking-widest mb-6">Global Parameters</h3>
+<!-- Decay Speed Slider -->
+<div class="mb-10">
+<div class="flex justify-between items-center mb-4">
+<label class="text-sm font-bold uppercase text-on-surface">Decay Speed</label>
+<span class="text-primary font-black">72%</span>
+</div>
+<div class="relative w-full h-1 bg-surface-bright">
+<div class="absolute top-0 left-0 h-full bg-primary w-[72%]"></div>
+<div class="absolute top-1/2 -translate-y-1/2 left-[72%] w-4 h-4 bg-white border-2 border-primary"></div>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] text-on-surface-variant uppercase font-bold">Stable</span>
+<span class="text-[10px] text-on-surface-variant uppercase font-bold">Volatile</span>
+</div>
+</div>
+<!-- Filter Options -->
+<div class="space-y-4">
+<div class="flex items-center justify-between p-3 bg-surface-container-low">
+<span class="text-xs font-bold uppercase">Auto-Vacuum Mode</span>
+<div class="w-10 h-5 bg-secondary flex items-center px-1">
+<div class="w-3 h-3 bg-on-secondary"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low">
+<span class="text-xs font-bold uppercase">Semantic Compression</span>
+<div class="w-10 h-5 bg-surface-bright flex items-center justify-end px-1">
+<div class="w-3 h-3 bg-outline"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-12">
+<button class="w-full bg-primary text-on-primary py-4 font-black uppercase tracking-widest hover:bg-on-primary hover:text-primary transition-all duration-200">
+                        Commit Policy Changes
+                    </button>
+</div>
+</div>
+<!-- Stale Memories List -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container p-6">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-primary text-xs font-black uppercase tracking-widest">Stale Memories (Pending Deletion)</h3>
+<div class="flex gap-2">
+<button class="bg-surface-bright px-3 py-1 text-[10px] font-bold uppercase">Sort by Age</button>
+<button class="bg-surface-bright px-3 py-1 text-[10px] font-bold uppercase">Sort by Signal</button>
+</div>
+</div>
+<div class="space-y-1">
+<!-- Memory Item 1 -->
+<div class="grid grid-cols-12 items-center bg-surface-container-low p-4 group hover:bg-surface-variant transition-colors">
+<div class="col-span-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="database">database</span>
+</div>
+<div class="col-span-6">
+<p class="text-sm font-bold truncate">LOG_SESSION_092323_PARSER_ERROR</p>
+<p class="text-[10px] text-on-surface-variant font-medium">Captured 14 days ago • Low relevance detected</p>
+</div>
+<div class="col-span-2 text-right">
+<span class="text-[10px] font-black text-error px-2 py-0.5 border border-error/30 uppercase">Signal: 0.12</span>
+</div>
+<div class="col-span-3 flex justify-end gap-4 items-center">
+<label class="text-[10px] font-bold uppercase text-on-surface-variant group-hover:text-on-surface">Whitelist</label>
+<div class="w-8 h-4 bg-surface-bright border border-outline-variant flex items-center px-0.5">
+<div class="w-2.5 h-2.5 bg-outline"></div>
+</div>
+</div>
+</div>
+<!-- Memory Item 2 -->
+<div class="grid grid-cols-12 items-center bg-surface-container-low p-4 group hover:bg-surface-variant transition-colors border-l-4 border-secondary">
+<div class="col-span-1 text-secondary">
+<span class="material-symbols-outlined text-sm" data-icon="shield" style="font-variation-settings: 'FILL' 1;">shield</span>
+</div>
+<div class="col-span-6">
+<p class="text-sm font-bold truncate">SYSTEM_CORE_PROMPT_ARCHITECTURE_V3</p>
+<p class="text-[10px] text-on-surface-variant font-medium">Captured 2 days ago • High relevance</p>
+</div>
+<div class="col-span-2 text-right">
+<span class="text-[10px] font-black text-secondary px-2 py-0.5 border border-secondary/30 uppercase">Signal: 0.98</span>
+</div>
+<div class="col-span-3 flex justify-end gap-4 items-center">
+<label class="text-[10px] font-bold uppercase text-secondary">Protected</label>
+<div class="w-8 h-4 bg-secondary flex items-center justify-end px-0.5">
+<div class="w-2.5 h-2.5 bg-on-secondary"></div>
+</div>
+</div>
+</div>
+<!-- Memory Item 3 -->
+<div class="grid grid-cols-12 items-center bg-surface-container-low p-4 group hover:bg-surface-variant transition-colors opacity-60">
+<div class="col-span-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="image">image</span>
+</div>
+<div class="col-span-6">
+<p class="text-sm font-bold truncate">UI_MOCKUP_REDUNDANT_V2_TEMP</p>
+<p class="text-[10px] text-on-surface-variant font-medium">Captured 24 days ago • Obsolete branch</p>
+</div>
+<div class="col-span-2 text-right">
+<span class="text-[10px] font-black text-error px-2 py-0.5 border border-error/30 uppercase">Signal: 0.04</span>
+</div>
+<div class="col-span-3 flex justify-end gap-4 items-center">
+<label class="text-[10px] font-bold uppercase text-on-surface-variant group-hover:text-on-surface">Whitelist</label>
+<div class="w-8 h-4 bg-surface-bright border border-outline-variant flex items-center px-0.5">
+<div class="w-2.5 h-2.5 bg-outline"></div>
+</div>
+</div>
+</div>
+<!-- Memory Item 4 -->
+<div class="grid grid-cols-12 items-center bg-surface-container-low p-4 group hover:bg-surface-variant transition-colors">
+<div class="col-span-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="description">description</span>
+</div>
+<div class="col-span-6">
+<p class="text-sm font-bold truncate">TEMPORARY_BUFFER_OVERFLOW_DUMP</p>
+<p class="text-[10px] text-on-surface-variant font-medium">Captured 6 hours ago • Scheduled purge</p>
+</div>
+<div class="col-span-2 text-right">
+<span class="text-[10px] font-black text-error px-2 py-0.5 border border-error/30 uppercase">Signal: 0.01</span>
+</div>
+<div class="col-span-3 flex justify-end gap-4 items-center">
+<label class="text-[10px] font-bold uppercase text-on-surface-variant group-hover:text-on-surface">Whitelist</label>
+<div class="w-8 h-4 bg-surface-bright border border-outline-variant flex items-center px-0.5">
+<div class="w-2.5 h-2.5 bg-outline"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Pagination / Load More -->
+<button class="w-full mt-4 bg-surface-bright py-3 text-[10px] font-black uppercase tracking-[0.2em] hover:text-primary transition-colors">
+                    View Entire Stale Stack (4,291 Entries)
+                </button>
+</div>
+<!-- Visualization Tile: Digital Decay -->
+<div class="col-span-12 lg:col-span-12 bg-surface-container p-6 min-h-[400px]">
+<div class="flex justify-between items-center mb-10">
+<div>
+<h3 class="text-primary text-xs font-black uppercase tracking-widest">Digital Decay Visualization</h3>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase mt-1">Real-time memory structural integrity monitoring</p>
+</div>
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-2">
+<span class="w-2 h-2 bg-primary"></span>
+<span class="text-[8px] font-bold uppercase">Active</span>
+</span>
+<span class="flex items-center gap-2">
+<span class="w-2 h-2 bg-surface-bright"></span>
+<span class="text-[8px] font-bold uppercase">Decayed</span>
+</span>
+</div>
+</div>
+<!-- Abstract Visualization Grid -->
+<div class="grid grid-cols-24 gap-1 h-64">
+<!-- Generating a dense visual grid of "memory blocks" -->
+<!-- This would be a large collection of divs in a real implementation -->
+<div class="col-span-12 h-full flex flex-wrap gap-1 content-start">
+<div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary"></div>
+<div class="w-4 h-4 bg-primary-dim"></div><div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary"></div>
+<div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-surface-bright"></div><div class="w-4 h-4 bg-primary"></div>
+<div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary-dim"></div>
+<div class="w-4 h-4 bg-surface-bright"></div><div class="w-4 h-4 bg-surface-bright"></div><div class="w-4 h-4 bg-primary"></div>
+<div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary-dim"></div><div class="w-4 h-4 bg-surface-bright"></div>
+<div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary"></div>
+<div class="w-4 h-4 bg-surface-bright"></div><div class="w-4 h-4 bg-surface-bright"></div><div class="w-4 h-4 bg-surface-bright"></div>
+<div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary-dim"></div><div class="w-4 h-4 bg-primary"></div>
+<div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary"></div>
+<div class="w-4 h-4 bg-primary-dim"></div><div class="w-4 h-4 bg-surface-bright"></div><div class="w-4 h-4 bg-surface-bright"></div>
+<div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary"></div><div class="w-4 h-4 bg-primary"></div>
+</div>
+<div class="col-span-12 h-full bg-surface-container-low flex items-center justify-center relative border border-primary/10">
+<img alt="abstract representation of digital decay" class="absolute inset-0 w-full h-full object-cover opacity-20 grayscale" data-alt="abstract architectural grid of glowing digital particles with sharp edges and dark geometric shadows in deep charcoal and violet tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjPV6P0S2YfFtlOPYFD6yG5di8xjfJcA-MjNs6-Sr9qSZFID4Gq6cNhXQNlml3mMbK0Al1QJ9blj8wymp1OZrvw2d_asxcaEQhGNfKD2z4j54wuWdIN-KEPbCo0zpy9oW_Thn1TuaDDXfZmpNl-RpM7zB8Vst1LSQ5Bfw4_GiCaM64eC0waQbdbIBjCeDLdPGwUAodvf3ztZUF0QYaPKosi6IHfyMjQs4gPnVQwJNL6mH79mgD9mHmE8bbBo1JuyAGFQvSoG4pDfM"/>
+<div class="z-10 text-center px-10">
+<p class="text-xs font-black uppercase tracking-widest text-primary mb-2">Entropy Warning</p>
+<p class="text-[10px] text-on-surface-variant font-bold leading-relaxed">
+                                SECTOR 7G SHOWS ACCELERATED DATA DEGRADATION.<br/>REALLOCATE LONG-TERM STORAGE OR AUTHORIZE PURGE.
+                            </p>
+<button class="mt-6 border border-primary px-6 py-2 text-[10px] font-black uppercase hover:bg-primary hover:text-on-primary transition-all">
+                                Force Defragmentation
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer Metadata -->
+<footer class="p-8 border-t border-surface-bright flex justify-between items-center text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">
+<div>Policy_Instance: FORGET_CRON_V1.2</div>
+<div>Next_Purge_Window: 04:00:00 UTC</div>
+<div class="text-primary">Status: Monitoring</div>
+</footer>
+</main>
+</body></html>

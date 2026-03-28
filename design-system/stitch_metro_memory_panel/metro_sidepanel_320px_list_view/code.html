@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-primary": "#00325b",
+              "surface-container-highest": "#262626",
+              "tertiary-container": "#fe2c15",
+              "secondary-dim": "#74e860",
+              "surface-container-lowest": "#000000",
+              "surface-bright": "#2c2c2c",
+              "on-primary-fixed-variant": "#003b6a",
+              "secondary-fixed-dim": "#74e860",
+              "on-secondary-fixed-variant": "#006700",
+              "on-error-container": "#ffa8a3",
+              "error": "#ff716c",
+              "on-secondary": "#005c00",
+              "error-dim": "#d7383b",
+              "surface-variant": "#262626",
+              "on-tertiary-fixed-variant": "#780600",
+              "tertiary-fixed": "#ff9380",
+              "on-error": "#490006",
+              "on-secondary-fixed": "#004700",
+              "surface-container": "#191a1a",
+              "primary-container": "#67a4ec",
+              "on-surface": "#ffffff",
+              "surface-container-high": "#1f2020",
+              "primary-fixed-dim": "#6aa6ef",
+              "on-surface-variant": "#adaaaa",
+              "tertiary-dim": "#e71602",
+              "surface-container-low": "#131313",
+              "primary": "#78b4fe",
+              "on-tertiary-fixed": "#390100",
+              "on-background": "#ffffff",
+              "inverse-on-surface": "#565555",
+              "on-tertiary-container": "#000000",
+              "secondary": "#82f76c",
+              "inverse-surface": "#fcf9f8",
+              "outline": "#767575",
+              "on-primary-container": "#002444",
+              "surface": "#0e0e0e",
+              "inverse-primary": "#1361a5",
+              "on-primary-fixed": "#001932",
+              "surface-tint": "#78b4fe",
+              "outline-variant": "#484848",
+              "error-container": "#9f0519",
+              "primary-dim": "#6aa6ef",
+              "background": "#0e0e0e",
+              "on-secondary-container": "#e7ffda",
+              "tertiary-fixed-dim": "#ff7c66",
+              "tertiary": "#ff725b",
+              "surface-dim": "#0e0e0e",
+              "secondary-container": "#006e00",
+              "on-tertiary": "#490200",
+              "secondary-fixed": "#82f76c",
+              "primary-fixed": "#78b4fe"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #0e0e0e; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="text-on-surface overflow-hidden">
+<!-- Top Navigation Anchor (As per JSON) -->
+<nav class="bg-[#0e0e0e] flex items-center justify-between px-5 h-16 w-full fixed top-0 z-[60]">
+<div class="text-xl font-black text-white tracking-[0.2em]">MEMORY_OS</div>
+<div class="flex items-center gap-6">
+<span class="material-symbols-outlined text-[#78b4fe] cursor-pointer">settings</span>
+<span class="material-symbols-outlined text-[#78b4fe] cursor-pointer">terminal</span>
+</div>
+</nav>
+<!-- Main Content Canvas (Background Grid) -->
+<main class="fixed inset-0 pt-16 pr-[320px] bg-surface">
+<div class="p-10 grid grid-cols-4 gap-1 h-full">
+<div class="col-span-2 bg-surface-container-low p-8 flex flex-col justify-end">
+<h1 class="text-7xl font-black tracking-tighter uppercase leading-none mb-4">Core<br/>Interface</h1>
+<p class="text-on-surface-variant font-bold uppercase tracking-widest text-xs">Awaiting instruction from side panel cluster.</p>
+</div>
+<div class="col-span-1 bg-primary text-on-primary p-6 flex flex-col justify-between">
+<span class="material-symbols-outlined text-4xl">analytics</span>
+<div class="text-2xl font-black uppercase tracking-tighter">Real-time Telemetry</div>
+</div>
+<div class="col-span-1 bg-surface-container p-6 border-l border-outline-variant/20">
+<div class="flex flex-col gap-4">
+<div class="h-2 bg-secondary w-full"></div>
+<div class="h-2 bg-secondary w-2/3"></div>
+<div class="h-2 bg-secondary w-1/2"></div>
+</div>
+</div>
+<div class="col-span-4 bg-surface-container-high h-32 flex items-center px-8">
+<div class="flex gap-12">
+<div>
+<div class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Active Thread</div>
+<div class="text-xl font-black uppercase">0x889_FETCH</div>
+</div>
+<div>
+<div class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Memory Load</div>
+<div class="text-xl font-black uppercase">44.2 GB</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- SIDE PANEL (The Component) -->
+<aside class="fixed right-0 top-0 h-full w-[320px] bg-[#0e0e0e] z-50 flex flex-col border-l border-[#484848]/20">
+<!-- Header: System Status & Time -->
+<header class="p-6 bg-[#0e0e0e] pt-20">
+<div class="flex justify-between items-end mb-1">
+<div class="text-[11px] font-black text-white uppercase tracking-widest">SYSTEM_STATUS</div>
+<div class="text-[11px] font-bold text-secondary uppercase tracking-widest">OPTIMAL</div>
+</div>
+<div class="text-4xl font-black tracking-tighter text-white">21:44:02</div>
+<div class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mt-2">V-0.1_STABLE // NO_ERRORS</div>
+</header>
+<!-- Vertical List of Accordion Tiles -->
+<div class="flex-1 overflow-y-auto no-scrollbar space-y-1 p-1">
+<!-- Tile 1: Cobalt / Short-Term -->
+<div class="group bg-surface-container-low hover:bg-primary transition-all duration-0 cursor-pointer">
+<div class="p-4 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#78b4fe] group-hover:text-on-primary">timer</span>
+<span class="text-[11px] font-black uppercase tracking-widest text-white group-hover:text-on-primary">SHORT-TERM</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant group-hover:text-on-primary/70">88%</span>
+</div>
+<!-- Buffer Bar -->
+<div class="h-1 w-full bg-surface-bright group-hover:bg-on-primary/20">
+<div class="h-full bg-[#78b4fe] group-hover:bg-on-primary" style="width: 88%"></div>
+</div>
+<!-- Expanded Content (Simulated via Group Hover) -->
+<div class="hidden group-hover:block pt-2 border-t border-on-primary/10">
+<div class="text-[9px] font-bold text-on-primary uppercase leading-tight">ACTIVE_CACHING_NODE_01<br/>LATENCY: 1.2MS</div>
+</div>
+</div>
+</div>
+<!-- Tile 2: Emerald / Long-Term -->
+<div class="group bg-surface-container-low hover:bg-secondary transition-all duration-0 cursor-pointer border-l-4 border-secondary">
+<div class="p-4 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary group-hover:text-on-secondary">database</span>
+<span class="text-[11px] font-black uppercase tracking-widest text-white group-hover:text-on-secondary">LONG-TERM</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant group-hover:text-on-secondary/70">42%</span>
+</div>
+<div class="h-1 w-full bg-surface-bright group-hover:bg-on-secondary/20">
+<div class="h-full bg-secondary group-hover:bg-on-secondary" style="width: 42%"></div>
+</div>
+</div>
+</div>
+<!-- Tile 3: Mango (Primary Variant) / Retriever -->
+<div class="group bg-surface-container-low hover:bg-primary-container transition-all duration-0 cursor-pointer">
+<div class="p-4 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary-container group-hover:text-on-primary-container">search</span>
+<span class="text-[11px] font-black uppercase tracking-widest text-white group-hover:text-on-primary-container">RETRIEVER</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant group-hover:text-on-primary-container/70">94%</span>
+</div>
+<div class="h-1 w-full bg-surface-bright group-hover:bg-on-primary-container/20">
+<div class="h-full bg-primary-container group-hover:bg-on-primary-container" style="width: 94%"></div>
+</div>
+</div>
+</div>
+<!-- Tile 4: Crimson / Consolidator -->
+<div class="group bg-surface-container-low hover:bg-error transition-all duration-0 cursor-pointer">
+<div class="p-4 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error group-hover:text-on-error">merge_type</span>
+<span class="text-[11px] font-black uppercase tracking-widest text-white group-hover:text-on-error">CONSOLIDATOR</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant group-hover:text-on-error/70">12%</span>
+</div>
+<div class="h-1 w-full bg-surface-bright group-hover:bg-on-error/20">
+<div class="h-full bg-error group-hover:bg-on-error" style="width: 12%"></div>
+</div>
+</div>
+</div>
+<!-- Tile 5: Violet / Forgetting -->
+<div class="group bg-surface-container-low hover:bg-tertiary-container transition-all duration-0 cursor-pointer">
+<div class="p-4 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary-container group-hover:text-on-tertiary-container">delete_sweep</span>
+<span class="text-[11px] font-black uppercase tracking-widest text-white group-hover:text-on-tertiary-container">FORGETTING</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant group-hover:text-on-tertiary-container/70">05%</span>
+</div>
+<div class="h-1 w-full bg-surface-bright group-hover:bg-on-tertiary-container/20">
+<div class="h-full bg-tertiary-container group-hover:bg-on-tertiary-container" style="width: 5%"></div>
+</div>
+</div>
+</div>
+<!-- Tile 6: Steel / Assembler -->
+<div class="group bg-surface-container-low hover:bg-outline transition-all duration-0 cursor-pointer">
+<div class="p-4 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline group-hover:text-white">architecture</span>
+<span class="text-[11px] font-black uppercase tracking-widest text-white group-hover:text-white">ASSEMBLER</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant group-hover:text-white/70">67%</span>
+</div>
+<div class="h-1 w-full bg-surface-bright group-hover:bg-white/20">
+<div class="h-full bg-outline group-hover:bg-white" style="width: 67%"></div>
+</div>
+</div>
+</div>
+<!-- Tile 7: Charcoal / System -->
+<div class="group bg-surface-container hover:bg-white transition-all duration-0 cursor-pointer">
+<div class="p-4 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-surface">settings_input_component</span>
+<span class="text-[11px] font-black uppercase tracking-widest text-white group-hover:text-surface">SYSTEM</span>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant group-hover:text-surface/70">100%</span>
+</div>
+<div class="h-1 w-full bg-surface-bright group-hover:bg-surface/20">
+<div class="h-full bg-on-surface-variant group-hover:bg-surface" style="width: 100%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<footer class="p-4 bg-[#0e0e0e] flex flex-col gap-1">
+<div class="flex gap-1 mb-2">
+<button class="flex-1 bg-surface-bright text-white p-3 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-colors">LOGS</button>
+<button class="flex-1 bg-surface-bright text-white p-3 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-colors">STATUS</button>
+</div>
+<button class="w-full bg-error text-on-error p-4 text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:invert">
+                CLEAR_LOGS
+            </button>
+</footer>
+</aside>
+</body></html>
