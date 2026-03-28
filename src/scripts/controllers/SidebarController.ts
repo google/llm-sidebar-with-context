@@ -57,6 +57,9 @@ export class SidebarController {
   private agentdropButton: HTMLButtonElement;
   private statusModel: HTMLElement | null;
   private statusMemory: HTMLElement | null;
+  private companionDot: HTMLElement | null;
+  private companionLabel: HTMLElement | null;
+  private companionPill: HTMLElement | null;
   private memoryPanel: HTMLElement | null;
   private memoryPanelToggle: HTMLElement | null;
   private memoryPanelBody: HTMLElement | null;
@@ -117,6 +120,9 @@ export class SidebarController {
     ) as HTMLButtonElement;
     this.statusModel = document.getElementById('status-model');
     this.statusMemory = document.getElementById('status-memory');
+    this.companionDot = document.getElementById('companion-dot');
+    this.companionLabel = document.getElementById('companion-label');
+    this.companionPill = document.getElementById('status-companion');
     this.memoryPanel = document.getElementById('memory-panel');
     this.memoryPanelToggle = document.getElementById('memory-panel-toggle');
     this.memoryPanelBody = document.getElementById('memory-panel-body');
@@ -286,8 +292,49 @@ export class SidebarController {
     // Load memory stats
     await this.refreshMemoryStats();
 
+    // Check native companion status
+    this.refreshCompanionStatus();
+
     // Periodic heartbeat to catch missed tab updates
     this.refreshInterval = setInterval(() => this.refreshCurrentTab(), 2000);
+
+    // Periodic companion health check (every 30s)
+    setInterval(() => this.refreshCompanionStatus(), 30000);
+  }
+
+  private async refreshCompanionStatus(): Promise<void> {
+    try {
+      const response = await this.messageService.sendMessage<{
+        state: { connectionState: string };
+      }>({
+        type: MessageTypes.NATIVE_COMPANION_STATUS,
+      });
+      if (response?.state) {
+        this.updateCompanionIndicator(response.state.connectionState);
+      }
+    } catch {
+      this.updateCompanionIndicator('disconnected');
+    }
+  }
+
+  private updateCompanionIndicator(state: string): void {
+    if (!this.companionDot || !this.companionLabel || !this.companionPill) return;
+
+    // Remove all state classes
+    this.companionDot.classList.remove('connected', 'connecting', 'disconnected', 'degraded');
+    this.companionDot.classList.add(state === 'connected' ? 'connected' :
+      state === 'connecting' ? 'connecting' :
+      state === 'degraded' ? 'degraded' : 'disconnected');
+
+    const labels: Record<string, string> = {
+      connected: 'Native OK',
+      connecting: 'Connecting',
+      degraded: 'Degraded',
+      disconnected: 'No Native',
+      disabled: 'Disabled',
+    };
+    this.companionLabel.textContent = labels[state] || state;
+    this.companionPill.title = `Native companion: ${state}`;
   }
 
   private async loadHistory() {

@@ -93,9 +93,13 @@ jobs:
         working-directory: native
         run: cargo build --release --target ${{ matrix.target }} -p llm-sidebar-host
 
-      - name: Build installer
+      - name: Build installer (CLI)
         working-directory: native
         run: cargo build --release --target ${{ matrix.target }} -p llm-sidebar-installer
+
+      - name: Build installer (GUI)
+        working-directory: native
+        run: cargo build --release --target ${{ matrix.target }} -p llm-sidebar-installer --features gui
 
       - name: Build overlay companion
         if: runner.os != 'Linux'
@@ -216,7 +220,159 @@ jobs:
           name: deb-package
           path: '*.deb'
 
-  # ── 4. Bundle release archives ────────────────────────────────────────
+  # ── 4a. Build macOS .dmg ───────────────────────────────────────────────
+  dmg:
+    needs: [extension, native]
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - artifact: macos-amd64
+            arch: x86_64
+          - artifact: macos-arm64
+            arch: arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-${{ matrix.artifact }}
+          path: native-bin/
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension
+          path: ext/
+
+      - name: Create .dmg
+        run: |
+          APP="LLM Sidebar"
+          DMG_DIR=dmg-staging
+          DMG_NAME=llm-sidebar-${{ matrix.artifact }}.dmg
+
+          mkdir -p "$DMG_DIR/$APP"
+
+          # Copy binaries
+          cp native-bin/llm-sidebar-host "$DMG_DIR/$APP/"
+          cp native-bin/llm-sidebar-installer "$DMG_DIR/$APP/"
+          test -f native-bin/overlay-companion && cp native-bin/overlay-companion "$DMG_DIR/$APP/" || true
+
+          # Copy CRX
+          cp ext/dist/llm-sidebar.crx "$DMG_DIR/$APP/" 2>/dev/null || true
+
+          # Make executable
+          chmod +x "$DMG_DIR/$APP/"llm-sidebar-*
+          test -f "$DMG_DIR/$APP/overlay-companion" && chmod +x "$DMG_DIR/$APP/overlay-companion" || true
+
+          # Create a simple install script
+          cat > "$DMG_DIR/$APP/install.command" << 'SCRIPT'
+          #!/bin/bash
+          cd "$(dirname "$0")"
+          echo ""
+          echo "  LLM SIDEBAR INSTALLER"
+          echo "  ─────────────────────"
+          echo ""
+          ./llm-sidebar-installer install
+          echo ""
+          echo "  Press any key to close."
+          read -n 1
+          SCRIPT
+          chmod +x "$DMG_DIR/$APP/install.command"
+
+          # Create DMG
+          hdiutil create -volname "$APP" -srcfolder "$DMG_DIR" \
+            -ov -format UDZO "$DMG_NAME"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dmg-${{ matrix.artifact }}
+          path: '*.dmg'
+
+  # ── 4b. Build Windows .msi ───────────────────────────────────────────
+  msi:
+    needs: [extension, native]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-windows-amd64
+          path: native-bin/
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension
+          path: ext/
+
+      - name: Install WiX Toolset
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+        shell: pwsh
+
+      - name: Create WiX source
+        shell: bash
+        run: |
+          mkdir -p wix-staging
+          cp native-bin/llm-sidebar-host.exe wix-staging/
+          cp native-bin/llm-sidebar-installer.exe wix-staging/
+          test -f native-bin/overlay-companion.exe && cp native-bin/overlay-companion.exe wix-staging/ || true
+          cp ext/dist/llm-sidebar.crx wix-staging/ 2>/dev/null || true
+
+          cat > wix-staging/Package.wxs << 'WXS'
+          <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+            <Package Name="LLM Sidebar"
+                     Manufacturer="maceip"
+                     Version="1.0.0"
+                     UpgradeCode="a1b2c3d4-e5f6-7890-abcd-ef1234567890">
+
+              <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
+              <MediaTemplate EmbedCab="yes" />
+
+              <StandardDirectory Id="LocalAppDataFolder">
+                <Directory Id="INSTALLFOLDER" Name="LLMSidebar">
+                  <Component Id="MainComponents" Guid="*">
+                    <File Id="NativeHost" Source="llm-sidebar-host.exe" KeyPath="yes" />
+                    <File Id="Installer" Source="llm-sidebar-installer.exe" />
+                    <RegistryKey Root="HKCU"
+                                 Key="Software\Google\Chrome\NativeMessagingHosts\com.llm_sidebar.native_host">
+                      <RegistryValue Type="string" Value="[INSTALLFOLDER]com.llm_sidebar.native_host.json" />
+                    </RegistryKey>
+                  </Component>
+                </Directory>
+              </StandardDirectory>
+
+              <Feature Id="MainFeature" Title="LLM Sidebar" Level="1">
+                <ComponentRef Id="MainComponents" />
+              </Feature>
+
+              <!-- Run installer post-install to write manifest JSON -->
+              <CustomAction Id="RunInstaller"
+                            FileRef="Installer"
+                            ExeCommand="install"
+                            Execute="deferred"
+                            Impersonate="yes"
+                            Return="ignore" />
+
+              <InstallExecuteSequence>
+                <Custom Action="RunInstaller" After="InstallFiles">NOT Installed</Custom>
+              </InstallExecuteSequence>
+            </Package>
+          </Wix>
+          WXS
+
+      - name: Build MSI
+        shell: pwsh
+        run: |
+          cd wix-staging
+          wix build Package.wxs -o ../llm-sidebar-windows-amd64.msi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: msi-package
+          path: '*.msi'
+
+  # ── 5. Bundle release archives ────────────────────────────────────────
   package:
     needs: [extension, native]
     strategy:
@@ -265,7 +421,7 @@ jobs:
   # ── 5. GitHub Release (only on tags) ──────────────────────────────────
   release:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [package, deb]
+    needs: [package, deb, dmg, msi]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -275,7 +431,7 @@ jobs:
       - name: Collect release files
         run: |
           mkdir -p release
-          find artifacts/ -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.deb" -o -name "*.crx" \) -exec cp {} release/ \;
+          find artifacts/ -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.deb" -o -name "*.crx" -o -name "*.dmg" -o -name "*.msi" \) -exec cp {} release/ \;
           ls -la release/
 
       - name: Create GitHub Release

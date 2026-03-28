@@ -536,6 +536,38 @@ body {
   background: currentColor;
 }
 
+/* Companion connection status */
+.status-pill.companion {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.status-pill.companion:hover {
+  opacity: 0.8;
+}
+
+.companion-dot.connected {
+  color: var(--success, #34c759);
+}
+
+.companion-dot.connecting {
+  color: var(--warning, #f5a623);
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.companion-dot.disconnected {
+  color: var(--error, #ef4444);
+}
+
+.companion-dot.degraded {
+  color: var(--warning, #f5a623);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
 /* --- Bottom Panel --- */
 
 .bottom-panel {
