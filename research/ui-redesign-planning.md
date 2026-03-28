@@ -6,13 +6,100 @@
 
 ## Context
 
-We're redesigning the UI for our Chrome extension — an AI chat sidebar that reads web pages, remembers conversations, and talks to multiple LLM providers. The current UI is a single sidebar panel with everything crammed in. This document covers: (A) what data and capabilities we already have, (B) what competitors show in their UIs, and (C) a recommended set of pages/views for the redesign.
+We're redesigning the UI for our Chrome extension **and** its native desktop overlay companion. The extension is an AI chat sidebar that reads web pages, remembers conversations, and talks to multiple LLM providers. The native companion is a Rust daemon that renders an always-on-top HUD window outside the browser.
+
+Both surfaces must share the same design language. This document covers: (A) what data and capabilities we already have, (B) the design system we're adopting, (C) what competitors show in their UIs, and (D) a recommended set of pages/views for the redesign across both surfaces.
 
 ---
 
-# PART A: What We Have Today
+# PART A: The Design System — "Kinetic Grid"
 
-## A1. Data We Collect & Store
+The redesign adopts the **Kinetic Grid** design system, an editorial interpretation of Swiss Design / Metro philosophy. This is the single source of truth for both the Chrome sidebar and the native overlay.
+
+## Core Principles (Non-Negotiable)
+
+| Rule | What it means |
+|------|--------------|
+| **No rounded corners** | `border-radius: 0` everywhere. Sharp corners only. |
+| **No borders for layout** | Sections are divided by color-block juxtaposition, not 1px lines. |
+| **No shadows or gradients** | Depth via tonal stacking (darker/lighter surface colors), never drop-shadow or blur. |
+| **No centering** | Left-aligned typography. Centered text is "too soft." |
+| **Scale extremes** | Massive display headlines against dense micro-copy grids create editorial tension. |
+
+## Color Palette
+
+**Foundation**: Deep charcoal `#0e0e0e` (surface base)
+
+| Token | Hex | Use |
+|-------|-----|-----|
+| `surface` | `#0e0e0e` | Base background |
+| `surface_container_low` | `#131313` | Section backgrounds, sidebar |
+| `surface_container` | `#191a1a` | Nested containers |
+| `surface_bright` | `#2c2c2c` | Active/interactive elements |
+| `on_surface` | `#ffffff` | Primary text |
+| `on_surface_variant` | `#adaaaa` | Body text, secondary info |
+| `outline_variant` | `#484848` | Ghost borders at 20% opacity (last resort) |
+| `primary` (Cobalt) | `#78b4fe` | System actions, primary nav |
+| `on_primary` | `#00325b` | Text on cobalt backgrounds |
+| `secondary` (Emerald) | `#006e00` | Success states, growth data |
+| `tertiary` (Crimson) | `#9f0519` | Alerts, high-priority |
+| Mango / Violet | (accent) | Category tags, Live Tile differentiators |
+
+## Typography
+
+Font: **Inter** (Google Fonts). Hierarchy designed for scan-ability.
+
+| Scale | Use | Style |
+|-------|-----|-------|
+| `display-lg` / `display-md` | Hero tiles, section headers | Tight letter-spacing (-0.02em), blocky |
+| `headline-sm` | Live Tile titles | **UPPERCASE** inside color blocks |
+| `body-md` / `body-lg` | Long-form data | `on_surface_variant` (#adaaaa) |
+| `label-sm` | Metadata | High-contrast white despite small size |
+
+## Components
+
+### Live Tiles (Core Primitive)
+- 0px border-radius, `spacing-5` (1.1rem) internal padding
+- Organized in CSS Grid with col-span for editorial rhythm
+- Color-coded by function (cobalt = system, emerald = success, crimson = alert)
+
+### Buttons
+- Primary: solid `primary` bg, `on_primary` text, 0px radius
+- Hover: color inversion (text ↔ background swap), no shadows
+
+### Input Fields
+- Bottom-only ghost border (`outline` #767575)
+- Focus: 2px solid `primary` line
+- Error: entire bg shifts to `error_container` (#9f0519)
+
+### Lists & Navigation
+- No divider lines — use `spacing-2` (0.4rem) gaps with `surface` showing through
+- Active item: 4px solid vertical accent bar on left edge
+
+## Design System Reference Screens
+
+The following mockups ship in `design-system/stitch_metro_memory_panel/`:
+
+| Screen | What it demonstrates |
+|--------|---------------------|
+| `metro_memory_panel_updated` | System overview with Live Tile grid (7 modules), system health bars, recent activity log |
+| `metro_context_v3` / `v3_refined` | Full desktop layout: left sidebar nav + Live Tile banner (7 modules) + architecture overview + node activity + data visualization |
+| `metro_context_v2` | Grid of module tiles with live activity log, uptime/latency stats |
+| `metro_sidepanel_320px_high_density` | 320px sidebar: massive "ARCHITECTURE" headline, synapse stream visualization, processing velocity tile, right-rail Live Tile stack with real-time stats (812 tokens, 99.2% recall, 45ms latency) |
+| `metro_sidepanel_320px_list_view` | 320px sidebar: "CORE INTERFACE" hero, real-time telemetry, right-rail module list with progress bars |
+| `metro_sidepanel_320px_data_vis` | 320px sidebar: "ARCHITECTING COGNITION" hero, context layer bar chart, logs/status footer |
+| `short_term_context_detail` | Module detail: live context buffer stream (chat-style), token counter (812), attention heatmap grid, buffer health indicator |
+| `long_term_memory_detail` | Module detail: memory fact cards with importance weights, knowledge graph visualizer, add-memory form, query speed/entropy stats |
+| `retriever_ranker_detail` | Module detail: candidate recall stream with confidence scores, retuning sliders (semantic density, temporal weight, recency bias), precision map, live heartbeat stats |
+| `consolidator_detail` | Module detail: raw text inflow vs semantic anchor output, compression ratio (84%), process ID, engine temp, uptime, recovery index |
+| `forgetting_policy_detail` | Module detail: decay speed slider, stale memories list with whitelist/protect actions, digital decay visualization grid, entropy warning |
+| `prompt_assembler_detail` | Module detail: assembly toggles (dynamic pruning, context window, temporal weighting, safety wrappers), live construction canvas showing injected assets, token monitor donut chart, estimated cost |
+
+---
+
+# PART B: What We Have Today
+
+## B1. Data We Collect & Store
 
 | Data | What it is | Where it lives |
 |------|-----------|----------------|
@@ -30,7 +117,7 @@ We're redesigning the UI for our Chrome extension — an AI chat sidebar that re
 | **Telemetry stats** | Retrieval counts, compaction counts, avg scores, budget usage ratios | In-memory per session |
 | **Native companion state** | Connection status, session IDs, ping/pong timing, diagnostics | chrome.storage.local |
 
-## A2. Capabilities We Have
+## B2. Capabilities We Have
 
 ### LLM Providers (4 backends)
 | Provider | Model | Needs API Key? |
@@ -69,7 +156,7 @@ We're redesigning the UI for our Chrome extension — an AI chat sidebar that re
 - JSON-RPC: hello, ping, status
 - Auto-reconnect with backoff
 
-## A3. Current UI Surfaces
+## B3. Current UI Surfaces
 
 **Only 1 real screen today: the Sidebar Panel**, containing:
 1. Status bar (green dot + model name + memory count)
@@ -84,9 +171,51 @@ We're redesigning the UI for our Chrome extension — an AI chat sidebar that re
 - `welcome.html` — onboarding (3 setup steps, keyboard shortcut, feature cards)
 - `website.html` — marketing mockup of sidebar
 
+## B4. Native Overlay Companion (Current State)
+
+The native companion is a Rust daemon (`native/overlay-companion/`) that renders an always-on-top HUD window on desktop. Today it is a **placeholder** — here's what exists:
+
+### Architecture
+```
+Chrome Extension
+    ↓ (native messaging: 4-byte LE + JSON over stdin/stdout)
+llm-sidebar-host (native/host/) — stdio bridge process
+    ↓ (JSON-RPC over local IPC socket)
+overlay-companion daemon (native/overlay-companion/) — long-lived process
+    → spawns overlay window in separate thread
+```
+
+### Current Window
+- **Size**: 900 x 120 px (hardcoded)
+- **Style**: Borderless, transparent, always-on-top, skip taskbar
+- **Rendering**: `winit` + `softbuffer` (CPU pixel buffer — no GPU, no webview, no UI framework)
+- **Content**: Colored rectangles only — dark slate bands top/bottom, dark navy center, blue accent square. No text, no widgets, no interactivity.
+
+### RPC Methods Available
+| Method | What it does |
+|--------|-------------|
+| `hello` | Handshake: exchange session IDs, report capabilities |
+| `ping` | Heartbeat (22s interval) — returns `pong` + timestamp |
+| `status` | Report service status, overlay status, platform, features |
+
+### Supported Features (reported to extension)
+`native-messaging`, `json-rpc`, `ipc`, `self-bootstrap`, `boot-assets`, `overlay` (mac/win), `always-on-top` (mac/win), `click-through` (mac/win)
+
+### Platform Support
+- **macOS**: Full overlay support (no shadow, no fullscreen)
+- **Windows**: Full overlay support (skip taskbar)
+- **Linux**: Overlay marked as "unsupported" — daemon runs but no window
+
+### What's Missing
+- No real UI rendering (just colored pixels)
+- No text rendering capability (would need a font rasterizer or switch to egui/iced/webview)
+- No data display from the extension (RPC only does hello/ping/status)
+- No Kinetic Grid design system applied
+- No new RPC methods to push memory/context/chat data to the overlay
+
 ---
 
-# PART B: Competitive Analysis
+# PART C: Competitive Analysis
 
 ## Category 1: Web Applications (Agent Memory)
 
@@ -236,7 +365,7 @@ We're redesigning the UI for our Chrome extension — an AI chat sidebar that re
 
 ---
 
-# PART C: Recommended Pages & Information Architecture
+# PART D: Recommended Pages & Information Architecture
 
 ## What the competitors teach us
 
@@ -327,38 +456,145 @@ We're redesigning the UI for our Chrome extension — an AI chat sidebar that re
 
 ---
 
-## Navigation Model
+## Design System Mapping to Proposed Pages
 
-```
-┌─────────────────────────────┐
-│  Status Bar (always visible) │
-│  [model] [memory: 42/160]   │
-├─────────────────────────────┤
-│  Tab Bar / Nav Icons:        │
-│  💬 Chat                     │
-│  🧠 Memory                   │
-│  📑 Context                  │
-│  📋 Conversations            │
-│  ⚙️ Settings                 │
-├─────────────────────────────┤
-│                              │
-│    Active page content       │
-│                              │
-└─────────────────────────────┘
-```
+Each page maps to Kinetic Grid reference screens from the design system zip:
 
-The sidebar stays a sidebar (420px wide) — we add a **tab bar or icon nav** at the top to switch between views. This matches what Supermemory and Jan do for their multi-panel layouts.
+| Page | Primary Reference Screen | Key Kinetic Grid Patterns |
+|------|-------------------------|--------------------------|
+| Chat | `metro_sidepanel_320px_list_view` | Hero headline for status ("CORE INTERFACE"), right-rail module list with progress bars, dark surface base |
+| Memory Explorer | `long_term_memory_detail` + `retriever_ranker_detail` | Fact cards as Live Tiles, keyword tags in colored blocks, graph visualizer, importance sliders |
+| Context Dashboard | `metro_sidepanel_320px_data_vis` + `metro_context_v2` | Context layer bar chart, module tiles grid, live activity log |
+| Settings | `forgetting_policy_detail` + `prompt_assembler_detail` | Toggle switches for policies, slider controls, parameter panels |
+| Conversations | `short_term_context_detail` | Live buffer stream (chat-style list), token counter, attention heatmap for session selection |
+| System Overview | `metro_memory_panel_updated` + `metro_sidepanel_320px_high_density` | Live Tile grid (7 modules), system health bars, processing velocity, synapse stream |
 
 ---
 
-## Summary: What's New vs What Exists
+## Navigation Model (Chrome Sidebar — 320px)
 
-| Surface | Status | Effort |
-|---------|--------|--------|
-| Chat (sidebar) | Exists — enhance with citations + budget ribbon | Small |
-| Memory Explorer | **New page** | Medium |
-| Context Dashboard | **New page** | Medium |
-| Settings (full page) | Exists as panel — expand to full page | Small |
-| Conversations | **New page** + new data model (multi-thread) | Large |
-| Welcome/Onboarding | Exists — refresh visuals | Small |
-| Navigation (tab bar) | **New component** | Small |
+```
+┌──────────────────────────────────┐
+│  MEMORY_OS          [icons] [gear]│  ← surface_container_low (#131313)
+├──────────────────────────────────┤
+│  ⚡ SHORT-TERM CONTEXT           │  ← Left nav, active = 4px
+│  ≋ LONG-TERM MEMORY             │    cobalt accent bar
+│  ⇌ RETRIEVER + RANKER           │
+│  ✦ CONSOLIDATOR                 │  ← on_surface_variant text
+│  ⌧ FORGETTING POLICY            │    uppercase labels
+│  ∧ PROMPT ASSEMBLER             │
+│  ✦ SYSTEM SETTINGS              │
+├──────────────────────────────────┤
+│                                  │
+│    Active page content           │  ← surface (#0e0e0e)
+│    (Kinetic Grid layout)         │
+│                                  │
+└──────────────────────────────────┘
+```
+
+Sidebar width: **320px** (matching the design system's sidepanel mockups, not the current 420px). Left nav uses the same pattern as the design system: icon + uppercase label, 4px accent bar on active item, `surface_container_low` background.
+
+---
+
+## Native Overlay — Redesign Scope
+
+The native overlay companion (`native/overlay-companion/`) must adopt the Kinetic Grid design system and become a real information surface. This is a significant upgrade from the current placeholder.
+
+### Technical Decision Required
+
+The overlay currently uses `winit + softbuffer` (raw pixel buffer). To render Kinetic Grid UI with text, Live Tiles, and data visualizations, we need a real rendering approach. Options:
+
+| Option | Pros | Cons |
+|--------|------|------|
+| **egui** (immediate-mode GUI) | Pure Rust, fast, easy theming, text rendering built in | Immediate mode = redraws every frame, round-corner defaults need overriding |
+| **iced** (Elm-style GUI) | Pure Rust, declarative, good for data dashboards | Heavier, steeper learning curve |
+| **webview (wry/tao)** | Can reuse exact HTML/CSS from design system mockups | Adds browser engine dependency, heavier binary |
+| **cosmic-text + tiny-skia** | Lightweight, full control | Lots of manual work for layout |
+
+**Recommendation for designer/PM**: `egui` is the best fit — it's lightweight, Rust-native, and can be themed to match Kinetic Grid (0px radius, flat colors, tonal stacking). The design system's HTML/CSS mockups serve as the spec; egui implements the same visual language natively.
+
+### Overlay Views
+
+The overlay HUD should support multiple modes, controlled by the extension via new RPC methods:
+
+#### Mode 1: Compact HUD (default — 900x120px)
+```
+┌─────────────────────────────────────────────────┐
+│ MEMORY_OS     42/160 ████████░░  GEMINI_2.5_FL  │  ← status bar
+│ ⚡ 812 TOKENS  ≋ 99.2% RECALL  ⌧ 45ms LATENCY  │  ← Live Tile strip
+└─────────────────────────────────────────────────┘
+```
+- Always-on-top strip showing real-time memory system health
+- Data: episode count, retrieval accuracy, latency, model name
+- Kinetic Grid: `surface` bg, Live Tile color blocks for each metric
+
+#### Mode 2: Expanded Dashboard (900x600px, toggled by user)
+```
+┌─────────────────────────────────────────────────┐
+│ MEMORY_OS                              EXPANDED │
+├──────────┬──────────────────────────────────────┤
+│ CONTEXT  │  ┌────────┬────────┬────────┐       │
+│ MEMORY   │  │ SHORT  │ LONG   │ RETRVR │       │
+│ RETRIEVER│  │ TERM   │ TERM   │ RANKER │       │
+│ ASSEMBLY │  │ 812tok │ 99.2%  │ 45ms   │       │
+│          │  ├────────┴────────┴────────┤       │
+│          │  │ RECENT ACTIVITY LOG       │       │
+│          │  │ 09:42:11 VECTOR_EMBED...  │       │
+│          │  │ 09:41:08 CONSOLIDATION... │       │
+│          │  │ 09:40:55 CACHE_PURGE...   │       │
+│          │  └──────────────────────────┘       │
+└──────────┴──────────────────────────────────────┘
+```
+- Full Kinetic Grid dashboard matching `metro_memory_panel_updated` mockup
+- Live Tile grid of all 7 modules with real-time stats
+- Activity log stream
+- System health bars
+
+#### Mode 3: Detail View (900x600px, drilled into one module)
+- Matches the module detail screens (e.g., `retriever_ranker_detail`, `forgetting_policy_detail`)
+- Shows tuning controls, candidate streams, visualizations
+- Controlled by clicking a module tile in expanded mode
+
+### New RPC Methods Needed
+
+To push data from the extension to the overlay, we need new RPC methods:
+
+| Method | Payload | Purpose |
+|--------|---------|---------|
+| `update_memory_stats` | episode count, budget ratio, last compaction time | Feed the memory gauge |
+| `update_retrieval` | query keywords, retrieved episodes with scores, candidate count | Feed retriever/ranker detail |
+| `update_context` | active tabs, pinned tabs, tier assignments, total budget used | Feed context dashboard |
+| `update_chat_event` | latest message role + snippet, token count | Feed short-term context stream |
+| `set_overlay_mode` | `compact` / `expanded` / `detail:{module}` | Switch between HUD modes |
+| `update_system_health` | latency, recall %, tokens active, compaction ratio | Feed system health tiles |
+
+### Overlay Styling Rules (Kinetic Grid applied to native)
+
+All the same rules apply natively:
+- 0px corner radius on all rectangles
+- Tonal stacking for depth (surface → surface_container_low → surface_container)
+- No shadows or blur effects
+- Live Tiles as solid color blocks (cobalt, emerald, crimson, mango, violet)
+- Inter font (bundled with the binary or loaded from system)
+- Uppercase `headline-sm` inside colored tiles
+- Left-aligned typography throughout
+- 4px accent bar for active navigation items
+
+---
+
+## Summary: All Surfaces
+
+| Surface | Platform | Status | Effort | Design System Screen |
+|---------|----------|--------|--------|---------------------|
+| Chat (sidebar) | Chrome ext | Enhance existing | Small | `sidepanel_320px_list_view` |
+| Memory Explorer | Chrome ext | **New page** | Medium | `long_term_memory_detail` |
+| Context Dashboard | Chrome ext | **New page** | Medium | `sidepanel_320px_data_vis` |
+| Settings | Chrome ext | Expand from panel | Small | `forgetting_policy_detail` |
+| Conversations | Chrome ext | **New page** + new data model | Large | `short_term_context_detail` |
+| Welcome/Onboarding | Chrome ext | Refresh visuals | Small | Kinetic Grid colors + type |
+| Navigation (left rail) | Chrome ext | **New component** | Small | `metro_context_v3` left nav |
+| Compact HUD | Native overlay | **New** (replace placeholder) | Large | `sidepanel_320px_high_density` (strip) |
+| Expanded Dashboard | Native overlay | **New** | Large | `metro_memory_panel_updated` |
+| Module Detail Views (7) | Native overlay | **New** | X-Large | Individual detail screens |
+| Rendering engine upgrade | Native overlay | **New** (egui or alternative) | Large | N/A (infrastructure) |
+| New RPC methods (6) | Extension + Native | **New** | Medium | N/A (data plumbing) |
