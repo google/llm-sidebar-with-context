@@ -110,7 +110,7 @@ describe('SidebarController', () => {
       const select = document.getElementById(
         'model-select',
       ) as HTMLSelectElement;
-      expect(select.value).toBe('gemini-2.5-flash');
+      expect(select.value).toBe('gemini-3.1-flash-lite-preview');
     });
   });
 

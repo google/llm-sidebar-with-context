@@ -45,7 +45,7 @@ export class GeminiService implements IGeminiService {
     apiKey: string,
     context: ContentPart[],
     history: ChatMessage[],
-    model: string = 'gemini-2.5-flash',
+    model: string = 'gemini-3.1-flash-lite-preview',
     signal?: AbortSignal,
   ): Promise<GeminiResponse> {
     try {
