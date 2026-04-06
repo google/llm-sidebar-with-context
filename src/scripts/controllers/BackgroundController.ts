@@ -111,6 +111,26 @@ export class BackgroundController {
         await chrome.sidePanel.open({ windowId: tab.windowId });
       }
     });
+
+    // Handle extension updates or first-time installation
+    chrome.runtime.onInstalled.addListener(async (details) => {
+      await this.initializeDefaults(details);
+    });
+  }
+
+  private async initializeDefaults(details: chrome.runtime.InstalledDetails) {
+    console.log(`Extension ${details.reason}ed.`);
+
+    // Initialize default model if not already set
+    const currentModel = await this.syncStorageService.get<string>(
+      StorageKeys.SELECTED_MODEL,
+    );
+    if (!currentModel) {
+      await this.syncStorageService.set(
+        StorageKeys.SELECTED_MODEL,
+        'gemini-3.1-flash-lite-preview',
+      );
+    }
   }
 
   private async broadcastCurrentTabInfo() {

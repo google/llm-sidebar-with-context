@@ -624,6 +624,43 @@ describe('SidebarController', () => {
       });
     });
 
+    it('should handle context invalidation error by reloading the page', async () => {
+      vi.useFakeTimers();
+      // Mock window.location.reload
+      const { location } = window;
+      delete (window as any).location;
+      window.location = { ...location, reload: vi.fn() } as any;
+
+      const promptInput = document.getElementById(
+        'prompt-input',
+      ) as HTMLInputElement;
+      const promptForm = document.getElementById(
+        'prompt-form',
+      ) as HTMLFormElement;
+      const messagesDiv = document.getElementById('messages') as HTMLDivElement;
+
+      promptInput.value = 'Hello';
+      vi.mocked(mockMessageService.sendMessage).mockRejectedValue(
+        new Error('Extension context invalidated.'),
+      );
+
+      promptForm.dispatchEvent(new Event('submit'));
+
+      await vi.waitFor(() => {
+        const systemMsg = messagesDiv.querySelector('.message.system');
+        expect(systemMsg?.textContent).toContain(
+          'Extension updated. Reloading to reconnect...',
+        );
+      });
+
+      // Wait for the reload to be called (it's inside a setTimeout)
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(window.location.reload).toHaveBeenCalled();
+
+      // Restore location
+      window.location = location;
+    });
+
     it('should show Stop button during generation and send STOP message on click', async () => {
       const promptInput = document.getElementById(
         'prompt-input',

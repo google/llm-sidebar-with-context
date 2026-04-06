@@ -49,6 +49,9 @@ describe('BackgroundController', () => {
       action: {
         onClicked: { addListener: vi.fn() },
       },
+      runtime: {
+        onInstalled: { addListener: vi.fn() },
+      },
       sidePanel: {
         open: vi.fn(),
       },
@@ -121,6 +124,7 @@ describe('BackgroundController', () => {
       expect(chrome.tabs.onUpdated.addListener).toHaveBeenCalled();
       expect(chrome.tabs.onRemoved.addListener).toHaveBeenCalled();
       expect(chrome.action.onClicked.addListener).toHaveBeenCalled();
+      expect(chrome.runtime.onInstalled.addListener).toHaveBeenCalled();
 
       expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
         type: MessageTypes.CURRENT_TAB_INFO,
@@ -305,6 +309,40 @@ describe('BackgroundController', () => {
       // Should not broadcast current tab info as tab is not active
       expect(mockMessageService.sendMessage).not.toHaveBeenCalledWith(
         expect.objectContaining({ type: MessageTypes.CURRENT_TAB_INFO }),
+      );
+    });
+
+    it('should initialize default model on install if not present', async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue(undefined);
+
+      controller.start();
+      const installListener = vi.mocked(chrome.runtime.onInstalled.addListener)
+        .mock.calls[0][0];
+
+      await installListener({
+        reason: 'install',
+      } as chrome.runtime.InstalledDetails);
+
+      expect(mockSyncStorage.set).toHaveBeenCalledWith(
+        StorageKeys.SELECTED_MODEL,
+        'gemini-3.1-flash-lite-preview',
+      );
+    });
+
+    it('should not overwrite existing model choice on update', async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue('gemini-2.5-pro');
+
+      controller.start();
+      const installListener = vi.mocked(chrome.runtime.onInstalled.addListener)
+        .mock.calls[0][0];
+
+      await installListener({
+        reason: 'update',
+      } as chrome.runtime.InstalledDetails);
+
+      expect(mockSyncStorage.set).not.toHaveBeenCalledWith(
+        StorageKeys.SELECTED_MODEL,
+        expect.any(String),
       );
     });
   });

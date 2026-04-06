@@ -407,10 +407,22 @@ export class SidebarController {
       } else if (response && response.error) {
         this.appendMessage('error', `Error: ${response.error}`);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       clearInterval(timerInterval);
       thinkingMessageElement.remove();
-      this.appendMessage('error', `Error: ${error}`);
+      const err = error as Error;
+      if (
+        err.message &&
+        err.message.includes('Extension context invalidated.')
+      ) {
+        this.appendMessage(
+          'system',
+          'System: Extension updated. Reloading to reconnect...',
+        );
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        this.appendMessage('error', `Error: ${error}`);
+      }
     } finally {
       this.isGenerating = false;
       this.submitButton.innerHTML = ICONS.SEND;
