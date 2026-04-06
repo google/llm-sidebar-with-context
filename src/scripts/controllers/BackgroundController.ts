@@ -132,7 +132,7 @@ export class BackgroundController {
     );
     if (
       !currentModel ||
-      !Object.keys(SUPPORTED_MODELS).includes(currentModel as any)
+      !Object.prototype.hasOwnProperty.call(SUPPORTED_MODELS, currentModel)
     ) {
       await this.syncStorageService.set(
         StorageKeys.SELECTED_MODEL,

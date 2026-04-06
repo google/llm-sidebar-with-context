@@ -46,6 +46,7 @@ describe('SidebarController', () => {
   let mockMessageService: IMessageService;
 
   beforeEach(() => {
+    vi.unstubAllGlobals();
     // Reset DOM
     document.body.innerHTML = htmlContent;
     document.documentElement.removeAttribute('data-theme');
@@ -645,9 +646,11 @@ describe('SidebarController', () => {
     it('should handle context invalidation error by reloading the page', async () => {
       vi.useFakeTimers();
       // Mock window.location.reload
-      const { location } = window;
-      delete (window as any).location;
-      window.location = { ...location, reload: vi.fn() } as any;
+      const mockReload = vi.fn();
+      vi.stubGlobal('location', {
+        ...window.location,
+        reload: mockReload,
+      });
 
       const promptInput = document.getElementById(
         'prompt-input',
@@ -673,10 +676,7 @@ describe('SidebarController', () => {
 
       // Wait for the reload to be called (it's inside a setTimeout)
       await vi.advanceTimersByTimeAsync(2000);
-      expect(window.location.reload).toHaveBeenCalled();
-
-      // Restore location
-      window.location = location;
+      expect(mockReload).toHaveBeenCalled();
     });
 
     it('should show Stop button during generation and send STOP message on click', async () => {

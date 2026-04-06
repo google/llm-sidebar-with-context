@@ -214,7 +214,7 @@ export class SidebarController {
 
     if (
       selectedModel &&
-      Object.keys(SUPPORTED_MODELS).includes(selectedModel as any)
+      Object.prototype.hasOwnProperty.call(SUPPORTED_MODELS, selectedModel)
     ) {
       this.modelSelect.value = selectedModel;
     } else {
