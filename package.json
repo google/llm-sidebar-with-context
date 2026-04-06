@@ -1,6 +1,6 @@
 {
   "name": "llm-sidebar-with-context",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "This chrome extension allows you to interact with LLMs in a sidebar and use multiple tabs as context when doing so",
   "main": "index.js",
   "scripts": {
