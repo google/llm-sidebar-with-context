@@ -78,3 +78,14 @@ export const NOISE_SELECTORS = [
   '#sidebar',
   '.cookie-consent',
 ];
+
+export const SUPPORTED_MODELS = {
+  'gemini-3.1-flash-lite-preview': 'Gemini 3.1 Flash Lite (Preview)',
+  'gemini-3-flash-preview': 'Gemini 3 Flash (Preview)',
+  'gemini-2.5-pro': 'Gemini 2.5 Pro',
+  'gemini-2.5-flash': 'Gemini 2.5 Flash',
+} as const;
+
+export type SupportedModelId = keyof typeof SUPPORTED_MODELS;
+
+export const DEFAULT_MODEL: SupportedModelId = 'gemini-3.1-flash-lite-preview';

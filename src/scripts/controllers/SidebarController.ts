@@ -20,6 +20,8 @@ import {
   StorageKeys,
   RestrictedURLs,
   Themes,
+  SUPPORTED_MODELS,
+  DEFAULT_MODEL,
 } from '../constants';
 import {
   ExtensionMessage,
@@ -193,6 +195,8 @@ export class SidebarController {
   }
 
   public async start() {
+    this.populateModelSelect();
+
     // Load API Key, Selected Model, and Theme
     const apiKey = await this.syncStorageService.get<string>(
       StorageKeys.API_KEY,
@@ -208,8 +212,13 @@ export class SidebarController {
       this.toggleSettings(true);
     }
 
-    if (selectedModel) {
+    if (
+      selectedModel &&
+      Object.keys(SUPPORTED_MODELS).includes(selectedModel as any)
+    ) {
       this.modelSelect.value = selectedModel;
+    } else {
+      this.modelSelect.value = DEFAULT_MODEL;
     }
 
     const theme = await this.syncStorageService.get<string>(StorageKeys.THEME);
@@ -246,6 +255,18 @@ export class SidebarController {
 
     // Rehydrate History
     await this.loadHistory();
+  }
+
+  private populateModelSelect() {
+    this.modelSelect.innerHTML = '';
+    (Object.entries(SUPPORTED_MODELS) as [string, string][]).forEach(
+      ([id, label]) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = label;
+        this.modelSelect.appendChild(option);
+      },
+    );
   }
 
   private toggleSettings(show: boolean) {

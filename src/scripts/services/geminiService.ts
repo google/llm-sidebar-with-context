@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { DEFAULT_MODEL } from '../constants';
 import { ChatMessage, GeminiResponse, ContentPart } from '../types';
 import { isAbortError } from '../utils';
 
@@ -45,7 +46,7 @@ export class GeminiService implements IGeminiService {
     apiKey: string,
     context: ContentPart[],
     history: ChatMessage[],
-    model: string = 'gemini-3.1-flash-lite-preview',
+    model: string = DEFAULT_MODEL,
     signal?: AbortSignal,
   ): Promise<GeminiResponse> {
     try {

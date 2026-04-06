@@ -22,7 +22,11 @@ import { IGeminiService } from '../../src/scripts/services/geminiService';
 import { IMessageService } from '../../src/scripts/services/messageService';
 import { ChatHistory } from '../../src/scripts/models/ChatHistory';
 import { ContextManager } from '../../src/scripts/models/ContextManager';
-import { MessageTypes, StorageKeys } from '../../src/scripts/constants';
+import {
+  MessageTypes,
+  StorageKeys,
+  DEFAULT_MODEL,
+} from '../../src/scripts/constants';
 import {
   GetContextResponse,
   CheckPinnedTabsResponse,
@@ -325,7 +329,7 @@ describe('BackgroundController', () => {
 
       expect(mockSyncStorage.set).toHaveBeenCalledWith(
         StorageKeys.SELECTED_MODEL,
-        'gemini-3.1-flash-lite-preview',
+        DEFAULT_MODEL,
       );
     });
 
@@ -343,6 +347,23 @@ describe('BackgroundController', () => {
       expect(mockSyncStorage.set).not.toHaveBeenCalledWith(
         StorageKeys.SELECTED_MODEL,
         expect.any(String),
+      );
+    });
+
+    it('should reset to default if the saved model is no longer supported', async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue('gemini-2.5-flash-lite');
+
+      controller.start();
+      const installListener = vi.mocked(chrome.runtime.onInstalled.addListener)
+        .mock.calls[0][0];
+
+      await installListener({
+        reason: 'update',
+      } as chrome.runtime.InstalledDetails);
+
+      expect(mockSyncStorage.set).toHaveBeenCalledWith(
+        StorageKeys.SELECTED_MODEL,
+        DEFAULT_MODEL,
       );
     });
   });

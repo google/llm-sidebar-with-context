@@ -18,7 +18,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SidebarController } from '../../src/scripts/controllers/SidebarController';
 import { ISyncStorageService } from '../../src/scripts/services/storageService';
 import { IMessageService } from '../../src/scripts/services/messageService';
-import { MessageTypes, StorageKeys } from '../../src/scripts/constants';
+import {
+  MessageTypes,
+  StorageKeys,
+  DEFAULT_MODEL,
+} from '../../src/scripts/constants';
 import { ExtensionMessage, ExtensionResponse } from '../../src/scripts/types';
 import fs from 'fs';
 import path from 'path';
@@ -110,7 +114,21 @@ describe('SidebarController', () => {
       const select = document.getElementById(
         'model-select',
       ) as HTMLSelectElement;
-      expect(select.value).toBe('gemini-3.1-flash-lite-preview');
+      expect(select.value).toBe(DEFAULT_MODEL);
+    });
+
+    it('should fallback to default model if an unsupported model is found in storage', async () => {
+      vi.mocked(mockSyncStorage.get).mockImplementation(async (key) => {
+        if (key === StorageKeys.SELECTED_MODEL) return 'gemini-2.5-flash-lite';
+        return undefined;
+      });
+
+      await controller.start();
+
+      const select = document.getElementById(
+        'model-select',
+      ) as HTMLSelectElement;
+      expect(select.value).toBe(DEFAULT_MODEL);
     });
   });
 

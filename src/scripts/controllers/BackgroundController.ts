@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-import { MessageTypes, StorageKeys } from '../constants';
+import {
+  MessageTypes,
+  StorageKeys,
+  SUPPORTED_MODELS,
+  DEFAULT_MODEL,
+} from '../constants';
 import { ChatHistory } from '../models/ChatHistory';
 import { ContextManager } from '../models/ContextManager';
 import { TabContext } from '../models/TabContext';
@@ -121,14 +126,17 @@ export class BackgroundController {
   private async initializeDefaults(details: chrome.runtime.InstalledDetails) {
     console.log(`Extension ${details.reason}ed.`);
 
-    // Initialize default model if not already set
+    // Initialize or validate default model
     const currentModel = await this.syncStorageService.get<string>(
       StorageKeys.SELECTED_MODEL,
     );
-    if (!currentModel) {
+    if (
+      !currentModel ||
+      !Object.keys(SUPPORTED_MODELS).includes(currentModel as any)
+    ) {
       await this.syncStorageService.set(
         StorageKeys.SELECTED_MODEL,
-        'gemini-3.1-flash-lite-preview',
+        DEFAULT_MODEL,
       );
     }
   }
