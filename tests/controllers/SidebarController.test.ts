@@ -72,7 +72,7 @@ describe('SidebarController', () => {
   });
 
   describe('Initialization', () => {
-    it('should hide API key container if key exists in storage', async () => {
+    it('should hide settings-view and show messages if API key exists in storage', async () => {
       vi.mocked(mockSyncStorage.get).mockImplementation(async (key) => {
         if (key === StorageKeys.API_KEY) return 'fake-api-key';
         return undefined;
@@ -80,17 +80,25 @@ describe('SidebarController', () => {
 
       await controller.start();
 
-      const container = document.getElementById('settings-panel');
-      expect(container?.style.display).toBe('none');
+      const settingsView = document.getElementById('settings-view');
+      const messages = document.getElementById('messages');
+      const promptForm = document.getElementById('prompt-form');
+      expect(settingsView?.classList.contains('hidden')).toBe(true);
+      expect(messages?.classList.contains('hidden')).toBe(false);
+      expect(promptForm?.classList.contains('hidden')).toBe(false);
     });
 
-    it('should show API key container if key is missing', async () => {
+    it('should show settings-view and hide messages/form if API key is missing', async () => {
       vi.mocked(mockSyncStorage.get).mockResolvedValue(undefined);
 
       await controller.start();
 
-      const container = document.getElementById('settings-panel');
-      expect(container?.style.display).toBe('flex');
+      const settingsView = document.getElementById('settings-view');
+      const messages = document.getElementById('messages');
+      const promptForm = document.getElementById('prompt-form');
+      expect(settingsView?.classList.contains('hidden')).toBe(false);
+      expect(messages?.classList.contains('hidden')).toBe(true);
+      expect(promptForm?.classList.contains('hidden')).toBe(true);
     });
 
     it('should load selected model from storage', async () => {
@@ -133,198 +141,288 @@ describe('SidebarController', () => {
     });
   });
 
-  describe('API Key Management', () => {
-    it("should toggle settings visibility when 'Settings' button is clicked", async () => {
+  describe('Settings UI Overhaul', () => {
+    it('should show settings-view and hide messages/form when settings button is clicked', async () => {
       vi.mocked(mockSyncStorage.get).mockResolvedValue('fake-key');
       await controller.start();
 
-      const container = document.getElementById(
-        'settings-panel',
+      const settingsView = document.getElementById(
+        'settings-view',
+      ) as HTMLElement;
+      const messages = document.getElementById('messages') as HTMLElement;
+      const promptForm = document.getElementById('prompt-form') as HTMLElement;
+      const settingsButton = document.getElementById(
+        'toggle-settings-button',
+      ) as HTMLButtonElement;
+
+      expect(settingsView.classList.contains('hidden')).toBe(true);
+      expect(messages.classList.contains('hidden')).toBe(false);
+      expect(promptForm.classList.contains('hidden')).toBe(false);
+
+      settingsButton.click();
+
+      expect(settingsView.classList.contains('hidden')).toBe(false);
+      expect(messages.classList.contains('hidden')).toBe(true);
+      expect(promptForm.classList.contains('hidden')).toBe(true);
+    });
+
+    it('should stay in settings-view when settings button is clicked twice', async () => {
+      await controller.start();
+      const settingsView = document.getElementById(
+        'settings-view',
       ) as HTMLElement;
       const settingsButton = document.getElementById(
         'toggle-settings-button',
       ) as HTMLButtonElement;
 
-      expect(container.style.display).toBe('none');
       settingsButton.click();
-      expect(container.style.display).toBe('flex');
+      expect(settingsView.classList.contains('hidden')).toBe(false);
+
       settingsButton.click();
-      expect(container.style.display).toBe('none');
+      expect(settingsView.classList.contains('hidden')).toBe(false); // Should still be open
     });
 
-    it('should populate the API key input with the stored key when loaded', async () => {
-      vi.mocked(mockSyncStorage.get).mockResolvedValue('existing-secret-key');
-      await controller.start();
-
-      const apiKeyInput = document.getElementById(
-        'api-key-input',
-      ) as HTMLInputElement;
-      expect(apiKeyInput.value).toBe('existing-secret-key');
-    });
-
-    it('should show alert and not send message when attempting to save an empty API key', async () => {
-      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
-      const apiKeyInput = document.getElementById(
-        'api-key-input',
-      ) as HTMLInputElement;
-      const saveButton = document.getElementById(
-        'save-api-key-button',
-      ) as HTMLButtonElement;
-
-      apiKeyInput.value = '   ';
-      saveButton.click();
-
-      expect(alertSpy).toHaveBeenCalledWith(
-        'Please enter your Gemini API Key.',
-      );
-      expect(mockMessageService.sendMessage).not.toHaveBeenCalled();
-      alertSpy.mockRestore();
-    });
-
-    it('should show alert if API key saving fails', async () => {
-      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
-      const apiKeyInput = document.getElementById(
-        'api-key-input',
-      ) as HTMLInputElement;
-      const saveButton = document.getElementById(
-        'save-api-key-button',
-      ) as HTMLButtonElement;
-
-      apiKeyInput.value = 'new-key';
-      vi.mocked(mockMessageService.sendMessage).mockResolvedValue({
-        success: false,
-      });
-
-      await saveButton.click();
-
-      expect(alertSpy).toHaveBeenCalledWith('Failed to save API Key.');
-      alertSpy.mockRestore();
-    });
-
-    it('should show alert if API key saving throws error', async () => {
-      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
-      const apiKeyInput = document.getElementById(
-        'api-key-input',
-      ) as HTMLInputElement;
-      const saveButton = document.getElementById(
-        'save-api-key-button',
-      ) as HTMLButtonElement;
-
-      apiKeyInput.value = 'new-key';
-      vi.mocked(mockMessageService.sendMessage).mockRejectedValue(
-        new Error('Network error'),
-      );
-
-      await saveButton.click();
-
-      expect(alertSpy).toHaveBeenCalledWith('Failed to save API Key.');
-      alertSpy.mockRestore();
-    });
-  });
-
-  describe('Theme Management', () => {
-    it('should default to system theme if none is found in storage', async () => {
-      vi.mocked(mockSyncStorage.get).mockResolvedValue(undefined);
-
-      await controller.start();
-
-      const select = document.getElementById(
-        'theme-select',
-      ) as HTMLSelectElement;
-      expect(select.value).toBe('system');
-      expect(document.documentElement.getAttribute('data-theme')).toBeNull();
-    });
-
-    it('should fallback to system theme if an invalid theme is found in storage', async () => {
-      vi.mocked(mockSyncStorage.get).mockImplementation(async (key) => {
-        if (key === StorageKeys.THEME) return 'ultra-dark-mode';
-        return undefined;
-      });
-
-      await controller.start();
-
-      const select = document.getElementById(
-        'theme-select',
-      ) as HTMLSelectElement;
-      expect(select.value).toBe('system');
-      expect(document.documentElement.getAttribute('data-theme')).toBeNull();
-    });
-
-    it('should load and apply light theme from storage', async () => {
+    it('should apply theme preview immediately on change but not save to storage', async () => {
       vi.mocked(mockSyncStorage.get).mockImplementation(async (key) => {
         if (key === StorageKeys.THEME) return 'light';
         return undefined;
       });
-
       await controller.start();
 
-      const select = document.getElementById(
+      const themeSelect = document.getElementById(
         'theme-select',
       ) as HTMLSelectElement;
-      expect(select.value).toBe('light');
-      expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    });
+      const settingsButton = document.getElementById(
+        'toggle-settings-button',
+      ) as HTMLButtonElement;
 
-    it('should save to storage and apply to DOM when dropdown is changed', async () => {
-      await controller.start();
+      settingsButton.click();
 
-      const select = document.getElementById(
-        'theme-select',
-      ) as HTMLSelectElement;
-      select.value = 'dark';
-      select.dispatchEvent(new Event('change'));
+      themeSelect.value = 'dark';
+      themeSelect.dispatchEvent(new Event('change'));
 
-      expect(mockSyncStorage.set).toHaveBeenCalledWith(
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+      expect(mockSyncStorage.set).not.toHaveBeenCalledWith(
         StorageKeys.THEME,
         'dark',
       );
-      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
     });
 
-    it('should show and then hide feedback icon when theme is changed', async () => {
-      vi.useFakeTimers();
+    it('should persist API key and theme to storage when Save is clicked', async () => {
+      vi.mocked(mockSyncStorage.get).mockImplementation(async (key) => {
+        if (key === StorageKeys.THEME) return 'light';
+        if (key === StorageKeys.API_KEY) return 'old-key';
+        return undefined;
+      });
       await controller.start();
 
-      const select = document.getElementById(
+      const settingsButton = document.getElementById(
+        'toggle-settings-button',
+      ) as HTMLButtonElement;
+      settingsButton.click();
+
+      const apiKeyInput = document.getElementById(
+        'api-key-input',
+      ) as HTMLInputElement;
+      const themeSelect = document.getElementById(
         'theme-select',
       ) as HTMLSelectElement;
-      const status = document.getElementById('theme-status');
+      const saveButton = document.getElementById(
+        'save-settings-button',
+      ) as HTMLButtonElement;
 
-      select.value = 'light';
-      select.dispatchEvent(new Event('change'));
+      apiKeyInput.value = 'new-key';
+      themeSelect.value = 'dark';
+      themeSelect.dispatchEvent(new Event('change'));
+
+      saveButton.click();
 
       await vi.waitFor(() => {
-        expect(status?.classList.contains('visible')).toBe(true);
+        expect(mockSyncStorage.set).toHaveBeenCalledWith(
+          StorageKeys.API_KEY,
+          'new-key',
+        );
+        expect(mockSyncStorage.set).toHaveBeenCalledWith(
+          StorageKeys.THEME,
+          'dark',
+        );
+        const settingsView = document.getElementById(
+          'settings-view',
+        ) as HTMLElement;
+        const promptForm = document.getElementById(
+          'prompt-form',
+        ) as HTMLElement;
+        expect(settingsView.classList.contains('hidden')).toBe(true);
+        expect(promptForm.classList.contains('hidden')).toBe(false);
       });
-
-      vi.advanceTimersByTime(2100);
-      expect(status?.classList.contains('visible')).toBe(false);
-
-      vi.useRealTimers();
     });
 
-    it('should hide theme picker when API key is successfully saved', async () => {
-      vi.mocked(mockSyncStorage.get).mockResolvedValue(undefined); // Start with settings visible
+    it('should revert theme and not save when Cancel is clicked, and restore UI', async () => {
+      vi.mocked(mockSyncStorage.get).mockImplementation(async (key) => {
+        if (key === StorageKeys.THEME) return 'light';
+        return undefined;
+      });
       await controller.start();
 
-      const topControls = document.getElementById('top-controls');
+      const settingsButton = document.getElementById(
+        'toggle-settings-button',
+      ) as HTMLButtonElement;
+      settingsButton.click();
+
+      const themeSelect = document.getElementById(
+        'theme-select',
+      ) as HTMLSelectElement;
+      const cancelButton = document.getElementById(
+        'cancel-settings-button',
+      ) as HTMLButtonElement;
+
+      themeSelect.value = 'dark';
+      themeSelect.dispatchEvent(new Event('change'));
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+
+      cancelButton.click();
+
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+      expect(mockSyncStorage.set).not.toHaveBeenCalled();
+
+      const settingsView = document.getElementById(
+        'settings-view',
+      ) as HTMLElement;
+      const promptForm = document.getElementById('prompt-form') as HTMLElement;
+      expect(settingsView.classList.contains('hidden')).toBe(true);
+      expect(promptForm.classList.contains('hidden')).toBe(false);
+    });
+
+    it('should show inline error and not save if API key is empty', async () => {
+      await controller.start();
+
+      const settingsButton = document.getElementById(
+        'toggle-settings-button',
+      ) as HTMLButtonElement;
+      settingsButton.click();
+
       const apiKeyInput = document.getElementById(
         'api-key-input',
       ) as HTMLInputElement;
       const saveButton = document.getElementById(
-        'save-api-key-button',
+        'save-settings-button',
       ) as HTMLButtonElement;
+      const settingsError = document.getElementById(
+        'settings-error',
+      ) as HTMLDivElement;
 
-      expect(topControls?.style.display).toBe('block');
+      apiKeyInput.value = '   ';
+      await saveButton.click();
 
-      apiKeyInput.value = 'new-valid-key';
-      vi.mocked(mockMessageService.sendMessage).mockResolvedValue({
-        success: true,
-      });
+      expect(settingsError.textContent).toBe(
+        'Please enter your Gemini API Key.',
+      );
+      expect(settingsError.classList.contains('hidden')).toBe(false);
+      expect(apiKeyInput.classList.contains('input-error')).toBe(true);
+      expect(document.activeElement).toBe(apiKeyInput);
+      expect(mockSyncStorage.set).not.toHaveBeenCalled();
+    });
+
+    it('should show inline error if saving settings fails, and verify focus', async () => {
+      await controller.start();
+
+      const settingsButton = document.getElementById(
+        'toggle-settings-button',
+      ) as HTMLButtonElement;
+      settingsButton.click();
+
+      const apiKeyInput = document.getElementById(
+        'api-key-input',
+      ) as HTMLInputElement;
+      apiKeyInput.value = 'valid-key-to-avoid-empty-check';
+
+      const saveButton = document.getElementById(
+        'save-settings-button',
+      ) as HTMLButtonElement;
+      const settingsError = document.getElementById(
+        'settings-error',
+      ) as HTMLDivElement;
+
+      // Mock storage.set to throw
+      vi.mocked(mockSyncStorage.set).mockRejectedValue(
+        new Error('Quota exceeded'),
+      );
 
       await saveButton.click();
 
-      expect(topControls?.style.display).toBe('none');
+      expect(settingsError.textContent).toBe('Failed to save settings.');
+      expect(settingsError.classList.contains('hidden')).toBe(false);
+    });
+
+    it('should clear error state when re-opening settings', async () => {
+      await controller.start();
+
+      const settingsButton = document.getElementById(
+        'toggle-settings-button',
+      ) as HTMLButtonElement;
+      settingsButton.click();
+
+      const apiKeyInput = document.getElementById(
+        'api-key-input',
+      ) as HTMLInputElement;
+      const saveButton = document.getElementById(
+        'save-settings-button',
+      ) as HTMLButtonElement;
+      const settingsError = document.getElementById(
+        'settings-error',
+      ) as HTMLDivElement;
+
+      // Trigger error
+      apiKeyInput.value = '';
+      await saveButton.click();
+      expect(settingsError.classList.contains('hidden')).toBe(false);
+
+      // Click cancel (which should clear error)
+      const cancelButton = document.getElementById(
+        'cancel-settings-button',
+      ) as HTMLButtonElement;
+      cancelButton.click();
+
+      // Re-open
+      settingsButton.click();
+      expect(settingsError.classList.contains('hidden')).toBe(true);
+      expect(apiKeyInput.classList.contains('input-error')).toBe(false);
+    });
+
+    it('should manage focus correctly when navigating settings', async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue('fake-key');
+      await controller.start();
+
+      const settingsButton = document.getElementById(
+        'toggle-settings-button',
+      ) as HTMLButtonElement;
+      const apiKeyInput = document.getElementById(
+        'api-key-input',
+      ) as HTMLInputElement;
+
+      // Open settings
+      settingsButton.click();
+      expect(document.activeElement).toBe(apiKeyInput);
+
+      // Cancel
+      const cancelButton = document.getElementById(
+        'cancel-settings-button',
+      ) as HTMLButtonElement;
+      cancelButton.click();
+      expect(document.activeElement).toBe(settingsButton);
+
+      // Open again
+      settingsButton.click();
+      expect(document.activeElement).toBe(apiKeyInput);
+
+      // Save
+      const saveButton = document.getElementById(
+        'save-settings-button',
+      ) as HTMLButtonElement;
+      saveButton.click();
+      await vi.waitFor(() => {
+        expect(document.activeElement).toBe(settingsButton);
+      });
     });
   });
 

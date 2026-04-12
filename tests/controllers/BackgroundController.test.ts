@@ -774,18 +774,6 @@ describe('BackgroundController', () => {
       expect(response.pinnedContexts).toEqual([]);
     });
 
-    it('should handle SAVE_API_KEY correctly', async () => {
-      const response = await controller.handleMessage({
-        type: MessageTypes.SAVE_API_KEY,
-        apiKey: 'new-key',
-      });
-      expect(response).toEqual({ success: true });
-      expect(mockSyncStorage.set).toHaveBeenCalledWith(
-        StorageKeys.API_KEY,
-        'new-key',
-      );
-    });
-
     it('should handle GET_HISTORY correctly', async () => {
       const history = [{ role: 'user' as const, text: 'Hi' }];
       vi.mocked(mockChatHistory.getMessages).mockReturnValue(history);

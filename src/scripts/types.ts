@@ -39,11 +39,6 @@ export interface GetContextRequest {
   type: typeof MessageTypes.GET_CONTEXT;
 }
 
-export interface SaveApiKeyRequest {
-  type: typeof MessageTypes.SAVE_API_KEY;
-  apiKey: string;
-}
-
 export interface PinTabRequest {
   type: typeof MessageTypes.PIN_TAB;
 }
@@ -55,11 +50,6 @@ export interface UnpinTabRequest {
 
 export interface CheckPinnedTabsRequest {
   type: typeof MessageTypes.CHECK_PINNED_TABS;
-}
-
-export interface ReopenTabRequest {
-  type: typeof MessageTypes.REOPEN_TAB;
-  url: string;
 }
 
 export interface ClearChatRequest {
@@ -86,11 +76,9 @@ export type ContentPart =
 export type ExtensionMessage =
   | ChatMessageRequest
   | GetContextRequest
-  | SaveApiKeyRequest
   | PinTabRequest
   | UnpinTabRequest
   | CheckPinnedTabsRequest
-  | ReopenTabRequest
   | ClearChatRequest
   | GetHistoryRequest
   | CurrentTabInfoMessage

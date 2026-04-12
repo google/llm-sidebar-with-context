@@ -22,58 +22,60 @@
   </head>
   <body>
     <div class="container">
-      <div id="top-controls">
-        <div class="theme-row">
-          <div class="label-wrapper">
-            <label for="theme-select">Theme</label>
-            <span id="theme-status" class="status-icon"></span>
-          </div>
-          <select id="theme-select">
-            <option value="system">Default (System)</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-        </div>
-      </div>
-
       <div id="messages"></div>
 
-      <div class="bottom-panel">
-        <div id="settings-panel">
-          <div class="api-key-help">
-            Get your API Key for free on
-            <a href="https://aistudio.google.com/api-keys" target="_blank"
-              >Google AI Studio</a
-            >
-            <div class="terms-text">
-              Please read the API's
-              <a href="https://ai.google.dev/gemini-api/terms" target="_blank"
-                >terms of service</a
-              >
-            </div>
+      <div id="settings-view" class="hidden">
+        <div class="settings-container">
+          <h2>Settings</h2>
+          <div id="settings-error" class="settings-error hidden"></div>
+          <div class="settings-section">
+            <div class="settings-label">Theme</div>
+            <select id="theme-select">
+              <option value="system">Default (System)</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
           </div>
-          <div class="api-key-input-wrapper">
+
+          <div class="settings-section">
+            <div class="settings-label">Gemini API Key</div>
+            <div class="api-key-help">
+              Get your API Key for free on
+              <a href="https://aistudio.google.com/api-keys" target="_blank"
+                >Google AI Studio</a
+              >
+              <div class="terms-text">
+                Please read the API's
+                <a href="https://ai.google.dev/gemini-api/terms" target="_blank"
+                  >terms of service</a
+                >
+              </div>
+            </div>
             <input
               type="password"
               id="api-key-input"
               placeholder="Enter your Gemini API Key"
             />
-            <button id="save-api-key-button">Save</button>
           </div>
-          <div id="legal-panel">
-            <hr />
-            <div class="legal-links">
-              <a href="{{LEGAL_NOTICE_URL}}" target="_blank"
-                >Legal Notice (Impressum)</a
-              >
-              <a href="{{PRIVACY_POLICY_URL}}" target="_blank"
-                >Privacy Policy</a
-              >
-              <a href="{{LICENSE_URL}}" target="_blank">License</a>
-            </div>
+
+          <div class="settings-actions">
+            <button id="save-settings-button">Save Changes</button>
+            <button id="cancel-settings-button">Cancel</button>
           </div>
         </div>
 
+        <div id="legal-panel">
+          <div class="legal-links">
+            <a href="{{LEGAL_NOTICE_URL}}" target="_blank"
+              >Legal Notice (Impressum)</a
+            >
+            <a href="{{PRIVACY_POLICY_URL}}" target="_blank">Privacy Policy</a>
+            <a href="{{LICENSE_URL}}" target="_blank">License</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-panel">
         <div id="pinned-tabs-container">
           <div id="current-tab"></div>
           <div id="pinned-tabs"></div>

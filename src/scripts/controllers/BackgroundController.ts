@@ -187,8 +187,6 @@ export class BackgroundController {
           );
         case MessageTypes.GET_CONTEXT:
           return await this.handleGetContext();
-        case MessageTypes.SAVE_API_KEY:
-          return await this.handleSaveApiKey(request.apiKey);
         case MessageTypes.PIN_TAB:
           return await this.handlePinTab();
         case MessageTypes.UNPIN_TAB:
@@ -232,7 +230,7 @@ export class BackgroundController {
     const apiKey = await this.getApiKey();
     if (!apiKey) {
       return {
-        error: 'Gemini API Key not set. Please set it in the sidebar.',
+        error: 'Gemini API Key not set. Please set it in the Settings.',
       };
     }
 
@@ -327,11 +325,6 @@ export class BackgroundController {
             }
           : null,
     };
-  }
-
-  private async handleSaveApiKey(apiKey: string): Promise<SuccessResponse> {
-    await this.syncStorageService.set(StorageKeys.API_KEY, apiKey);
-    return { success: true };
   }
 
   private async handlePinTab(): Promise<SuccessResponse> {

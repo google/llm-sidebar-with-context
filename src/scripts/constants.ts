@@ -20,12 +20,10 @@ export const MAX_PINNED_TABS = 6;
 export const MessageTypes = {
   CHAT_MESSAGE: 'chatMessage',
   GET_CONTEXT: 'getContext',
-  SAVE_API_KEY: 'saveApiKey',
   PIN_TAB: 'pinTab',
   UNPIN_TAB: 'unpinTab',
   CURRENT_TAB_INFO: 'currentTabInfo',
   CHECK_PINNED_TABS: 'checkPinnedTabs',
-  REOPEN_TAB: 'reopenTab',
   CLEAR_CHAT: 'clearChat',
   GET_HISTORY: 'getHistory',
   STOP_GENERATION: 'stopGeneration',

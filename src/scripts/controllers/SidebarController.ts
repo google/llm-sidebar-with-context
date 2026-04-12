@@ -45,9 +45,11 @@ export class SidebarController {
   private promptInput: HTMLInputElement;
   private submitButton: HTMLButtonElement;
   private messagesDiv: HTMLDivElement;
+  private settingsView: HTMLDivElement;
+  private settingsError: HTMLDivElement;
   private apiKeyInput: HTMLInputElement;
-  private saveApiKeyButton: HTMLButtonElement;
-  private settingsPanel: HTMLDivElement;
+  private saveSettingsButton: HTMLButtonElement;
+  private cancelSettingsButton: HTMLButtonElement;
   private pinnedTabsDiv: HTMLDivElement;
   private currentTabDiv: HTMLDivElement;
   private modelSelect: HTMLSelectElement;
@@ -59,6 +61,9 @@ export class SidebarController {
   private currentTab: TabInfo | null = null;
   private isCurrentTabShared: boolean = true;
   private isGenerating: boolean = false;
+  private isSettingsOpen: boolean = false;
+  private initialTheme: string = Themes.SYSTEM;
+  private initialApiKey: string = '';
 
   constructor(
     private syncStorageService: ISyncStorageService,
@@ -73,15 +78,21 @@ export class SidebarController {
       'send-button',
     ) as HTMLButtonElement;
     this.messagesDiv = document.getElementById('messages') as HTMLDivElement;
+    this.settingsView = document.getElementById(
+      'settings-view',
+    ) as HTMLDivElement;
+    this.settingsError = document.getElementById(
+      'settings-error',
+    ) as HTMLDivElement;
     this.apiKeyInput = document.getElementById(
       'api-key-input',
     ) as HTMLInputElement;
-    this.saveApiKeyButton = document.getElementById(
-      'save-api-key-button',
+    this.saveSettingsButton = document.getElementById(
+      'save-settings-button',
     ) as HTMLButtonElement;
-    this.settingsPanel = document.getElementById(
-      'settings-panel',
-    ) as HTMLDivElement;
+    this.cancelSettingsButton = document.getElementById(
+      'cancel-settings-button',
+    ) as HTMLButtonElement;
     this.pinnedTabsDiv = document.getElementById(
       'pinned-tabs',
     ) as HTMLDivElement;
@@ -127,10 +138,17 @@ export class SidebarController {
       }
     });
 
-    this.saveApiKeyButton.addEventListener('click', () => this.saveApiKey());
+    this.saveSettingsButton.addEventListener('click', () =>
+      this.saveSettings(),
+    );
+    this.cancelSettingsButton.addEventListener('click', () =>
+      this.cancelSettings(),
+    );
+
     this.toggleSettingsButton.addEventListener('click', () => {
-      const isHidden = this.settingsPanel.style.display === 'none';
-      this.toggleSettings(isHidden);
+      if (!this.isSettingsOpen) {
+        this.openSettings();
+      }
     });
 
     this.newChatButton.addEventListener('click', async () => {
@@ -151,11 +169,8 @@ export class SidebarController {
       );
     });
 
-    this.themeSelect.addEventListener('change', async () => {
-      const selectedTheme = this.themeSelect.value;
-      this.applyTheme(selectedTheme);
-      await this.syncStorageService.set(StorageKeys.THEME, selectedTheme);
-      this.showThemeSaveFeedback();
+    this.themeSelect.addEventListener('change', () => {
+      this.applyTheme(this.themeSelect.value);
     });
 
     this.promptForm.addEventListener('submit', (e) => {
@@ -205,11 +220,19 @@ export class SidebarController {
       StorageKeys.SELECTED_MODEL,
     );
 
+    const theme = await this.syncStorageService.get<string>(StorageKeys.THEME);
+    const validThemes = Object.values(Themes);
+    const effectiveTheme =
+      theme && validThemes.includes(theme) ? theme : Themes.SYSTEM;
+
+    this.themeSelect.value = effectiveTheme;
+    this.applyTheme(effectiveTheme);
+
     if (apiKey) {
-      this.toggleSettings(false);
       this.apiKeyInput.value = apiKey;
+      this.toggleSettingsView(false);
     } else {
-      this.toggleSettings(true);
+      this.openSettings();
     }
 
     if (
@@ -220,14 +243,6 @@ export class SidebarController {
     } else {
       this.modelSelect.value = DEFAULT_MODEL;
     }
-
-    const theme = await this.syncStorageService.get<string>(StorageKeys.THEME);
-    const validThemes = Object.values(Themes);
-    const effectiveTheme =
-      theme && validThemes.includes(theme) ? theme : Themes.SYSTEM;
-
-    this.themeSelect.value = effectiveTheme;
-    this.applyTheme(effectiveTheme);
 
     // Load Sharing Preference
     const storedSharing = await this.localStorageService.get<boolean>(
@@ -269,11 +284,74 @@ export class SidebarController {
     );
   }
 
-  private toggleSettings(show: boolean) {
-    this.settingsPanel.style.display = show ? 'flex' : 'none';
-    const topControls = document.getElementById('top-controls');
-    if (topControls) {
-      topControls.style.display = show ? 'block' : 'none';
+  private openSettings() {
+    this.clearError();
+    this.initialTheme = this.themeSelect.value;
+    this.initialApiKey = this.apiKeyInput.value;
+    this.isSettingsOpen = true;
+    this.toggleSettingsView(true);
+    this.apiKeyInput.focus();
+  }
+
+  private async saveSettings() {
+    this.clearError();
+    const apiKey = this.apiKeyInput.value;
+    if (!apiKey || apiKey.trim() === '') {
+      this.showError('Please enter your Gemini API Key.', this.apiKeyInput);
+      return;
+    }
+
+    try {
+      await this.syncStorageService.set(StorageKeys.API_KEY, apiKey);
+      await this.syncStorageService.set(
+        StorageKeys.THEME,
+        this.themeSelect.value,
+      );
+      this.isSettingsOpen = false;
+      this.toggleSettingsView(false);
+      this.toggleSettingsButton.focus();
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      this.showError('Failed to save settings.');
+    }
+  }
+
+  private cancelSettings() {
+    this.clearError();
+    this.applyTheme(this.initialTheme);
+    this.themeSelect.value = this.initialTheme;
+    this.apiKeyInput.value = this.initialApiKey;
+    this.isSettingsOpen = false;
+    this.toggleSettingsView(false);
+    this.toggleSettingsButton.focus();
+  }
+
+  private showError(message: string, errorElement?: HTMLElement) {
+    this.settingsError.textContent = message;
+    this.settingsError.classList.remove('hidden');
+    if (errorElement) {
+      errorElement.classList.add('input-error');
+      errorElement.focus();
+    }
+  }
+
+  private clearError() {
+    this.settingsError.textContent = '';
+    this.settingsError.classList.add('hidden');
+    this.settingsView.querySelectorAll('.input-error').forEach((el) => {
+      el.classList.remove('input-error');
+    });
+  }
+
+  private toggleSettingsView(show: boolean) {
+    if (show) {
+      this.settingsView.classList.remove('hidden');
+      this.messagesDiv.classList.add('hidden');
+      this.promptForm.classList.add('hidden');
+    } else {
+      this.settingsView.classList.add('hidden');
+      this.messagesDiv.classList.remove('hidden');
+      this.promptForm.classList.remove('hidden');
     }
   }
 
@@ -282,15 +360,6 @@ export class SidebarController {
       document.documentElement.removeAttribute('data-theme');
     } else {
       document.documentElement.setAttribute('data-theme', theme);
-    }
-  }
-
-  private showThemeSaveFeedback() {
-    const status = document.getElementById('theme-status');
-    if (status) {
-      status.innerHTML = ICONS.CHECK;
-      status.classList.add('visible');
-      setTimeout(() => status.classList.remove('visible'), 2000);
     }
   }
 
@@ -346,29 +415,6 @@ export class SidebarController {
         </div>
       </div>
     `;
-  }
-
-  private async saveApiKey() {
-    const apiKey = this.apiKeyInput.value;
-    if (apiKey.trim() === '') {
-      alert('Please enter your Gemini API Key.');
-      return;
-    }
-
-    try {
-      const response = await this.messageService.sendMessage<SuccessResponse>({
-        type: MessageTypes.SAVE_API_KEY,
-        apiKey: apiKey,
-      });
-      if (response && response.success) {
-        this.toggleSettings(false);
-      } else {
-        alert('Failed to save API Key.');
-      }
-    } catch (error) {
-      console.error('Failed to save API key:', error);
-      alert('Failed to save API Key.');
-    }
   }
 
   private async sendMessage() {
