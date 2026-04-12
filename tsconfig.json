@@ -10,8 +10,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["chrome", "marked"],
+    "types": ["chrome", "marked", "node"],
     "rootDir": "."
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "tests/**/*"]
 }

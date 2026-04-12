@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SidebarController } from '../../src/scripts/controllers/SidebarController';
 import { ISyncStorageService } from '../../src/scripts/services/storageService';
 import { IMessageService } from '../../src/scripts/services/messageService';
@@ -23,7 +23,12 @@ import {
   StorageKeys,
   DEFAULT_MODEL,
 } from '../../src/scripts/constants';
-import { ExtensionMessage, ExtensionResponse } from '../../src/scripts/types';
+import {
+  ExtensionMessage,
+  ExtensionResponse,
+  GetHistoryResponse,
+  SuccessResponse,
+} from '../../src/scripts/types';
 import fs from 'fs';
 import path from 'path';
 
@@ -427,11 +432,7 @@ describe('SidebarController', () => {
   });
 
   describe('Tab Context Updates', () => {
-    let messageListener: (
-      message: ExtensionMessage,
-      sender: unknown,
-      sendResponse: (response?: ExtensionResponse) => void,
-    ) => void;
+    let messageListener: Parameters<IMessageService['onMessage']>[0];
 
     beforeEach(() => {
       vi.mocked(mockMessageService.onMessage).mockImplementation((listener) => {

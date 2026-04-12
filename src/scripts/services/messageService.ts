@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ExtensionMessage } from '../types';
+import { ExtensionMessage, ExtensionResponse } from '../types';
 
 export interface IMessageService {
   /**
@@ -29,7 +29,7 @@ export interface IMessageService {
     listener: (
       message: ExtensionMessage,
       sender: chrome.runtime.MessageSender,
-      sendResponse: (response?: unknown) => void,
+      sendResponse: (response?: ExtensionResponse) => void,
     ) => boolean | void,
   ): void;
 }
@@ -51,7 +51,7 @@ export class ChromeMessageService implements IMessageService {
     listener: (
       message: ExtensionMessage,
       sender: chrome.runtime.MessageSender,
-      sendResponse: (response?: unknown) => void,
+      sendResponse: (response?: ExtensionResponse) => void,
     ) => boolean | void,
   ): void {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

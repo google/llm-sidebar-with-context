@@ -61,9 +61,9 @@ describe('Sidebar Integration: Message Handling', () => {
   it('should send a success response when receiving CURRENT_TAB_INFO to prevent port closure errors', () => {
     let capturedListener: (
       message: ExtensionMessage,
-      sender: unknown,
+      sender: chrome.runtime.MessageSender,
       sendResponse: (response?: ExtensionResponse) => void,
-    ) => void;
+    ) => void = () => {};
     vi.mocked(mockMessageService.onMessage).mockImplementation((listener) => {
       capturedListener = listener;
     });
@@ -94,9 +94,9 @@ describe('Sidebar Integration: Message Handling', () => {
   it('should send a success response when receiving CHECK_PINNED_TABS to prevent port closure errors', () => {
     let capturedListener: (
       message: ExtensionMessage,
-      sender: unknown,
+      sender: chrome.runtime.MessageSender,
       sendResponse: (response?: ExtensionResponse) => void,
-    ) => void;
+    ) => void = () => {};
     vi.mocked(mockMessageService.onMessage).mockImplementation((listener) => {
       capturedListener = listener;
     });

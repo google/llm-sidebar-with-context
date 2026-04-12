@@ -28,9 +28,11 @@ import {
   DEFAULT_MODEL,
 } from '../../src/scripts/constants';
 import {
+  ExtensionMessage,
   GetContextResponse,
   CheckPinnedTabsResponse,
 } from '../../src/scripts/types';
+import { TabContext } from '../../src/scripts/models/TabContext';
 
 describe('BackgroundController', () => {
   let controller: BackgroundController;
@@ -65,6 +67,7 @@ describe('BackgroundController', () => {
     mockTabService = {
       query: vi.fn().mockResolvedValue([]),
       executeScript: vi.fn(),
+      executeScriptFile: vi.fn(),
       create: vi.fn(),
       waitForTabComplete: vi.fn(),
       getTab: vi.fn(),
@@ -148,7 +151,7 @@ describe('BackgroundController', () => {
       activationListener({
         tabId: 1,
         windowId: 1,
-      } as chrome.tabs.TabActiveInfo);
+      } as chrome.tabs.OnActivatedInfo);
       expect(mockTabService.query).toHaveBeenCalledWith({
         active: true,
         currentWindow: true,
@@ -161,8 +164,8 @@ describe('BackgroundController', () => {
         .calls[0][0];
       updateListener(
         1,
-        { url: 'https://new.com' } as chrome.tabs.TabChangeInfo,
-        { active: true } as ChromeTab,
+        { url: 'https://new.com' } as chrome.tabs.OnUpdatedInfo,
+        { active: true } as unknown as chrome.tabs.Tab,
       );
       expect(mockTabService.query).toHaveBeenCalled();
     });
@@ -173,8 +176,8 @@ describe('BackgroundController', () => {
         .calls[0][0];
       updateListener(
         1,
-        { title: 'New Title' } as chrome.tabs.TabChangeInfo,
-        { active: true } as ChromeTab,
+        { title: 'New Title' } as chrome.tabs.OnUpdatedInfo,
+        { active: true } as unknown as chrome.tabs.Tab,
       );
       expect(mockTabService.query).toHaveBeenCalled();
     });
@@ -188,13 +191,13 @@ describe('BackgroundController', () => {
 
       await updateListener(
         101,
-        { url: 'https://new.com' } as chrome.tabs.TabChangeInfo,
+        { url: 'https://new.com' } as chrome.tabs.OnUpdatedInfo,
         {
           id: 101,
           url: 'https://new.com',
           title: 'New',
           active: true,
-        } as ChromeTab,
+        } as unknown as chrome.tabs.Tab,
       );
 
       expect(mockContextManager.updateTabMetadata).toHaveBeenCalledWith(
@@ -214,8 +217,8 @@ describe('BackgroundController', () => {
         .calls[0][0];
       updateListener(
         1,
-        { url: 'https://bg.com' } as chrome.tabs.TabChangeInfo,
-        { active: false } as ChromeTab,
+        { url: 'https://bg.com' } as chrome.tabs.OnUpdatedInfo,
+        { active: false } as unknown as chrome.tabs.Tab,
       );
       expect(mockTabService.query).toHaveBeenCalledTimes(1);
     });
@@ -225,7 +228,7 @@ describe('BackgroundController', () => {
       const removedListener = vi.mocked(chrome.tabs.onRemoved.addListener).mock
         .calls[0][0];
 
-      await removedListener(123, {} as chrome.tabs.TabRemoveInfo);
+      await removedListener(123, {} as chrome.tabs.OnRemovedInfo);
 
       expect(mockContextManager.removeTab).toHaveBeenCalledWith(123);
       expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
@@ -292,13 +295,13 @@ describe('BackgroundController', () => {
 
       await updateListener(
         101,
-        { title: 'New Title' } as chrome.tabs.TabChangeInfo,
+        { title: 'New Title' } as chrome.tabs.OnUpdatedInfo,
         {
           id: 101,
           url: 'https://pinned.com',
           title: 'New Title',
           active: false,
-        } as ChromeTab,
+        } as unknown as chrome.tabs.Tab,
       );
 
       expect(mockContextManager.updateTabMetadata).toHaveBeenCalledWith(
@@ -371,8 +374,8 @@ describe('BackgroundController', () => {
   describe('handleMessage', () => {
     it('should return an error response if an unknown command is received from the UI', async () => {
       const response = await controller.handleMessage({
-        type: 'UNKNOWN_TYPE' as unknown as keyof typeof MessageTypes,
-      });
+        type: 'UNKNOWN_TYPE',
+      } as unknown as ExtensionMessage);
 
       expect(response).toEqual({ error: 'Unknown message type: UNKNOWN_TYPE' });
     });
@@ -799,8 +802,8 @@ describe('BackgroundController', () => {
 
     it('should handle unknown message types gracefully', async () => {
       const response = await controller.handleMessage({
-        type: 'UNKNOWN_TYPE' as unknown as keyof typeof MessageTypes,
-      });
+        type: 'UNKNOWN_TYPE',
+      } as unknown as ExtensionMessage);
 
       expect(response).toEqual({ error: 'Unknown message type: UNKNOWN_TYPE' });
     });

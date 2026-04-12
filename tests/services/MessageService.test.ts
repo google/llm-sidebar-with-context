@@ -81,10 +81,8 @@ describe('ChromeMessageService', () => {
         callback(undefined);
       });
 
-      const message = { type: MessageTypes.PING }; // Hypothetical void message
-      const response = await service.sendMessage(
-        message as unknown as ExtensionMessage,
-      );
+      const message = { type: 'ping' } as unknown as ExtensionMessage; // Hypothetical void message
+      const response = await service.sendMessage(message);
 
       expect(response).toBeUndefined();
     });
@@ -115,7 +113,7 @@ describe('ChromeMessageService', () => {
         message: unknown,
         sender: unknown,
         sendResponse: unknown,
-      ) => void;
+      ) => void = () => {};
       mockOnMessageAddListener.mockImplementation((cb) => {
         registeredListener = cb;
       });
