@@ -87,14 +87,15 @@ export class ContextManager {
 
   /**
    * Fetches the combined content of all pinned tabs.
+   * @param charLimit - Optional character limit for each tab.
    */
-  async getAllContent(): Promise<ContentPart[]> {
+  async getAllContent(charLimit?: number): Promise<ContentPart[]> {
     const allParts: ContentPart[] = [];
 
     for (const tab of this.pinnedTabs) {
       const header = `\n\n--- Pinned Tab: ${tab.title} (${tab.url}) ---`;
       allParts.push({ type: 'text', text: header });
-      allParts.push(await tab.readContent());
+      allParts.push(await tab.readContent(charLimit));
     }
 
     return allParts;
@@ -102,8 +103,9 @@ export class ContextManager {
 
   /**
    * Fetches content of the currently active tab.
+   * @param charLimit - Optional character limit for the active tab.
    */
-  async getActiveTabContent(): Promise<ContentPart[]> {
+  async getActiveTabContent(charLimit?: number): Promise<ContentPart[]> {
     const [activeTab] = await this.tabService.query({
       active: true,
       currentWindow: true,
@@ -128,7 +130,10 @@ export class ContextManager {
       );
       const header = `Current tab URL: ${activeTab.url}`;
 
-      return [{ type: 'text', text: header }, await tempContext.readContent()];
+      return [
+        { type: 'text', text: header },
+        await tempContext.readContent(charLimit),
+      ];
     }
     return [];
   }

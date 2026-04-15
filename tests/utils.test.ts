@@ -15,7 +15,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { isRestrictedURL, isAbortError } from '../src/scripts/utils';
+import {
+  isRestrictedURL,
+  isAbortError,
+  sandwichTruncate,
+} from '../src/scripts/utils';
+import { CONTEXT_MESSAGES } from '../src/scripts/constants';
 
 describe('Utils', () => {
   describe('isRestrictedURL', () => {
@@ -75,6 +80,48 @@ describe('Utils', () => {
     it('should return false for non-error objects', () => {
       expect(isAbortError('string error')).toBe(false);
       expect(isAbortError({ random: 'object' })).toBe(false);
+    });
+  });
+
+  describe('sandwichTruncate', () => {
+    it('should not truncate if text is within limit', () => {
+      const text = 'short text';
+      expect(sandwichTruncate(text, 20)).toBe(text);
+    });
+
+    it('should not truncate if text is exactly at limit', () => {
+      const text = 'exactly 10';
+      expect(sandwichTruncate(text, 10)).toBe(text);
+    });
+
+    it('should truncate and keep both ends if text exceeds limit', () => {
+      const text = 'START' + 'M'.repeat(100) + 'END';
+      const limit = 70;
+      const result = sandwichTruncate(text, limit);
+
+      expect(result.length).toBe(limit);
+      expect(result.startsWith('START')).toBe(true);
+      expect(result.endsWith('END')).toBe(true);
+      expect(result).toContain(CONTEXT_MESSAGES.TRUNCATION_MESSAGE);
+    });
+
+    it('should handle very small limits by returning start of string', () => {
+      const text = 'Some long text that needs truncation';
+      const limit = 5;
+      const result = sandwichTruncate(text, limit);
+
+      expect(result).toBe('Some ');
+    });
+
+    it('should split remaining space equally between start and end', () => {
+      const text = '1234567890' + 'X'.repeat(100) + 'ABCDEFGHIJ';
+      const truncationMessage = CONTEXT_MESSAGES.TRUNCATION_MESSAGE;
+      const limit = truncationMessage.length + 10; // 5 chars from start, 5 from end
+      const result = sandwichTruncate(text, limit);
+
+      expect(result.startsWith('12345')).toBe(true);
+      expect(result.endsWith('FGHIJ')).toBe(true);
+      expect(result.length).toBe(limit);
     });
   });
 });

@@ -42,9 +42,10 @@ export class TabContext {
 
   /**
    * Reads the content of the tab using the appropriate strategy.
+   * @param charLimit - Optional character limit for truncation.
    * @returns The content part (text or file data) or an error message as text.
    */
-  async readContent(): Promise<ContentPart> {
+  async readContent(charLimit?: number): Promise<ContentPart> {
     if (isRestrictedURL(this.url)) {
       console.warn(`Cannot extract content from restricted URL: ${this.url}`);
       return {
@@ -64,7 +65,7 @@ export class TabContext {
     }
 
     try {
-      return await strategy.getContent(this.tabId, this.url);
+      return await strategy.getContent(this.tabId, this.url, charLimit);
     } catch (error: unknown) {
       console.error(`Failed to extract content for tab ${this.url}:`, error);
       const errorMessage =

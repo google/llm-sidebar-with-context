@@ -345,6 +345,33 @@ describe('GoogleDocsStrategy', () => {
       });
     });
 
+    it('should truncate long content using sandwichTruncate', async () => {
+      vi.mocked(mockTabService.getTab).mockResolvedValue({
+        id: tabId,
+        url,
+        active: true,
+        discarded: false,
+        windowId: 1,
+        status: 'complete',
+      });
+
+      const longContent = 'A'.repeat(200) + 'B'.repeat(200) + 'C'.repeat(200);
+      vi.mocked(mockTabService.executeScript).mockResolvedValue({
+        content: longContent,
+      });
+
+      const charLimit = 100;
+      const result = await strategy.getContent(tabId, url, charLimit);
+
+      expect(result.type).toBe('text');
+      if (result.type === 'text') {
+        expect(result.text.length).toBe(charLimit);
+        expect(result.text).toContain(CONTEXT_MESSAGES.TRUNCATION_MESSAGE);
+        expect(result.text.startsWith('AAAA')).toBe(true);
+        expect(result.text.endsWith('CCCC')).toBe(true);
+      }
+    });
+
     it('should handle extension policy errors', async () => {
       vi.mocked(mockTabService.getTab).mockResolvedValue({
         id: tabId,

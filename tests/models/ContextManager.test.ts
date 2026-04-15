@@ -388,6 +388,20 @@ describe('ContextManager', () => {
       expect(tab2.readContent).toHaveBeenCalled();
     });
 
+    it('should pass charLimit to readContent for each tab', async () => {
+      const tab1 = new TabContext(1, 'https://a.com', 'A', mockTabService);
+      vi.spyOn(tab1, 'readContent').mockResolvedValue({
+        type: 'text',
+        text: 'Content A',
+      });
+      await contextManager.addTab(tab1);
+
+      const charLimit = 500;
+      await contextManager.getAllContent(charLimit);
+
+      expect(tab1.readContent).toHaveBeenCalledWith(charLimit);
+    });
+
     it('should handle partial failure (one tab fails to read)', async () => {
       const tab1 = new TabContext(
         1,
@@ -452,6 +466,41 @@ describe('ContextManager', () => {
 
       // Verify we passed the ID to getTab
       expect(mockTabService.getTab).toHaveBeenCalledWith(99);
+    });
+
+    it('should pass charLimit to readContent for the active tab', async () => {
+      const activeTab = {
+        id: 99,
+        url: 'https://active.com',
+        title: 'Active',
+        status: 'complete',
+      } as ChromeTab;
+
+      vi.mocked(mockTabService.query).mockResolvedValue([activeTab]);
+      vi.mocked(mockTabService.getTab).mockResolvedValue(activeTab);
+      vi.mocked(mockTabService.executeScript).mockResolvedValue('Content');
+
+      const charLimit = 500;
+      await contextManager.getActiveTabContent(charLimit);
+
+      // DefaultWebPageStrategy will be used and its getContent should receive charLimit.
+      // TabContext.readContent(charLimit) will call strategy.getContent(..., charLimit).
+      // Since TabContext is created internally, we can't easily spy on its readContent.
+      // However, we can verify that truncation happened if we use a small limit.
+      const smallLimit = 10;
+      vi.mocked(mockTabService.executeScript).mockResolvedValue(
+        'Very long content',
+      );
+      const result = await contextManager.getActiveTabContent(smallLimit);
+
+      const contentPart = result.find(
+        (p) =>
+          p.type === 'text' && p.text !== 'Current tab URL: https://active.com',
+      );
+      expect(contentPart).toBeDefined();
+      if (contentPart?.type === 'text') {
+        expect(contentPart.text.length).toBe(smallLimit);
+      }
     });
 
     it('should return empty array if no active tab found', async () => {

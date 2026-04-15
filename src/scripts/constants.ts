@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-export const MAX_CONTEXT_LENGTH = 250000;
+export const MAX_CONTEXT_LENGTH_CHARS_PER_TAB_DEFAULT = 250000;
 export const MAX_PINNED_TABS = 6;
 
 export const MessageTypes = {
@@ -62,6 +62,8 @@ export const CONTEXT_MESSAGES = {
   TAB_DISCARDED:
     '(Tab is suspended to save memory. Click it to reload content)',
   ERROR_PREFIX: '(Could not extract content from',
+  TRUNCATION_MESSAGE:
+    '\n... CONTENT TRUNCATED DUE TO LIMITED CONTEXT WINDOW ...\n',
 };
 
 export const NOISE_SELECTORS = [

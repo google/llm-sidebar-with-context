@@ -81,6 +81,27 @@ describe('TabContext', () => {
     expect(content).toEqual({ type: 'text', text: 'Regular Content' });
   });
 
+  it('should pass charLimit to the strategy for truncation', async () => {
+    const url = 'https://example.com';
+    vi.mocked(mockTabService.getTab).mockResolvedValue({
+      id: 123,
+      status: 'complete',
+      url,
+    } as ChromeTab);
+    vi.mocked(mockTabService.executeScript).mockResolvedValue(
+      'Very long content',
+    );
+
+    const tabContext = new TabContext(123, url, 'Example', mockTabService);
+    const smallLimit = 5;
+    const result = await tabContext.readContent(smallLimit);
+
+    expect(result.type).toBe('text');
+    if (result.type === 'text') {
+      expect(result.text.length).toBe(smallLimit);
+    }
+  });
+
   it('should handle navigation from restricted to valid URL', async () => {
     const tabId = 123;
     const tabContext = new TabContext(

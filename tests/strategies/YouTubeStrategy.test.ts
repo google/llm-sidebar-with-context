@@ -70,9 +70,9 @@ describe('YouTubeStrategy', () => {
   });
 
   describe('getContent', () => {
-    it('should return file_data with video/mp4 mimeType', async () => {
+    it('should return file_data with video/mp4 mimeType and ignore charLimit', async () => {
       const url = 'https://www.youtube.com/watch?v=123';
-      const content = await strategy.getContent(1, url);
+      const content = await strategy.getContent(1, url, 100);
 
       expect(content).toEqual({
         type: 'file_data',

@@ -17,7 +17,11 @@
 import { IContentStrategy } from './IContentStrategy';
 import { ContentPart } from '../types';
 import { ITabService, TimeoutError } from '../services/tabService';
-import { CONTEXT_MESSAGES, MAX_CONTEXT_LENGTH } from '../constants';
+import {
+  CONTEXT_MESSAGES,
+  MAX_CONTEXT_LENGTH_CHARS_PER_TAB_DEFAULT,
+} from '../constants';
+import { sandwichTruncate } from '../utils';
 
 /**
  * Extraction logic for Google Docs content.
@@ -117,7 +121,11 @@ export class GoogleDocsStrategy implements IContentStrategy {
     return GOOGLE_DOCS_REGEX.test(url);
   }
 
-  async getContent(tabId: number, url: string): Promise<ContentPart> {
+  async getContent(
+    tabId: number,
+    url: string,
+    charLimit: number = MAX_CONTEXT_LENGTH_CHARS_PER_TAB_DEFAULT,
+  ): Promise<ContentPart> {
     const tab = await this.tabService.getTab(tabId);
 
     if (!tab) {
@@ -165,7 +173,7 @@ export class GoogleDocsStrategy implements IContentStrategy {
         };
       }
 
-      const truncated = result.content.substring(0, MAX_CONTEXT_LENGTH);
+      const truncated = sandwichTruncate(result.content, charLimit);
       return {
         type: 'text',
         text: warningPrefix ? `${warningPrefix}${truncated}` : truncated,

@@ -40,7 +40,11 @@ export class YouTubeStrategy implements IContentStrategy {
     }
   }
 
-  async getContent(_tabId: number, url: string): Promise<ContentPart> {
+  async getContent(
+    _tabId: number,
+    url: string,
+    _charLimit?: number,
+  ): Promise<ContentPart> {
     return {
       type: 'file_data',
       mimeType: 'video/mp4',

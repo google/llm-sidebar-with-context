@@ -14,15 +14,44 @@
  * limitations under the License.
  */
 
-import { RestrictedURLs } from './constants';
+import { RestrictedURLs, CONTEXT_MESSAGES } from './constants';
 
 /**
- * Checks if a URL is restricted.
+ * Checks if a URL is restricted (e.g., chrome://, about:, file://).
  * @param url - The URL to check.
  * @returns True if the URL is restricted, false otherwise.
  */
 export function isRestrictedURL(url: string): boolean {
   return RestrictedURLs.some((prefix) => url.startsWith(prefix));
+}
+
+/**
+ * Truncates text by keeping the beginning and end, with a truncation message in the middle.
+ * @param text - The text to truncate.
+ * @param charLimit - The maximum character limit.
+ * @returns The truncated text.
+ */
+export function sandwichTruncate(text: string, charLimit: number): string {
+  if (text.length <= charLimit) {
+    return text;
+  }
+
+  const truncationMessage = CONTEXT_MESSAGES.TRUNCATION_MESSAGE;
+  const remainingSpace = charLimit - truncationMessage.length;
+
+  if (remainingSpace <= 0) {
+    // If limit is very small, just return the first few characters
+    return text.substring(0, charLimit);
+  }
+
+  const startChars = Math.floor(remainingSpace / 2);
+  const endChars = remainingSpace - startChars;
+
+  return (
+    text.substring(0, startChars) +
+    truncationMessage +
+    text.substring(text.length - endChars)
+  );
 }
 
 /**

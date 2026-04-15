@@ -17,7 +17,11 @@
 import { IContentStrategy } from './IContentStrategy';
 import { ContentPart } from '../types';
 import { ITabService, TimeoutError } from '../services/tabService';
-import { MAX_CONTEXT_LENGTH, CONTEXT_MESSAGES } from '../constants';
+import {
+  MAX_CONTEXT_LENGTH_CHARS_PER_TAB_DEFAULT,
+  CONTEXT_MESSAGES,
+} from '../constants';
+import { sandwichTruncate } from '../utils';
 
 declare global {
   interface Window {
@@ -32,7 +36,11 @@ export class DefaultWebPageStrategy implements IContentStrategy {
     return true; // Catch-all strategy
   }
 
-  async getContent(tabId: number, url: string): Promise<ContentPart> {
+  async getContent(
+    tabId: number,
+    url: string,
+    charLimit: number = MAX_CONTEXT_LENGTH_CHARS_PER_TAB_DEFAULT,
+  ): Promise<ContentPart> {
     const tab = await this.tabService.getTab(tabId);
 
     if (!tab) {
@@ -78,7 +86,7 @@ export class DefaultWebPageStrategy implements IContentStrategy {
         return { type: 'text', text: CONTEXT_MESSAGES.NO_CONTENT_WARNING };
       }
 
-      const truncated = result.substring(0, MAX_CONTEXT_LENGTH);
+      const truncated = sandwichTruncate(result, charLimit);
       return {
         type: 'text',
         text: warningPrefix ? `${warningPrefix}${truncated}` : truncated,

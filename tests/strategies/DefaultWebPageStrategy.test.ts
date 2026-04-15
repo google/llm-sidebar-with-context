@@ -21,10 +21,7 @@ import {
   TimeoutError,
   ChromeTab,
 } from '../../src/scripts/services/tabService';
-import {
-  MAX_CONTEXT_LENGTH,
-  CONTEXT_MESSAGES,
-} from '../../src/scripts/constants';
+import { CONTEXT_MESSAGES } from '../../src/scripts/constants';
 
 describe('DefaultWebPageStrategy', () => {
   let mockTabService: ITabService;
@@ -221,10 +218,11 @@ describe('DefaultWebPageStrategy', () => {
     });
   });
 
-  it('should return the truncated text content of the tab', async () => {
+  it('should return the truncated text content of the tab using sandwichTruncate', async () => {
     const tabId = 123;
     const url = 'https://example.com';
-    const longContent = 'A'.repeat(MAX_CONTEXT_LENGTH + 100);
+    const charLimit = 100;
+    const longContent = 'A'.repeat(100) + 'B'.repeat(100) + 'C'.repeat(100);
     vi.mocked(mockTabService.getTab).mockResolvedValue({
       id: tabId,
       active: true,
@@ -233,12 +231,16 @@ describe('DefaultWebPageStrategy', () => {
     } as ChromeTab);
     vi.mocked(mockTabService.executeScript).mockResolvedValue(longContent);
 
-    const content = await strategy.getContent(tabId, url);
+    const content = await strategy.getContent(tabId, url, charLimit);
 
     expect(content.type).toBe('text');
     if (content.type === 'text') {
-      expect(content.text.length).toBe(MAX_CONTEXT_LENGTH);
-      expect(content.text).toBe('A'.repeat(MAX_CONTEXT_LENGTH));
+      expect(content.text.length).toBe(charLimit);
+      expect(content.text).toContain(
+        CONTEXT_MESSAGES.TRUNCATION_MESSAGE.trim(),
+      );
+      expect(content.text.startsWith('AAAA')).toBe(true);
+      expect(content.text.endsWith('CCCC')).toBe(true);
     }
   });
 
