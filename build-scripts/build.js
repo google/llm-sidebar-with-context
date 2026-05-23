@@ -34,20 +34,12 @@ async function build() {
       dest: path.join(distDir, 'manifest.json'),
     },
     {
-      src: path.join(projectRoot, 'icon16.png'),
-      dest: path.join(distDir, 'icon16.png'),
-    },
-    {
-      src: path.join(projectRoot, 'icon48.png'),
-      dest: path.join(distDir, 'icon48.png'),
-    },
-    {
-      src: path.join(projectRoot, 'icon128.png'),
-      dest: path.join(distDir, 'icon128.png'),
-    },
-    {
       src: path.join(srcDir, 'styles'),
       dest: path.join(distDir, 'src/styles'),
+    },
+    {
+      src: path.join(projectRoot, 'favicons'),
+      dest: path.join(distDir, 'favicons'),
     },
   ];
 

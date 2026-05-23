@@ -15,30 +15,111 @@
  limitations under the License.
 -->
 
-<html>
+<html lang="en">
   <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LLM Sidebar with Context</title>
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="48x48"
+      href="../../favicons/favicon-48x48.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../../favicons/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="../../favicons/favicon-16x16.png"
+    />
     <link rel="stylesheet" href="../styles/sidebar.css" />
   </head>
   <body>
     <div class="container">
-      <div id="messages"></div>
+      <!-- Header: Model Select + Action Buttons -->
+      <header class="sidebar-header">
+        <span class="sidebar-header__title">LLM Sidebar</span>
+        <nav class="sidebar-header__actions" aria-label="Chat actions">
+          <div id="model-select" class="dropdown-wrapper"></div>
+          <button id="new-chat-button" class="btn btn--ghost" title="New Chat">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M3 12h18" />
+              <path d="M12 3v18" />
+            </svg>
+          </button>
+          <button
+            id="toggle-settings-button"
+            class="btn btn--ghost"
+            title="Settings"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+              />
+            </svg>
+          </button>
+        </nav>
+      </header>
 
-      <div id="settings-view" class="hidden">
+      <!-- Main Content: Chat Messages or Settings -->
+      <main
+        id="messages"
+        role="log"
+        aria-live="polite"
+        aria-label="Chat messages"
+      >
+        <!-- Welcome message or chat history rendered dynamically -->
+      </main>
+
+      <!-- Settings View (toggled) -->
+      <section id="settings-view" class="hidden" aria-label="Settings">
         <div class="settings-container">
           <h2>Settings</h2>
-          <div id="settings-error" class="settings-error hidden"></div>
-          <div class="settings-section">
-            <div class="settings-label">Theme</div>
-            <select id="theme-select">
-              <option value="system">Default (System)</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </div>
+          <div
+            id="settings-error"
+            class="settings-error hidden"
+            role="alert"
+          ></div>
 
-          <div class="settings-section">
-            <div class="settings-label">Gemini API Key</div>
+          <section class="settings-section">
+            <h3 class="settings-label">Theme</h3>
+            <div
+              id="theme-select"
+              class="dropdown-wrapper dropdown-wrapper--block"
+            ></div>
+          </section>
+
+          <section class="settings-section">
+            <h3 class="settings-label">Gemini API Key</h3>
             <div class="api-key-help">
               Get your API Key for free on
               <a href="https://aistudio.google.com/api-keys" target="_blank"
@@ -55,67 +136,67 @@
               type="password"
               id="api-key-input"
               placeholder="Enter your Gemini API Key"
+              autocomplete="off"
+              aria-label="Gemini API Key"
             />
-          </div>
+          </section>
 
           <div class="settings-actions">
-            <button id="save-settings-button">Save Changes</button>
-            <button id="cancel-settings-button">Cancel</button>
-          </div>
-        </div>
-
-        <div id="legal-panel">
-          <div class="legal-links">
-            <a href="{{LEGAL_NOTICE_URL}}" target="_blank"
-              >Legal Notice (Impressum)</a
-            >
-            <a href="{{PRIVACY_POLICY_URL}}" target="_blank">Privacy Policy</a>
-            <a href="{{LICENSE_URL}}" target="_blank">License</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="bottom-panel">
-        <div id="pinned-tabs-container">
-          <div id="current-tab"></div>
-          <div id="pinned-tabs"></div>
-        </div>
-
-        <div id="controls-container">
-          <select id="model-select"></select>
-          <div class="button-group">
-            <button id="new-chat-button" title="New Chat">New Chat</button>
-            <button id="toggle-settings-button" title="Settings">
-              Settings
+            <button id="save-settings-button" class="btn btn--primary">
+              Save Changes
+            </button>
+            <button id="cancel-settings-button" class="btn btn--secondary">
+              Cancel
             </button>
           </div>
         </div>
 
-        <form id="prompt-form">
+        <footer id="legal-panel">
+          <nav class="legal-links" aria-label="Legal information">
+            <a href="{{LEGAL_NOTICE_URL}}" target="_blank">Legal Notice</a>
+            <a href="{{PRIVACY_POLICY_URL}}" target="_blank">Privacy Policy</a>
+            <a href="{{LICENSE_URL}}" target="_blank">License</a>
+          </nav>
+        </footer>
+      </section>
+
+      <!-- Bottom Panel: Pinned Tabs + Chat Input -->
+      <footer class="bottom-panel">
+        <!-- Pinned Contexts -->
+        <section id="pinned-tabs-container" aria-label="Pinned tabs context">
+          <div id="current-tab"></div>
+          <div id="pinned-tabs"></div>
+        </section>
+
+        <!-- Prompt Input -->
+        <form id="prompt-form" autocomplete="off">
           <textarea
             id="prompt-input"
-            placeholder="Type your prompt here..."
+            placeholder="Ask anything or type / for prompts..."
             rows="1"
+            aria-label="Type your prompt"
           ></textarea>
-          <button type="submit" id="send-button">
+          <button type="submit" id="send-button" aria-label="Send prompt">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
-              class="feather feather-send"
+              aria-hidden="true"
             >
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              <path
+                d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"
+              />
+              <path d="m21.854 2.147-10.94 10.939" />
             </svg>
           </button>
         </form>
-      </div>
+      </footer>
     </div>
     <script type="module" src="../scripts/sidebar.js"></script>
   </body>

@@ -7,9 +7,9 @@
   "host_permissions": ["<all_urls>"],
   "action": {
     "default_icon": {
-      "16": "icon16.png",
-      "48": "icon48.png",
-      "128": "icon128.png"
+      "16": "favicons/favicon-16x16.png",
+      "48": "favicons/favicon-48x48.png",
+      "128": "favicons/favicon-48x48.png"
     }
   },
   "background": {
@@ -20,8 +20,8 @@
     "default_path": "src/pages/sidebar.html"
   },
   "icons": {
-    "16": "icon16.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "16": "favicons/favicon-16x16.png",
+    "48": "favicons/favicon-48x48.png",
+    "128": "favicons/favicon-48x48.png"
   }
 }

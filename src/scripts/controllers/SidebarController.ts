@@ -39,6 +39,7 @@ import {
 } from '../services/storageService';
 import { IMessageService } from '../services/messageService';
 import { ICONS } from '../../../third_party/lucide/lucideIcons';
+import { DropdownMenu, DropdownItem } from '../components/DropdownMenu';
 
 export class SidebarController {
   private promptForm: HTMLFormElement;
@@ -52,8 +53,8 @@ export class SidebarController {
   private cancelSettingsButton: HTMLButtonElement;
   private pinnedTabsDiv: HTMLDivElement;
   private currentTabDiv: HTMLDivElement;
-  private modelSelect: HTMLSelectElement;
-  private themeSelect: HTMLSelectElement;
+  private modelSelect!: DropdownMenu;
+  private themeSelect!: DropdownMenu;
   private toggleSettingsButton: HTMLButtonElement;
   private newChatButton: HTMLButtonElement;
 
@@ -99,12 +100,7 @@ export class SidebarController {
     this.currentTabDiv = document.getElementById(
       'current-tab',
     ) as HTMLDivElement;
-    this.modelSelect = document.getElementById(
-      'model-select',
-    ) as HTMLSelectElement;
-    this.themeSelect = document.getElementById(
-      'theme-select',
-    ) as HTMLSelectElement;
+    // modelSelect and themeSelect are DropdownMenu instances created in start()
     this.toggleSettingsButton = document.getElementById(
       'toggle-settings-button',
     ) as HTMLButtonElement;
@@ -162,17 +158,6 @@ export class SidebarController {
       }
     });
 
-    this.modelSelect.addEventListener('change', () => {
-      this.syncStorageService.set(
-        StorageKeys.SELECTED_MODEL,
-        this.modelSelect.value,
-      );
-    });
-
-    this.themeSelect.addEventListener('change', () => {
-      this.applyTheme(this.themeSelect.value);
-    });
-
     this.promptForm.addEventListener('submit', (e) => {
       e.preventDefault();
       if (this.isGenerating) {
@@ -210,22 +195,28 @@ export class SidebarController {
   }
 
   public async start() {
-    this.populateModelSelect();
-
-    // Load API Key, Selected Model, and Theme
+    // Load preferences first
     const apiKey = await this.syncStorageService.get<string>(
       StorageKeys.API_KEY,
     );
     const selectedModel = await this.syncStorageService.get<string>(
       StorageKeys.SELECTED_MODEL,
     );
-
     const theme = await this.syncStorageService.get<string>(StorageKeys.THEME);
+
     const validThemes = Object.values(Themes);
     const effectiveTheme =
       theme && validThemes.includes(theme) ? theme : Themes.SYSTEM;
 
-    this.themeSelect.value = effectiveTheme;
+    const effectiveModel =
+      selectedModel &&
+      Object.prototype.hasOwnProperty.call(SUPPORTED_MODELS, selectedModel)
+        ? selectedModel
+        : DEFAULT_MODEL;
+
+    // Create dropdowns with correct initial values
+    this.initModelSelect(effectiveModel);
+    this.initThemeSelect(effectiveTheme);
     this.applyTheme(effectiveTheme);
 
     if (apiKey) {
@@ -233,15 +224,6 @@ export class SidebarController {
       this.toggleSettingsView(false);
     } else {
       this.openSettings();
-    }
-
-    if (
-      selectedModel &&
-      Object.prototype.hasOwnProperty.call(SUPPORTED_MODELS, selectedModel)
-    ) {
-      this.modelSelect.value = selectedModel;
-    } else {
-      this.modelSelect.value = DEFAULT_MODEL;
     }
 
     // Load Sharing Preference
@@ -272,14 +254,38 @@ export class SidebarController {
     await this.loadHistory();
   }
 
-  private populateModelSelect() {
-    this.modelSelect.innerHTML = '';
-    (Object.entries(SUPPORTED_MODELS) as [string, string][]).forEach(
-      ([id, label]) => {
-        const option = document.createElement('option');
-        option.value = id;
-        option.textContent = label;
-        this.modelSelect.appendChild(option);
+  private initModelSelect(initialValue: string) {
+    const container = document.getElementById('model-select') as HTMLDivElement;
+    const items: DropdownItem[] = (
+      Object.entries(SUPPORTED_MODELS) as [string, string][]
+    ).map(([id, label]) => ({
+      value: id,
+      label: label,
+      description: id,
+    }));
+    this.modelSelect = new DropdownMenu(
+      container,
+      items,
+      initialValue,
+      (value) => {
+        this.syncStorageService.set(StorageKeys.SELECTED_MODEL, value);
+      },
+    );
+  }
+
+  private initThemeSelect(initialValue: string) {
+    const container = document.getElementById('theme-select') as HTMLDivElement;
+    const items: DropdownItem[] = [
+      { value: 'system', label: 'Default (System)', description: 'Auto' },
+      { value: 'light', label: 'Light', description: 'Light mode' },
+      { value: 'dark', label: 'Dark', description: 'Dark mode' },
+    ];
+    this.themeSelect = new DropdownMenu(
+      container,
+      items,
+      initialValue,
+      (value) => {
+        this.applyTheme(value);
       },
     );
   }
@@ -392,14 +398,17 @@ export class SidebarController {
   private showWelcomeMessage() {
     this.messagesDiv.innerHTML = `
       <div class="welcome-container">
+        <div class="welcome-icon" aria-hidden="true">
+          <img src="../../favicons/favicon-48x48.png" alt="" width="28" height="28" />
+        </div>
         <div class="welcome-header">
-          <h1>Welcome to LLM Sidebar with Context</h1>
+          <h1>LLM Sidebar with Context</h1>
         </div>
 
         <div class="welcome-section">
           <h2>Quick Tips</h2>
           <ul>
-            <li><strong>Select Model:</strong> Choose the best model for your task.</li>
+            <li><strong>Select Model:</strong> Choose the best model from the header dropdown.</li>
             <li><strong>Pin Tabs:</strong> Click the ${ICONS.PIN} icon to pin the current tab as context. You can pin multiple tabs.</li>
             <li><strong>Control Privacy:</strong> Click the ${ICONS.EYE} icon to toggle auto-sharing of your current tab.</li>
           </ul>

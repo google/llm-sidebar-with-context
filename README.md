@@ -14,9 +14,25 @@ This Chrome Extension allows you to interact with Gemini models in a sidebar, us
   <img src="./assets/promotional_images/promotional_images_slideshow.webp" width="800" alt="LLM Sidebar Demo Slideshow">
 </div>
 
+## 🎨 UI Overhaul
+
+The extension recently received a complete visual redesign inspired by [shadcn/ui](https://ui.shadcn.com/) design principles.
+
+<div align="center">
+
+|                                               |                                               |
+| --------------------------------------------- | --------------------------------------------- |
+| ![og-4](./assets/promotional_images/og-4.png) | ![og-3](./assets/promotional_images/og-3.png) |
+| ![og-1](./assets/promotional_images/og-1.png) | ![og-2](./assets/promotional_images/og-2.png) |
+
+</div>
+
+Added UI to my own taste.
+
 ## 🚀 Features
 
 - **Frontend Only:** This extension runs entirely in your browser. There is no middle-man server; your prompts are sent directly from your browser to the Google Gemini API.
+- **Shadcn-Style UI:** Modern, clean interface with semantic HTML, accessible components, and light/dark theme support.
 - **Context-Aware Chat:** Pin up to 6 tabs to use their content as context for your prompts.
 - **Multimodal Support:**
   - **YouTube:** Summarize or answer questions about YouTube videos.
@@ -24,21 +40,21 @@ This Chrome Extension allows you to interact with Gemini models in a sidebar, us
   - **Web Pages:** Extracts text content from standard web pages.
 - **Current Tab Sharing:** Toggle "Share Current Tab" (Eye icon) to dynamically include the active tab's content in your context as you browse.
 - **Model Selection:** Choose between various Gemini models:
-  - Gemini 2.5 Flash Lite (Default)
-  - Gemini 2.5 Flash
+  - Gemini 3.1 Flash Lite (Default)
+  - Gemini 3.5 Flash
   - Gemini 2.5 Pro
-  - Gemini 3 Flash (Preview)
+  - Gemini 2.5 Flash
 - **Privacy Focused:**
   - Your API Key is stored locally in your browser (`chrome.storage.sync`).
   - Chat history is stored locally (`chrome.storage.local`).
-- **Markdown Support:** Responses are rendered with full Markdown support.
+- **Markdown Support:** Responses are rendered with full Markdown support with copy-to-clipboard functionality.
 
 ## 🛠️ Build Manually (Development)
 
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/google/llm-sidebar-with-context.git
+    git clone https://github.com/carlosadcaraujo/llm-sidebar-with-context
     cd llm-sidebar-with-context
     ```
 
@@ -116,6 +132,10 @@ LICENSE_URL="https://example.com/license"
 ## 🤝 Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
+
+## 🏆 Contributors
+
+- **UI Overhaul** — [@abhiasap](https://github.com/abhiasap)
 
 ## 📄 Disclaimer
 

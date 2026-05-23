@@ -114,10 +114,7 @@ describe('SidebarController', () => {
 
       await controller.start();
 
-      const select = document.getElementById(
-        'model-select',
-      ) as HTMLSelectElement;
-      expect(select.value).toBe('gemini-2.5-pro');
+      expect((controller as any).modelSelect.value).toBe('gemini-2.5-pro');
     });
 
     it('should use default model if none is found in storage', async () => {
@@ -125,10 +122,7 @@ describe('SidebarController', () => {
 
       await controller.start();
 
-      const select = document.getElementById(
-        'model-select',
-      ) as HTMLSelectElement;
-      expect(select.value).toBe(DEFAULT_MODEL);
+      expect((controller as any).modelSelect.value).toBe(DEFAULT_MODEL);
     });
 
     it('should fallback to default model if an unsupported model is found in storage', async () => {
@@ -139,10 +133,7 @@ describe('SidebarController', () => {
 
       await controller.start();
 
-      const select = document.getElementById(
-        'model-select',
-      ) as HTMLSelectElement;
-      expect(select.value).toBe(DEFAULT_MODEL);
+      expect((controller as any).modelSelect.value).toBe(DEFAULT_MODEL);
     });
   });
 
@@ -194,17 +185,13 @@ describe('SidebarController', () => {
       });
       await controller.start();
 
-      const themeSelect = document.getElementById(
-        'theme-select',
-      ) as HTMLSelectElement;
       const settingsButton = document.getElementById(
         'toggle-settings-button',
       ) as HTMLButtonElement;
 
       settingsButton.click();
 
-      themeSelect.value = 'dark';
-      themeSelect.dispatchEvent(new Event('change'));
+      (controller as any).themeSelect.select('dark');
 
       expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
       expect(mockSyncStorage.set).not.toHaveBeenCalledWith(
@@ -229,16 +216,12 @@ describe('SidebarController', () => {
       const apiKeyInput = document.getElementById(
         'api-key-input',
       ) as HTMLInputElement;
-      const themeSelect = document.getElementById(
-        'theme-select',
-      ) as HTMLSelectElement;
       const saveButton = document.getElementById(
         'save-settings-button',
       ) as HTMLButtonElement;
 
       apiKeyInput.value = 'new-key';
-      themeSelect.value = 'dark';
-      themeSelect.dispatchEvent(new Event('change'));
+      (controller as any).themeSelect.select('dark');
 
       saveButton.click();
 
@@ -274,17 +257,12 @@ describe('SidebarController', () => {
       ) as HTMLButtonElement;
       settingsButton.click();
 
-      const themeSelect = document.getElementById(
-        'theme-select',
-      ) as HTMLSelectElement;
+      (controller as any).themeSelect.select('dark');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+
       const cancelButton = document.getElementById(
         'cancel-settings-button',
       ) as HTMLButtonElement;
-
-      themeSelect.value = 'dark';
-      themeSelect.dispatchEvent(new Event('change'));
-      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-
       cancelButton.click();
 
       expect(document.documentElement.getAttribute('data-theme')).toBe('light');
@@ -624,6 +602,11 @@ describe('SidebarController', () => {
   });
 
   describe('Chat Interaction', () => {
+    beforeEach(async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue('fake-api-key');
+      await controller.start();
+    });
+
     it('should send message and display response', async () => {
       const promptInput = document.getElementById(
         'prompt-input',
@@ -1188,9 +1171,7 @@ describe('SidebarController', () => {
 
       const messagesDiv = document.getElementById('messages') as HTMLDivElement;
       expect(messagesDiv.querySelector('.welcome-container')).not.toBeNull();
-      expect(messagesDiv.textContent).toContain(
-        'Welcome to LLM Sidebar with Context',
-      );
+      expect(messagesDiv.textContent).toContain('LLM Sidebar with Context');
     });
 
     it('should show welcome message after clicking New Chat', async () => {
@@ -1260,7 +1241,9 @@ describe('SidebarController', () => {
   });
 
   describe('Response Timer', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+      vi.mocked(mockSyncStorage.get).mockResolvedValue('fake-api-key');
+      await controller.start();
       vi.useFakeTimers();
     });
 
