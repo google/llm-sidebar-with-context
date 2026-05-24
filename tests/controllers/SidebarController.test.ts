@@ -114,7 +114,7 @@ describe('SidebarController', () => {
 
       await controller.start();
 
-      expect((controller as any).modelSelect.value).toBe('gemini-2.5-pro');
+      expect(controller.getSelectedModel()).toBe('gemini-2.5-pro');
     });
 
     it('should use default model if none is found in storage', async () => {
@@ -122,7 +122,7 @@ describe('SidebarController', () => {
 
       await controller.start();
 
-      expect((controller as any).modelSelect.value).toBe(DEFAULT_MODEL);
+      expect(controller.getSelectedModel()).toBe(DEFAULT_MODEL);
     });
 
     it('should fallback to default model if an unsupported model is found in storage', async () => {
@@ -133,7 +133,7 @@ describe('SidebarController', () => {
 
       await controller.start();
 
-      expect((controller as any).modelSelect.value).toBe(DEFAULT_MODEL);
+      expect(controller.getSelectedModel()).toBe(DEFAULT_MODEL);
     });
   });
 
@@ -191,7 +191,7 @@ describe('SidebarController', () => {
 
       settingsButton.click();
 
-      (controller as any).themeSelect.select('dark');
+      controller.selectTheme('dark');
 
       expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
       expect(mockSyncStorage.set).not.toHaveBeenCalledWith(
@@ -221,7 +221,7 @@ describe('SidebarController', () => {
       ) as HTMLButtonElement;
 
       apiKeyInput.value = 'new-key';
-      (controller as any).themeSelect.select('dark');
+      controller.selectTheme('dark');
 
       saveButton.click();
 
@@ -257,7 +257,7 @@ describe('SidebarController', () => {
       ) as HTMLButtonElement;
       settingsButton.click();
 
-      (controller as any).themeSelect.select('dark');
+      controller.selectTheme('dark');
       expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
 
       const cancelButton = document.getElementById(

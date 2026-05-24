@@ -68,7 +68,10 @@ export class BackgroundController {
         sender: chrome.runtime.MessageSender,
         sendResponse: (response?: ExtensionResponse) => void,
       ) => {
-        this.handleMessage(request).then(sendResponse);
+        (async () => {
+          const response = await this.handleMessage(request);
+          sendResponse(response);
+        })();
         return true; // Keep the message channel open for async response
       },
     );

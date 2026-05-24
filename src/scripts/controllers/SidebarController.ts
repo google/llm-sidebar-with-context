@@ -57,6 +57,7 @@ export class SidebarController {
   private themeSelect!: DropdownMenu;
   private toggleSettingsButton: HTMLButtonElement;
   private newChatButton: HTMLButtonElement;
+  private exportChatButton: HTMLButtonElement;
 
   private pinnedContexts: TabInfo[] = [];
   private currentTab: TabInfo | null = null;
@@ -107,6 +108,9 @@ export class SidebarController {
     this.newChatButton = document.getElementById(
       'new-chat-button',
     ) as HTMLButtonElement;
+    this.exportChatButton = document.getElementById(
+      'export-chat-button',
+    ) as HTMLButtonElement;
 
     this.setupEventListeners();
   }
@@ -149,14 +153,22 @@ export class SidebarController {
 
     this.newChatButton.addEventListener('click', async () => {
       this.messagesDiv.innerHTML = ''; // Clear messages in UI
-      const response = await this.messageService.sendMessage<SuccessResponse>({
-        type: MessageTypes.CLEAR_CHAT,
-      });
-      if (response && response.success) {
-        this.displayPinnedTabs([]); // Clear pinned tabs in UI
-        this.showWelcomeMessage();
+      try {
+        const response = await this.messageService.sendMessage<SuccessResponse>(
+          {
+            type: MessageTypes.CLEAR_CHAT,
+          },
+        );
+        if (response && response.success) {
+          this.displayPinnedTabs([]); // Clear pinned tabs in UI
+          this.showWelcomeMessage();
+        }
+      } catch (error) {
+        console.error('Failed to clear chat:', error);
       }
     });
+
+    this.exportChatButton.addEventListener('click', () => this.exportChat());
 
     this.promptForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -192,6 +204,16 @@ export class SidebarController {
         }
       },
     );
+  }
+
+  /** Returns the currently selected model value. Used by tests. */
+  getSelectedModel(): string {
+    return this.modelSelect.value;
+  }
+
+  /** Programmatically selects a theme in the dropdown. Used by tests. */
+  selectTheme(theme: string): void {
+    this.themeSelect.select(theme);
   }
 
   public async start() {
@@ -569,6 +591,43 @@ export class SidebarController {
       }, 2000);
     } catch (err) {
       console.error('Failed to copy!', err);
+    }
+  }
+
+  private async exportChat() {
+    try {
+      const response =
+        await this.messageService.sendMessage<GetHistoryResponse>({
+          type: MessageTypes.GET_HISTORY,
+        });
+      if (!response || !response.success || !Array.isArray(response.history)) {
+        this.appendMessage(
+          'error',
+          'Export failed: no chat history to export.',
+        );
+        return;
+      }
+
+      const lines: string[] = [];
+      for (const msg of response.history) {
+        const label = msg.role === 'user' ? 'You' : 'Gemini';
+        lines.push(`${label}\n${msg.text}\n`);
+      }
+      const markdown = lines.join('\n');
+
+      const blob = new Blob([markdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const date = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `chat-export-${date}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export chat:', error);
+      this.appendMessage('error', 'Export failed. Please try again.');
     }
   }
 
