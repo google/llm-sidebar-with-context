@@ -1,4 +1,4 @@
-# LLM Sidebar with Context
+# Browser Engine
 
 This Chrome Extension allows you to interact with Gemini models in a sidebar, using multiple browser tabs as context for your conversations.
 
@@ -11,7 +11,7 @@ This Chrome Extension allows you to interact with Gemini models in a sidebar, us
 ## 🎬 Usage Examples
 
 <div align="center">
-  <img src="./assets/promotional_images/promotional_images_slideshow.webp" width="800" alt="LLM Sidebar Demo Slideshow">
+  <img src="./assets/promotional_images/promotional_images_slideshow.webp" width="800" alt="Browser Engine Demo Slideshow">
 </div>
 
 ## 🎨 UI Overhaul

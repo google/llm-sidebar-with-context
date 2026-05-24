@@ -1171,7 +1171,7 @@ describe('SidebarController', () => {
 
       const messagesDiv = document.getElementById('messages') as HTMLDivElement;
       expect(messagesDiv.querySelector('.welcome-container')).not.toBeNull();
-      expect(messagesDiv.textContent).toContain('LLM Sidebar with Context');
+      expect(messagesDiv.textContent).toContain('Browser Engine');
     });
 
     it('should show welcome message after clicking New Chat', async () => {

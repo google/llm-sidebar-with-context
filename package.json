@@ -1,7 +1,7 @@
 {
-  "name": "llm-sidebar-with-context",
+  "name": "browser-engine",
   "version": "1.2.0",
-  "description": "This chrome extension allows you to interact with LLMs in a sidebar and use multiple tabs as context when doing so",
+  "description": "AI-powered browser sidebar with multi-tab context",
   "main": "index.js",
   "scripts": {
     "test": "vitest run",

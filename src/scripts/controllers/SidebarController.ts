@@ -402,7 +402,7 @@ export class SidebarController {
           <img src="../../favicons/favicon-48x48.png" alt="" width="28" height="28" />
         </div>
         <div class="welcome-header">
-          <h1>LLM Sidebar with Context</h1>
+          <h1>Browser Engine</h1>
         </div>
 
         <div class="welcome-section">

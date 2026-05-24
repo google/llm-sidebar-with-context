@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "LLM Sidebar with Context",
+  "name": "Browser Engine",
   "version": "1.2",
   "description": "Simple, context-aware AI sidebar for Chrome, Edge, Brave & Vivaldi. Free and open source.",
   "permissions": ["activeTab", "scripting", "storage", "tabs", "sidePanel"],
