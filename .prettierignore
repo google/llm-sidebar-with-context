@@ -12,3 +12,7 @@ coverage/
 
 # Icons
 *.png
+
+# Third-party / auto-generated
+.agents/
+third_party/
