@@ -49,6 +49,7 @@ export class DropdownMenu {
     items: DropdownItem[],
     selectedValue: string,
     onChange: (value: string) => void,
+    options?: { triggerIcon?: string },
   ) {
     this.selectedValue = selectedValue;
     this.onChange = onChange;
@@ -60,31 +61,45 @@ export class DropdownMenu {
     this.trigger.setAttribute('aria-haspopup', 'listbox');
     this.trigger.setAttribute('aria-expanded', 'false');
 
-    const triggerLabel = document.createElement('span');
-    triggerLabel.className = 'dropdown-trigger__label';
-    this.trigger.appendChild(triggerLabel);
+    if (options?.triggerIcon) {
+      // Icon-only mode: no label, no chevron, just the icon
+      this.trigger.classList.add('dropdown-trigger--icon');
+      const iconEl = document.createElement('span');
+      iconEl.className = 'dropdown-trigger__icon';
+      iconEl.innerHTML = options.triggerIcon;
+      iconEl.setAttribute('aria-hidden', 'true');
+      this.trigger.appendChild(iconEl);
 
-    const chevron = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'svg',
-    );
-    chevron.setAttribute('width', '14');
-    chevron.setAttribute('height', '14');
-    chevron.setAttribute('viewBox', '0 0 24 24');
-    chevron.setAttribute('fill', 'none');
-    chevron.setAttribute('stroke', 'currentColor');
-    chevron.setAttribute('stroke-width', '2');
-    chevron.setAttribute('stroke-linecap', 'round');
-    chevron.setAttribute('stroke-linejoin', 'round');
-    chevron.classList.add('dropdown-trigger__chevron');
-    chevron.setAttribute('aria-hidden', 'true');
-    const chevronPath = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'path',
-    );
-    chevronPath.setAttribute('d', 'm6 9 6 6 6-6');
-    chevron.appendChild(chevronPath);
-    this.trigger.appendChild(chevron);
+      // Screen-reader label for accessibility
+      this.trigger.setAttribute('aria-label', 'Chat history');
+    } else {
+      // Standard mode: label + chevron
+      const triggerLabel = document.createElement('span');
+      triggerLabel.className = 'dropdown-trigger__label';
+      this.trigger.appendChild(triggerLabel);
+
+      const chevron = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'svg',
+      );
+      chevron.setAttribute('width', '14');
+      chevron.setAttribute('height', '14');
+      chevron.setAttribute('viewBox', '0 0 24 24');
+      chevron.setAttribute('fill', 'none');
+      chevron.setAttribute('stroke', 'currentColor');
+      chevron.setAttribute('stroke-width', '2');
+      chevron.setAttribute('stroke-linecap', 'round');
+      chevron.setAttribute('stroke-linejoin', 'round');
+      chevron.classList.add('dropdown-trigger__chevron');
+      chevron.setAttribute('aria-hidden', 'true');
+      const chevronPath = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'path',
+      );
+      chevronPath.setAttribute('d', 'm6 9 6 6 6-6');
+      chevron.appendChild(chevronPath);
+      this.trigger.appendChild(chevron);
+    }
 
     // ── Menu ──
     this.menu = document.createElement('div');

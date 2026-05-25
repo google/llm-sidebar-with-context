@@ -391,6 +391,7 @@ export class SidebarController {
         if (!chatId) return;
         await this.loadChatById(chatId);
       },
+      { triggerIcon: ICONS.HISTORY },
     );
 
     await this.refreshChatHistoryDropdown();

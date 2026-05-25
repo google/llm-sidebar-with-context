@@ -431,44 +431,46 @@
     text-overflow: ellipsis;
   }
 
-  /* ── Chat History Title Dropdown ── */
+  /* ── Chat History Icon Dropdown ── */
   #chat-history-select {
-    min-width: 0;
-    flex: 1;
-    margin-right: auto;
+    display: flex;
+    align-items: center;
   }
 
-  #chat-history-select .dropdown-trigger {
-    font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--text-bright);
-    letter-spacing: -0.01em;
+  #chat-history-select .dropdown-trigger--icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: transparent;
     border-color: transparent;
-    padding: var(--spacing-1) var(--spacing-2);
+    width: 32px;
+    height: 32px;
+    padding: 0;
     border-radius: var(--radius-sm);
     min-height: unset;
-    max-width: 100%;
-  }
-
-  #chat-history-select .dropdown-trigger:hover {
-    background-color: var(--bg-hover);
-  }
-
-  #chat-history-select .dropdown-trigger__label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--text-bright);
-    letter-spacing: -0.01em;
-  }
-
-  #chat-history-select .dropdown-trigger__chevron {
-    flex-shrink: 0;
-    width: 14px;
-    height: 14px;
     color: var(--text-dim);
+  }
+
+  #chat-history-select .dropdown-trigger--icon:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-main);
+  }
+
+  #chat-history-select .dropdown-trigger--icon:active {
+    transform: scale(0.92);
+  }
+
+  #chat-history-select .dropdown-trigger__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+  }
+
+  #chat-history-select .dropdown-trigger__icon svg {
+    width: 16px;
+    height: 16px;
+    display: block;
   }
 
   #chat-history-select .dropdown-menu {
@@ -1341,6 +1343,38 @@
 
   .dropdown-trigger[aria-expanded='true'] .dropdown-trigger__chevron {
     transform: rotate(180deg);
+  }
+
+  /* ── Icon-only dropdown trigger ── */
+  .dropdown-trigger--icon {
+    justify-content: center;
+    padding: var(--spacing-1);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    color: var(--text-dim);
+    background: transparent;
+    border-color: transparent;
+  }
+
+  .dropdown-trigger--icon:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-main);
+  }
+
+  .dropdown-trigger--icon:active {
+    transform: scale(0.92);
+  }
+
+  .dropdown-trigger__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+  }
+
+  .dropdown-trigger__icon svg {
+    display: block;
   }
 
   /* ── Dropdown Menu (Popover) ── */

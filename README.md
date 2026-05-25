@@ -1,112 +1,91 @@
 # Browser Engine
 
-This Chrome Extension allows you to interact with Gemini models in a sidebar, using multiple browser tabs as context for your conversations.
-
-## 📦 Installation
-
-<a href="https://chromewebstore.google.com/detail/llm-sidebar-with-context/hecgmgkofmopdcjlbaegcaanaadhomhb">
-  <img src="./assets/promotional_images/chrome_web_store_badge.png" width="206" alt="Available in the Chrome Web Store">
-</a>
-
-## 🎬 Usage Examples
+**Browser engine** is a context-aware AI sidebar for Chrome. Pin up to 6 tabs and get answers without leaving your workflow. Free, open source, and runs entirely in your browser.
 
 <div align="center">
-  <img src="./assets/promotional_images/promotional_images_slideshow.webp" width="800" alt="Browser Engine Demo Slideshow">
+  <img src="./assets/promotional_images/be.png" width="800" alt="Browser Engine — Tab context sidebar">
+  <br><br>
+  <img src="./assets/promotional_images/be2.png" width="800" alt="Browser Engine — Model & settings panel">
+    <br><br>
+  <img src="./assets/promotional_images/be3.png" width="800" alt="Browser Engine — Pinned context management">
+  <br><br>
+  <img src="./assets/promotional_images/be4.png" width="800" alt="Browser Engine — Pinned context management">
+  <br><br>
 </div>
-
-## 🎨 UI Overhaul
-
-The extension recently received a complete visual redesign inspired by [shadcn/ui](https://ui.shadcn.com/) design principles.
-
-<div align="center">
-
-|                                               |                                               |
-| --------------------------------------------- | --------------------------------------------- |
-| ![og-4](./assets/promotional_images/og-4.png) | ![og-3](./assets/promotional_images/og-3.png) |
-| ![og-1](./assets/promotional_images/og-1.png) | ![og-2](./assets/promotional_images/og-2.png) |
-
-</div>
-
-Added UI to my own taste.
 
 ## 🚀 Features
 
-- **Frontend Only:** This extension runs entirely in your browser. There is no middle-man server; your prompts are sent directly from your browser to the Google Gemini API.
-- **Shadcn-Style UI:** Modern, clean interface with semantic HTML, accessible components, and light/dark theme support.
-- **Context-Aware Chat:** Pin up to 6 tabs to use their content as context for your prompts.
-- **Multimodal Support:**
-  - **YouTube:** Summarize or answer questions about YouTube videos.
-  - **Google Docs:** Extracts content directly from open Google Docs.
-  - **Web Pages:** Extracts text content from standard web pages.
-- **Current Tab Sharing:** Toggle "Share Current Tab" (Eye icon) to dynamically include the active tab's content in your context as you browse.
-- **Model Selection:** Choose between various Gemini models:
-  - Gemini 3.1 Flash Lite (Default)
-  - Gemini 3.5 Flash
-  - Gemini 2.5 Pro
-  - Gemini 2.5 Flash
-- **Privacy Focused:**
-  - Your API Key is stored locally in your browser (`chrome.storage.sync`).
-  - Chat history is stored locally (`chrome.storage.local`).
-- **Markdown Support:** Responses are rendered with full Markdown support with copy-to-clipboard functionality.
+### Core
+
+- **Frontend Only** — No middleman server. Your prompts go directly from your browser to the AI API.
+- **Multi-Tab Context** — Pin up to 6 tabs and feed their content as context for your prompts.
+- **Current Tab Sharing** — Toggle the eye icon to dynamically include whichever tab is active.
+- **Multi-Source Support** — Extracts content from YouTube, Google Docs, and standard web pages with noise removal.
+- **Sandwich Truncation** — Smart context-window management so long pages don't break your flow.
+- **Stop Generation** — Hit stop mid-response when you've seen enough.
+
+### Chat & History
+
+- **Local Chat History** — Every conversation is saved automatically with timestamps and a title generated from your first message.
+- **Chat Sessions** — Create, switch between, rename, and delete multiple conversations via the dropdown in the header bar.
+- **Edit Messages** — Click the edit icon on any user message, rewrite it, and resubmit — the conversation re-runs from that point. (Branching coming soon.)
+- **Regenerate Responses** — Hit the redo icon on any model reply to re-roll it.
+- **Export Chat** — One-click export of the active conversation as a Markdown file.
+- **Welcome Suggestions** — Smart prompt cards on first open: Summarize, Explain Code, Compare Tabs, Research.
+
+### Actions & Accessibility
+
+- **Copy to Clipboard** — Copy any model response with one click (with visual feedback).
+- **Read Aloud** — Hear responses spoken via the Web Speech API (browser-native TTS, no cloud dependency).
+- **Keyboard Friendly** — Enter to send, Shift+Enter for newline, Escape to cancel edits.
+
+### UI & Theming
+
+- **Shadcn-Style Design System** — Clean, semantic HTML with CSS layers, custom properties, cards, and consistent spacing. No framework, no div soup.
+- **Light / Dark / System Theme** — Persisted to storage, with live toggle in Settings.
+- **Model Selector** — Dropdown in the header to switch between available Gemini models.
+- **Favicon Support** — Tab favicons shown in the pinned-tabs bar and current-tab display.
+- **Response Timer** — Each model reply shows how long it took (e.g. `2.3s`).
+- **Responsive Composer** — Pill-shaped input bar that auto-resizes; Send button activates only when there's content.
+- **Semantic HTML & ARIA** — Built with `role="log"`, `aria-live="polite"`, landmark elements, and accessible buttons throughout.
+
+### Privacy & Storage
+
+- **API Key** — Stored in `chrome.storage.sync` (encrypted-at-rest by Chrome).
+- **Chat History** — Stored in `chrome.storage.local` (never leaves your machine).
+- **No Telemetry** — Zero analytics, zero tracking, zero network calls except to the AI API you configure.
+
+## ⚙️ Quick Start
+
+1. **Get an API key** from your preferred AI provider (e.g. Google AI Studio, OpenAI, etc.).
+2. **Install the extension** from the [Chrome Web Store](#) or [build it yourself](#-build-manually-development).
+3. **Click the extension icon** <img src="assets/svg-icons/llm-sidebar-logo_16.svg" width="16" alt="Extension Icon"/> in your toolbar.
+4. **Open Settings** (bottom panel), enter your API key, pick a model.
+5. **Pin tabs** you want to talk about, type your prompt, and go.
 
 ## 🛠️ Build Manually (Development)
 
-1.  **Clone the repository:**
+```bash
+git clone <your-repo-url>
+cd browser-engine
+npm install
+npm run build
+```
 
-    ```bash
-    git clone https://github.com/carlosadcaraujo/llm-sidebar-with-context
-    cd llm-sidebar-with-context
-    ```
+This generates a `dist/` directory.
 
-2.  **Install dependencies:**
+### Load into Chrome
 
-    ```bash
-    npm install
-    ```
-
-3.  **Build the extension:**
-
-    ```bash
-    npm run build
-    ```
-
-    _Note: This generates a `dist/` directory._
-
-4.  **Load into Chrome:**
-    1.  Open Chrome and navigate to `chrome://extensions`.
-    2.  Enable **Developer mode** (toggle in the top right).
-    3.  Click **Load unpacked**.
-    4.  Select the `dist` folder created in step 3.
-
-## ⚙️ Configuration
-
-1.  **Get a Gemini API Key:**
-    - Visit [Google AI Studio](https://aistudio.google.com/).
-    - Create a new API key.
-
-2.  **Setup the Extension:**
-    - Click the extension icon <img src="assets/svg-icons/llm-sidebar-logo_16.svg" width="16" alt="Extension Icon"/> in your browser toolbar to open the sidebar.
-    - Click the **Settings** button in the bottom panel.
-    - Enter your API Key.
-    - (Optional) Select your preferred Model.
-
-## 🛠️ Usage
-
-1.  **Open Sidebar:** Click the extension icon <img src="assets/svg-icons/llm-sidebar-logo_16.svg" width="16" alt="Extension Icon"/> in your browser toolbar.
-2.  **Pin Context:**
-    - Navigate to a page you want to discuss.
-    - Click the **Pin** icon next to the "Current Tab" to add it to your pinned context.
-    - You can pin up to 6 tabs.
-3.  **Chat:** Type your prompt. The extension will send your message along with the content of all pinned tabs to Gemini.
-4.  **Manage Context:**
-    - Toggle the **Eye** icon on the "Current Tab" to automatically include whichever tab you are looking at.
-    - Click the **Trash** icon to clear a pinned tab.
+1. Open Chrome → `chrome://extensions`
+2. Enable **Developer mode** (top right toggle)
+3. Click **Load unpacked**
+4. Select the `dist` folder
 
 ## 💻 Development
 
 ### Prerequisites
 
-- Node.js (v20+)
+- Node.js v20+
 - npm
 
 ### Commands
@@ -121,7 +100,7 @@ Added UI to my own taste.
 
 ### Environment Variables
 
-To populate legal links in the Settings panel, create a `.env` file in the root:
+To populate legal links in the Settings panel, create a `.env` file:
 
 ```env
 LEGAL_NOTICE_URL="https://example.com/legal"
@@ -131,16 +110,17 @@ LICENSE_URL="https://example.com/license"
 
 ## 🤝 Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
-
-## 🏆 Contributors
-
-- **UI Overhaul** — [@abhiasap](https://github.com/abhiasap)
-
-## 📄 Disclaimer
-
-This project is not an official Google project. It is not supported by Google and Google specifically disclaims all warranties as to its quality, merchantability, or fitness for a particular purpose.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## 📄 License
 
-Apache 2.0; see [`LICENSE`](LICENSE) for details.
+Apache 2.0 — see [`LICENSE`](LICENSE).
+
+---
+
+> This is a **fork** of the original [llm-sidebar-with-context](https://github.com/google/llm-sidebar-with-context). Thank you to the original authors.
+
+> [!IMPORTANT]
+> Currently supports **Gemini** only. More providers (OpenAI, Claude, Groq, etc.) are on the roadmap.
+>
+> This project is **not** an official Google product. It is not supported by Google and Google specifically disclaims all warranties as to its quality, merchantability, or fitness for a particular purpose.
