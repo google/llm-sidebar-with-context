@@ -124,3 +124,9 @@ Apache 2.0 — see [`LICENSE`](LICENSE).
 > Currently supports **Gemini** only. More providers (OpenAI, Claude, Groq, etc.) are on the roadmap.
 >
 > This project is **not** an official Google product. It is not supported by Google and Google specifically disclaims all warranties as to its quality, merchantability, or fitness for a particular purpose.
+
+---
+
+## Sponsorship
+
+Being based in Africa makes it particularly difficult to receive financial support for open source projects. That shouldn't stop me from asking and that shouldn't stop you from supporting. Contact me directly and we will find a way carlos@caraujo.com (spammers please spare me).
