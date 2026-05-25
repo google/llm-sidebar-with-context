@@ -58,7 +58,7 @@
 ## ⚙️ Quick Start
 
 1. **Get an API key** from your preferred AI provider (e.g. Google AI Studio, OpenAI, etc.).
-2. **Install the extension** from the [Chrome Web Store](#) or [build it yourself](#-build-manually-development).
+2. **Install the extension** build it yourself. Chrome store coming soon.
 3. **Click the extension icon** <img src="assets/svg-icons/llm-sidebar-logo_16.svg" width="16" alt="Extension Icon"/> in your toolbar.
 4. **Open Settings** (bottom panel), enter your API key, pick a model.
 5. **Pin tabs** you want to talk about, type your prompt, and go.
@@ -68,8 +68,8 @@
 ```bash
 git clone <your-repo-url>
 cd browser-engine
-npm install
-npm run build
+pnpm install
+pnpm run build
 ```
 
 This generates a `dist/` directory.
@@ -130,3 +130,11 @@ Apache 2.0 — see [`LICENSE`](LICENSE).
 ## Sponsorship
 
 Being based in Africa makes it particularly difficult to receive financial support for open source projects. That shouldn't stop me from asking and that shouldn't stop you from supporting. Contact me directly and we will find a way carlos@caraujo.com (spammers please spare me).
+
+## Hire me
+
+- Linkedin https://www.linkedin.com/in/carlos-alberto-da-conceicao-araujo/
+- X account https://x.com/carlosadcaraujo
+- Personal website https://caraujo.com
+
+"Here's the deal Dick, i'm the best there is plain and simple. If you ain't first, you're last." - Ricky Bobby
