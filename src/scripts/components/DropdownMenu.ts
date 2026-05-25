@@ -171,6 +171,22 @@ export class DropdownMenu {
     this.selectItem(value, true);
   }
 
+  /**
+   * Refreshes the dropdown items in-place without destroying/recreating.
+   * Preserves the current selection if the value still exists in the new items.
+   */
+  refreshItems(items: DropdownItem[]) {
+    // Remember current selection; fall back to first item if it no longer exists
+    const currentValue = this.selectedValue;
+    const stillExists = items.some((item) => item.value === currentValue);
+    if (!stillExists) {
+      this.selectedValue = items.length > 0 ? items[0].value : '';
+    }
+
+    this.buildItems(items);
+    this.updateTriggerLabel();
+  }
+
   private buildItems(items: DropdownItem[]) {
     this.menu.innerHTML = '';
     this.itemElements = [];

@@ -28,6 +28,13 @@ export interface ChatMessage {
   text: string;
 }
 
+export interface ChatSession {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: number;
+}
+
 export interface ChatMessageRequest {
   type: typeof MessageTypes.CHAT_MESSAGE;
   message: string;
@@ -64,6 +71,24 @@ export interface StopGenerationRequest {
   type: typeof MessageTypes.STOP_GENERATION;
 }
 
+export interface ListChatsRequest {
+  type: typeof MessageTypes.LIST_CHATS;
+}
+
+export interface LoadChatRequest {
+  type: typeof MessageTypes.LOAD_CHAT;
+  chatId: string;
+}
+
+export interface DeleteChatRequest {
+  type: typeof MessageTypes.DELETE_CHAT;
+  chatId: string;
+}
+
+export interface CreateChatRequest {
+  type: typeof MessageTypes.CREATE_CHAT;
+}
+
 export interface CurrentTabInfoMessage {
   type: typeof MessageTypes.CURRENT_TAB_INFO;
   tab: TabInfo;
@@ -82,7 +107,11 @@ export type ExtensionMessage =
   | ClearChatRequest
   | GetHistoryRequest
   | CurrentTabInfoMessage
-  | StopGenerationRequest;
+  | StopGenerationRequest
+  | ListChatsRequest
+  | LoadChatRequest
+  | DeleteChatRequest
+  | CreateChatRequest;
 
 export interface GeminiResponse {
   reply?: string;
@@ -110,9 +139,16 @@ export interface GetHistoryResponse {
   history: ChatMessage[];
 }
 
+export interface ListChatsResponse {
+  success: boolean;
+  chats: ChatSession[];
+  activeChatId: string;
+}
+
 export type ExtensionResponse =
   | GeminiResponse
   | GetContextResponse
   | SuccessResponse
   | CheckPinnedTabsResponse
-  | GetHistoryResponse;
+  | GetHistoryResponse
+  | ListChatsResponse;

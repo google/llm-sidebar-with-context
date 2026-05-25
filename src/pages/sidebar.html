@@ -44,7 +44,7 @@
     <div class="container">
       <!-- Header: Model Select + Action Buttons -->
       <header class="sidebar-header">
-        <span class="sidebar-header__title">Browser Engine</span>
+        <div id="chat-history-select" class="dropdown-wrapper"></div>
         <nav class="sidebar-header__actions" aria-label="Chat actions">
           <div id="model-select" class="dropdown-wrapper"></div>
           <button id="new-chat-button" class="btn btn--ghost" title="New Chat">
@@ -190,33 +190,30 @@
           <div id="pinned-tabs"></div>
         </section>
 
-        <!-- Prompt Input -->
-        <form id="prompt-form" autocomplete="off">
+        <!-- Pill-shaped Composer -->
+        <form id="prompt-form" class="input-container" autocomplete="off">
           <textarea
             id="prompt-input"
             placeholder="Ask anything or type / for prompts..."
             rows="1"
             aria-label="Type your prompt"
           ></textarea>
-          <button type="submit" id="send-button" aria-label="Send prompt">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path
-                d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"
-              />
-              <path d="m21.854 2.147-10.94 10.939" />
-            </svg>
-          </button>
+          <div class="input-footer">
+            <div class="actions-right">
+              <button
+                type="button"
+                id="voice-button"
+                class="btn-icon"
+                title="Voice input"
+              ></button>
+              <button
+                type="submit"
+                id="send-button"
+                class="send-btn"
+                aria-label="Send prompt"
+              ></button>
+            </div>
+          </div>
         </form>
       </footer>
     </div>

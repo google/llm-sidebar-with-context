@@ -205,6 +205,21 @@ export class BackgroundController {
             this.abortController.abort();
           }
           return { success: true };
+        case MessageTypes.LIST_CHATS:
+          return {
+            success: true,
+            chats: this.chatHistory.listChats(),
+            activeChatId: this.chatHistory.getActiveId(),
+          };
+        case MessageTypes.LOAD_CHAT:
+          await this.chatHistory.switchChat(request.chatId);
+          return { success: true };
+        case MessageTypes.CREATE_CHAT:
+          await this.chatHistory.createChat();
+          return { success: true };
+        case MessageTypes.DELETE_CHAT:
+          await this.chatHistory.deleteChat(request.chatId);
+          return { success: true };
         default:
           return {
             error: `Unknown message type: ${(request as { type: unknown }).type}`,

@@ -27,6 +27,10 @@ export const MessageTypes = {
   CLEAR_CHAT: 'clearChat',
   GET_HISTORY: 'getHistory',
   STOP_GENERATION: 'stopGeneration',
+  LIST_CHATS: 'listChats',
+  LOAD_CHAT: 'loadChat',
+  DELETE_CHAT: 'deleteChat',
+  CREATE_CHAT: 'createChat',
 } as const;
 
 export const Themes = {

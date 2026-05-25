@@ -431,6 +431,52 @@
     text-overflow: ellipsis;
   }
 
+  /* ── Chat History Title Dropdown ── */
+  #chat-history-select {
+    min-width: 0;
+    flex: 1;
+    margin-right: auto;
+  }
+
+  #chat-history-select .dropdown-trigger {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-bright);
+    letter-spacing: -0.01em;
+    background: transparent;
+    border-color: transparent;
+    padding: var(--spacing-1) var(--spacing-2);
+    border-radius: var(--radius-sm);
+    min-height: unset;
+    max-width: 100%;
+  }
+
+  #chat-history-select .dropdown-trigger:hover {
+    background-color: var(--bg-hover);
+  }
+
+  #chat-history-select .dropdown-trigger__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-bright);
+    letter-spacing: -0.01em;
+  }
+
+  #chat-history-select .dropdown-trigger__chevron {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    color: var(--text-dim);
+  }
+
+  #chat-history-select .dropdown-menu {
+    left: 0;
+    min-width: 220px;
+    max-width: 320px;
+  }
+
   .sidebar-header__actions {
     display: flex;
     align-items: center;
@@ -442,15 +488,19 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: var(--spacing-4);
+    padding: var(--spacing-5) var(--spacing-6);
+    padding-bottom: var(--spacing-8);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-2);
+    align-items: center;
+    gap: var(--spacing-8);
     scroll-behavior: smooth;
   }
 
   /* ── Message Cards ── */
   .message {
+    width: 100%;
+    max-width: 800px;
     padding: var(--spacing-3) var(--spacing-4);
     border-radius: var(--radius-lg);
     line-height: var(--leading-relaxed);
@@ -458,7 +508,6 @@
     overflow-wrap: anywhere;
     word-break: break-word;
     position: relative;
-    max-width: 92%;
     animation: message-in 0.2s ease-out;
   }
 
@@ -473,13 +522,27 @@
     }
   }
 
-  /* User messages — right-aligned cards */
+  /* User messages — right-aligned within centered column */
   .message.user {
-    align-self: flex-end;
+    display: flex;
+    justify-content: flex-end;
+    background: none;
+    border: none;
+    color: var(--text-bright);
+    border-bottom-right-radius: unset;
+  }
+
+  .bubble {
+    padding: var(--spacing-3) var(--spacing-4);
     background-color: var(--bg-chat-user);
     border: 1px solid var(--bg-chat-user-border);
-    color: var(--text-bright);
+    border-radius: var(--radius-lg);
     border-bottom-right-radius: var(--radius-xs);
+    line-height: var(--leading-relaxed);
+    font-size: var(--text-base);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 80%;
   }
 
   /* Model messages — left-aligned cards */
@@ -489,6 +552,41 @@
     border: 1px solid var(--border);
     box-shadow: var(--shadow-xs);
     border-bottom-left-radius: var(--radius-xs);
+  }
+
+  .ai-content {
+    line-height: var(--leading-relaxed);
+    font-size: var(--text-base);
+  }
+
+  .ai-content h1,
+  .ai-content h2,
+  .ai-content h3 {
+    margin: var(--spacing-4) 0 var(--spacing-2) 0;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .ai-content h1 {
+    font-size: var(--text-xl);
+  }
+  .ai-content h2 {
+    font-size: var(--text-lg);
+  }
+  .ai-content h3 {
+    font-size: var(--text-base);
+  }
+
+  .ai-content p {
+    margin-bottom: var(--spacing-3);
+  }
+  .ai-content ul,
+  .ai-content ol {
+    margin-bottom: var(--spacing-3);
+    padding-left: var(--spacing-5);
+  }
+  .ai-content li {
+    margin-bottom: var(--spacing-1);
   }
 
   .message.model a {
@@ -528,27 +626,14 @@
     font-size: inherit;
   }
 
-  /* Thinking message */
+  /* Thinking message — uses dot animation */
   .message.thinking {
     align-self: flex-start;
-    font-style: italic;
-    color: var(--text-muted);
-    font-size: var(--text-sm);
-    background-color: var(--bg-muted);
-    border: 1px dashed var(--border);
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-xs);
     border-radius: var(--radius-lg);
     padding: var(--spacing-2) var(--spacing-4);
-    animation: pulse-thinking 1.5s ease-in-out infinite;
-  }
-
-  @keyframes pulse-thinking {
-    0%,
-    100% {
-      opacity: 0.6;
-    }
-    50% {
-      opacity: 1;
-    }
   }
 
   /* System and error message */
@@ -589,131 +674,168 @@
     opacity: 0.8;
   }
 
-  /* ── Copy Button ── */
-  .copy-button {
-    display: inline-flex;
+  /* ── Message Actions (always visible) ── */
+  .message-actions {
+    display: flex;
     align-items: center;
     gap: var(--spacing-1);
-    background: none;
-    border: 1px solid var(--border);
+    margin-top: var(--spacing-2);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .message.user .message-actions {
+    justify-content: flex-end;
+  }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
     color: var(--text-dim);
     cursor: pointer;
-    padding: var(--spacing-1) var(--spacing-2);
-    border-radius: var(--radius-sm);
-    font-size: var(--text-xs);
     transition: all 0.15s ease;
-    background-color: var(--bg-main);
-    white-space: nowrap;
+    padding: 0;
+    line-height: 0;
   }
 
-  .copy-button:hover {
-    background-color: var(--bg-hover);
+  .action-btn:hover:not(:disabled) {
+    background: var(--bg-hover);
     color: var(--text-main);
-    border-color: var(--border-hover);
   }
 
-  .copy-button:active {
-    transform: scale(0.96);
+  .action-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 
-  .copy-button.success {
+  .action-btn.copied {
     color: var(--success);
-    border-color: var(--success);
-    background-color: var(--success-bg);
   }
 
-  .copy-button svg {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
+  .action-btn .check-icon {
+    display: none;
+  }
+
+  .action-btn.copied .check-icon {
+    display: block;
+  }
+
+  .action-btn.copied .copy-icon {
+    display: none;
+  }
+
+  /* ── Typing Animation ── */
+  .typing {
+    display: flex;
+    gap: 6px;
+    padding: var(--spacing-3) 0;
+    align-items: center;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--text-disabled);
+    border-radius: 50%;
+    animation: blink 1.4s infinite;
+  }
+
+  .dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes blink {
+    0%,
+    100% {
+      opacity: 0.3;
+      transform: scale(0.8);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
   }
 
   /* ── Welcome Message ── */
   .welcome-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    text-align: center;
+    text-align: left;
     padding: var(--spacing-8) var(--spacing-6);
-    gap: var(--spacing-6);
+    gap: var(--spacing-4);
     margin: auto;
-    max-width: 380px;
+    max-width: 420px;
     animation: message-in 0.3s ease-out;
   }
 
-  .welcome-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: var(--radius-xl);
-    background-color: var(--primary-muted);
-    color: var(--primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .welcome-icon svg,
-  .welcome-icon img {
-    width: 28px;
-    height: 28px;
-  }
-
-  .welcome-header h1 {
-    font-size: var(--text-lg);
+  .welcome-container h1 {
+    font-size: var(--text-xl);
     font-weight: 700;
     color: var(--text-bright);
     line-height: var(--leading-tight);
     letter-spacing: -0.02em;
+    margin: 0;
   }
 
-  .welcome-section {
+  .welcome-container > p {
+    font-size: var(--text-lg);
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* ── Suggestion Grid ── */
+  .suggestion-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-3);
     width: 100%;
-    text-align: left;
   }
 
-  .welcome-section h2 {
-    font-size: var(--text-xs);
-    font-weight: 700;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: var(--spacing-3);
-  }
-
-  .welcome-section ul {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-2);
-  }
-
-  .welcome-section li {
-    font-size: var(--text-sm);
-    line-height: var(--leading-normal);
-    color: var(--text-muted);
-    padding: var(--spacing-2) var(--spacing-3);
-    background-color: var(--bg-surface);
+  .suggestion-card {
+    padding: var(--spacing-5);
+    background-color: var(--bg-main);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    transition: border-color 0.15s ease;
+    border-radius: var(--radius-xl);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
+    box-shadow: var(--shadow-xs);
   }
 
-  .welcome-section li:hover {
+  .suggestion-card:hover {
+    background-color: var(--bg-surface);
     border-color: var(--border-hover);
+    box-shadow: var(--shadow-sm);
   }
 
-  .welcome-section li strong {
-    color: var(--text-bright);
+  .suggestion-card__title {
+    display: block;
     font-weight: 600;
+    font-size: var(--text-base);
+    color: var(--text-bright);
+    margin-bottom: var(--spacing-1);
+    line-height: var(--leading-tight);
   }
 
-  .welcome-section li svg {
-    display: inline-block;
-    vertical-align: middle;
-    width: 13px;
-    height: 13px;
-    margin-right: var(--spacing-1);
+  .suggestion-card__subtitle {
+    display: block;
+    font-size: var(--text-sm);
     color: var(--text-muted);
+    line-height: var(--leading-normal);
   }
 
   /* ── Settings View ── */
@@ -1041,23 +1163,33 @@
     flex-shrink: 0;
   }
 
-  /* ── Chat Input Bar ── */
-  #prompt-form {
+  /* ── Chat Input Bar (Pill) ── */
+  .input-container {
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
     border: 1px solid var(--border);
     background-color: var(--bg-main);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-1);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-1) var(--spacing-1) var(--spacing-1) var(--spacing-2);
     transition: all 0.2s ease;
     box-shadow: var(--shadow-xs);
   }
 
-  #prompt-form:focus-within {
-    border-color: var(--border-ring);
-    box-shadow:
-      0 0 0 3px hsl(var(--shadcn-brand-400) / 0.15),
-      var(--shadow-xs);
+  .input-container:focus-within {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .input-footer {
+    display: flex;
+    align-items: center;
+    margin-top: var(--spacing-1);
+  }
+
+  .actions-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    margin-left: auto;
   }
 
   #prompt-input {
@@ -1065,7 +1197,7 @@
     background-color: transparent;
     color: var(--text-bright);
     border: none;
-    padding: var(--spacing-2) var(--spacing-3);
+    padding: var(--spacing-2) var(--spacing-2);
     resize: none;
     font-size: var(--text-sm);
     line-height: var(--leading-normal);
@@ -1081,31 +1213,67 @@
     color: var(--text-disabled);
   }
 
-  #send-button {
+  /* ── Icon Buttons (composer tools) ── */
+  .btn-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: none;
     border: none;
-    color: var(--text-disabled);
+    color: var(--text-dim);
     cursor: pointer;
-    padding: var(--spacing-2);
+    width: 32px;
+    height: 32px;
     border-radius: var(--radius-sm);
     transition: all 0.15s ease;
-    flex-shrink: 0;
     line-height: 0;
+    padding: 0;
   }
 
-  #send-button:hover {
+  .btn-icon:hover {
+    color: var(--text-main);
+    background-color: var(--bg-hover);
+  }
+
+  .btn-icon.active {
     color: var(--primary);
     background-color: var(--primary-muted);
   }
 
-  #send-button:active {
-    transform: scale(0.9);
+  /* ── Send Button (circular) ── */
+  .send-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-muted);
+    color: var(--text-disabled);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    line-height: 0;
+    padding: 0;
   }
 
-  #send-button svg {
+  .send-btn:hover {
+    background-color: var(--bg-alt);
+    color: var(--text-muted);
+  }
+
+  .send-btn.active {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    cursor: pointer;
+  }
+
+  .send-btn:active {
+    transform: scale(0.92);
+  }
+
+  .send-btn svg {
     width: 18px;
     height: 18px;
   }

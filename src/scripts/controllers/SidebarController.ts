@@ -32,6 +32,8 @@ import {
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
+  ListChatsResponse,
+  ChatSession,
 } from '../types';
 import {
   ISyncStorageService,
@@ -55,15 +57,18 @@ export class SidebarController {
   private currentTabDiv: HTMLDivElement;
   private modelSelect!: DropdownMenu;
   private themeSelect!: DropdownMenu;
+  private chatHistorySelect!: DropdownMenu;
   private toggleSettingsButton: HTMLButtonElement;
   private newChatButton: HTMLButtonElement;
   private exportChatButton: HTMLButtonElement;
+  private voiceButton: HTMLButtonElement;
 
   private pinnedContexts: TabInfo[] = [];
   private currentTab: TabInfo | null = null;
   private isCurrentTabShared: boolean = true;
   private isGenerating: boolean = false;
   private isSettingsOpen: boolean = false;
+  private isSpeaking: boolean = false;
   private initialTheme: string = Themes.SYSTEM;
   private initialApiKey: string = '';
 
@@ -111,6 +116,13 @@ export class SidebarController {
     this.exportChatButton = document.getElementById(
       'export-chat-button',
     ) as HTMLButtonElement;
+    this.voiceButton = document.getElementById(
+      'voice-button',
+    ) as HTMLButtonElement;
+
+    // Set initial icon content
+    this.submitButton.innerHTML = ICONS.SEND;
+    this.voiceButton.innerHTML = ICONS.MIC;
 
     this.setupEventListeners();
   }
@@ -136,6 +148,20 @@ export class SidebarController {
       } else if (target.classList.contains('unpin-button')) {
         this.unpinTab(Number(target.dataset.id));
       }
+      // Suggestion card clicks
+      else if (target.dataset.prompt) {
+        this.promptInput.value = target.dataset.prompt;
+        this.promptInput.dispatchEvent(new Event('input'));
+        this.setSendButtonActive();
+        this.promptInput.focus();
+      }
+      // Message action buttons (delegated)
+      else if (
+        target.classList.contains('action-btn') &&
+        target.dataset.action
+      ) {
+        this.handleActionButton(target);
+      }
     });
 
     this.saveSettingsButton.addEventListener('click', () =>
@@ -152,23 +178,28 @@ export class SidebarController {
     });
 
     this.newChatButton.addEventListener('click', async () => {
-      this.messagesDiv.innerHTML = ''; // Clear messages in UI
+      this.messagesDiv.innerHTML = '';
       try {
         const response = await this.messageService.sendMessage<SuccessResponse>(
           {
-            type: MessageTypes.CLEAR_CHAT,
+            type: MessageTypes.CREATE_CHAT,
           },
         );
         if (response && response.success) {
-          this.displayPinnedTabs([]); // Clear pinned tabs in UI
           this.showWelcomeMessage();
+          await this.refreshChatHistoryDropdown();
         }
       } catch (error) {
-        console.error('Failed to clear chat:', error);
+        console.error('Failed to create chat:', error);
       }
     });
 
     this.exportChatButton.addEventListener('click', () => this.exportChat());
+
+    this.voiceButton.addEventListener('click', () => {
+      // Voice input — placeholder for future implementation
+      console.log('Voice input not yet implemented');
+    });
 
     this.promptForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -177,6 +208,10 @@ export class SidebarController {
       } else {
         this.sendMessage();
       }
+    });
+
+    this.promptInput.addEventListener('input', () => {
+      this.setSendButtonActive();
     });
 
     this.promptInput.addEventListener('keydown', (e) => {
@@ -239,6 +274,7 @@ export class SidebarController {
     // Create dropdowns with correct initial values
     this.initModelSelect(effectiveModel);
     this.initThemeSelect(effectiveTheme);
+    this.initChatHistorySelect();
     this.applyTheme(effectiveTheme);
 
     if (apiKey) {
@@ -310,6 +346,107 @@ export class SidebarController {
         this.applyTheme(value);
       },
     );
+  }
+
+  /**
+   * Formats a Unix timestamp (ms) into a short, human-readable date string.
+   */
+  private formatChatDate(timestamp: number): string {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+    });
+  }
+
+  /**
+   * Initializes the chat history dropdown in the sidebar header.
+   * Lists all saved chat sessions and allows switching between them.
+   */
+  private async initChatHistorySelect() {
+    const container = document.getElementById(
+      'chat-history-select',
+    ) as HTMLDivElement;
+    if (!container) return;
+
+    const defaultItems: DropdownItem[] = [
+      { value: '', label: 'Chats', description: 'Loading...' },
+    ];
+
+    this.chatHistorySelect = new DropdownMenu(
+      container,
+      defaultItems,
+      '',
+      async (chatId) => {
+        if (!chatId) return;
+        await this.loadChatById(chatId);
+      },
+    );
+
+    await this.refreshChatHistoryDropdown();
+  }
+
+  /**
+   * Refreshes the chat history dropdown items from the background.
+   */
+  private async refreshChatHistoryDropdown() {
+    try {
+      const response = await this.messageService.sendMessage<ListChatsResponse>(
+        {
+          type: MessageTypes.LIST_CHATS,
+        },
+      );
+
+      if (!response || !response.success || !response.chats) return;
+
+      const items: DropdownItem[] = response.chats.map((chat: ChatSession) => ({
+        value: chat.id,
+        label: chat.title || 'New Chat',
+        description: this.formatChatDate(chat.createdAt),
+      }));
+
+      this.chatHistorySelect.refreshItems(items);
+
+      // If the active chat exists in the list, select it
+      if (response.activeChatId) {
+        const exists = items.some((i) => i.value === response.activeChatId);
+        if (exists) {
+          this.chatHistorySelect.value = response.activeChatId;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refresh chat history dropdown:', error);
+    }
+  }
+
+  /**
+   * Switches to a chat by ID and loads its messages into the UI.
+   */
+  private async loadChatById(chatId: string) {
+    try {
+      const response = await this.messageService.sendMessage<SuccessResponse>({
+        type: MessageTypes.LOAD_CHAT,
+        chatId,
+      });
+
+      if (!response || !response.success) return;
+
+      // Clear UI and reload messages for the active chat
+      this.messagesDiv.innerHTML = '';
+      await this.loadHistory();
+    } catch (error) {
+      console.error('Failed to load chat:', error);
+    }
   }
 
   private openSettings() {
@@ -391,6 +528,210 @@ export class SidebarController {
     }
   }
 
+  /** Toggle the send button active state based on input content. */
+  private setSendButtonActive() {
+    const hasContent = this.promptInput.value.trim().length > 0;
+    this.submitButton.classList.toggle(
+      'active',
+      hasContent && !this.isGenerating,
+    );
+  }
+
+  /** Dispatches delegated message action button clicks. */
+  private handleActionButton(btn: HTMLButtonElement) {
+    const action = btn.dataset.action;
+    const msgDiv = btn.closest('.message') as HTMLDivElement;
+    if (!msgDiv) return;
+
+    switch (action) {
+      case 'copy':
+        this.copyMessage(msgDiv, btn);
+        break;
+      case 'redo':
+        this.regenerateMessage(msgDiv);
+        break;
+      case 'speak':
+        this.speakMessage(msgDiv);
+        break;
+      case 'edit':
+        this.editMessage(msgDiv);
+        break;
+    }
+  }
+
+  /** Copies the model message text to clipboard. */
+  private async copyMessage(msgDiv: HTMLDivElement, btn: HTMLButtonElement) {
+    const contentDiv = msgDiv.querySelector(
+      '.ai-content',
+    ) as HTMLDivElement | null;
+    const text = contentDiv ? contentDiv.textContent || '' : '';
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.classList.add('copied');
+      btn.title = 'Copied';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.title = 'Copy';
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy!', err);
+    }
+  }
+
+  /** Speaks or stops the model message using the Web Speech API. */
+  private speakMessage(msgDiv: HTMLDivElement) {
+    // If already speaking, stop and reset
+    if (this.isSpeaking) {
+      window.speechSynthesis.cancel();
+      this.isSpeaking = false;
+      // Remove active state from all speak buttons
+      this.messagesDiv
+        .querySelectorAll('.action-btn[data-action="speak"]')
+        .forEach((b) => b.classList.remove('active'));
+      return;
+    }
+
+    const contentDiv = msgDiv.querySelector(
+      '.ai-content',
+    ) as HTMLDivElement | null;
+    const text = contentDiv ? contentDiv.textContent || '' : '';
+    if (!text) return;
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.onend = () => {
+      this.isSpeaking = false;
+      this.messagesDiv
+        .querySelectorAll('.action-btn[data-action="speak"]')
+        .forEach((b) => b.classList.remove('active'));
+    };
+    utterance.onerror = () => {
+      this.isSpeaking = false;
+      this.messagesDiv
+        .querySelectorAll('.action-btn[data-action="speak"]')
+        .forEach((b) => b.classList.remove('active'));
+    };
+
+    this.isSpeaking = true;
+    // Highlight the triggering speak button
+    const speakBtn = msgDiv.querySelector(
+      '.action-btn[data-action="speak"]',
+    ) as HTMLButtonElement | null;
+    if (speakBtn) speakBtn.classList.add('active');
+    window.speechSynthesis.speak(utterance);
+  }
+
+  /** Regenerates a model response by re-sending the prior user message. */
+  private async regenerateMessage(msgDiv: HTMLDivElement) {
+    if (this.isGenerating) return;
+
+    // Find the user message preceding this model message
+    const messages = Array.from(this.messagesDiv.querySelectorAll('.message'));
+    const idx = messages.indexOf(msgDiv);
+    if (idx <= 0) return;
+
+    const prevMsg = messages[idx - 1];
+    if (!prevMsg.classList.contains('user')) return;
+    const prevBubble = prevMsg.querySelector('.bubble');
+    const userText = prevBubble
+      ? prevBubble.textContent || ''
+      : prevMsg.textContent || '';
+    if (!userText) return;
+
+    // Remove this model message and all after it, then re-send
+    for (let i = messages.length - 1; i >= idx; i--) {
+      messages[i].remove();
+    }
+
+    await this.messageService.sendMessage({
+      type: MessageTypes.STOP_GENERATION,
+    });
+
+    this.promptInput.value = userText;
+    this.setSendButtonActive();
+    await this.sendMessage();
+  }
+
+  /** Edits a user message inline, then resubmits. */
+  private editMessage(msgDiv: HTMLDivElement) {
+    if (this.isGenerating) return;
+
+    const originalText =
+      msgDiv.querySelector('.bubble')?.textContent || msgDiv.textContent || '';
+    const container = document.createElement('div');
+    container.style.cssText =
+      'display:flex;flex-direction:column;gap:8px;max-width:92%;';
+    const textarea = document.createElement('textarea');
+    textarea.value = originalText;
+    textarea.style.cssText =
+      'width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:var(--text-sm);resize:vertical;min-height:60px;outline:none;background:var(--bg-main);color:var(--text-main);';
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;';
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save & Send';
+    saveBtn.style.cssText =
+      'padding:6px 14px;background:var(--primary);color:var(--primary-foreground);border:none;border-radius:6px;cursor:pointer;font-size:var(--text-xs);font-weight:600;';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText =
+      'padding:6px 14px;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:var(--text-xs);';
+    btnRow.appendChild(saveBtn);
+    btnRow.appendChild(cancelBtn);
+    container.appendChild(textarea);
+    container.appendChild(btnRow);
+    msgDiv.replaceWith(container);
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    const save = async () => {
+      const newText = textarea.value.trim();
+      if (!newText) return;
+      // Remove all messages from the edited one onward
+      const nextSibling = container.nextElementSibling;
+      while (container.nextElementSibling) {
+        container.nextElementSibling.remove();
+      }
+      if (nextSibling) {
+        nextSibling.remove();
+      }
+      container.remove();
+      // Re-send the edited message
+      await this.messageService.sendMessage({
+        type: MessageTypes.STOP_GENERATION,
+      });
+      this.promptInput.value = newText;
+      this.setSendButtonActive();
+      await this.sendMessage();
+    };
+
+    const cancel = () => {
+      const newBubble = document.createElement('div');
+      newBubble.className = msgDiv.classList.contains('bubble')
+        ? 'bubble'
+        : 'message user';
+      if (msgDiv.classList.contains('user')) {
+        newBubble.className = 'message user';
+        const innerBubble = document.createElement('div');
+        innerBubble.className = 'bubble';
+        innerBubble.textContent = originalText;
+        newBubble.appendChild(innerBubble);
+      } else {
+        newBubble.textContent = originalText;
+      }
+      container.replaceWith(newBubble);
+    };
+
+    saveBtn.addEventListener('click', save);
+    cancelBtn.addEventListener('click', cancel);
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        save();
+      }
+      if (e.key === 'Escape') cancel();
+    });
+  }
+
   private async loadHistory() {
     try {
       const response =
@@ -420,29 +761,25 @@ export class SidebarController {
   private showWelcomeMessage() {
     this.messagesDiv.innerHTML = `
       <div class="welcome-container">
-        <div class="welcome-icon" aria-hidden="true">
-          <img src="../../favicons/favicon-48x48.png" alt="" width="28" height="28" />
-        </div>
-        <div class="welcome-header">
-          <h1>Browser Engine</h1>
-        </div>
-
-        <div class="welcome-section">
-          <h2>Quick Tips</h2>
-          <ul>
-            <li><strong>Select Model:</strong> Choose the best model from the header dropdown.</li>
-            <li><strong>Pin Tabs:</strong> Click the ${ICONS.PIN} icon to pin the current tab as context. You can pin multiple tabs.</li>
-            <li><strong>Control Privacy:</strong> Click the ${ICONS.EYE} icon to toggle auto-sharing of your current tab.</li>
-          </ul>
-        </div>
-
-        <div class="welcome-section">
-          <h2>Try asking</h2>
-          <ul>
-            <li>"Summarize news from multiple tabs"</li>
-            <li>"Explain this code snippet"</li>
-            <li>"Review my doc"</li>
-          </ul>
+        <h1>Hello!</h1>
+        <p>How can I help you today?</p>
+        <div class="suggestion-grid">
+          <button class="suggestion-card" data-prompt="Summarize the key points from the current page.">
+            <span class="suggestion-card__title">Summarize</span>
+            <span class="suggestion-card__subtitle">Extract key points from this page</span>
+          </button>
+          <button class="suggestion-card" data-prompt="Explain the code on this page in simple terms.">
+            <span class="suggestion-card__title">Explain Code</span>
+            <span class="suggestion-card__subtitle">Break down code snippets clearly</span>
+          </button>
+          <button class="suggestion-card" data-prompt="Compare the information across my open tabs.">
+            <span class="suggestion-card__title">Compare Tabs</span>
+            <span class="suggestion-card__subtitle">Cross-reference pinned pages</span>
+          </button>
+          <button class="suggestion-card" data-prompt="Research this topic and find recent news about it.">
+            <span class="suggestion-card__title">Research</span>
+            <span class="suggestion-card__subtitle">Search and find relevant info</span>
+          </button>
         </div>
       </div>
     `;
@@ -461,16 +798,16 @@ export class SidebarController {
     this.isGenerating = true;
     this.submitButton.innerHTML = ICONS.STOP;
     this.submitButton.title = 'Stop generation';
+    // Stop button is always visible when generating
+    this.submitButton.classList.remove('active');
 
     this.appendMessage('user', message);
     this.promptInput.value = '';
+    this.promptInput.style.height = 'auto';
+    this.setSendButtonActive();
 
     const thinkingMessageElement = this.appendThinkingMessage();
     const startTime = Date.now();
-    const timerInterval = setInterval(() => {
-      const elapsed = (Date.now() - startTime) / 1000;
-      thinkingMessageElement.textContent = `Waiting for model response... (${elapsed.toFixed(1)}s)`;
-    }, 100);
 
     try {
       const response = await this.messageService.sendMessage<GeminiResponse>({
@@ -480,7 +817,6 @@ export class SidebarController {
         includeCurrentTab: this.isCurrentTabShared,
       });
 
-      clearInterval(timerInterval);
       thinkingMessageElement.remove();
       const duration = (Date.now() - startTime) / 1000;
 
@@ -506,7 +842,6 @@ export class SidebarController {
         this.appendMessage('error', `Error: ${response.error}`);
       }
     } catch (error: unknown) {
-      clearInterval(timerInterval);
       thinkingMessageElement.remove();
       const err = error as Error;
       if (
@@ -525,6 +860,7 @@ export class SidebarController {
       this.isGenerating = false;
       this.submitButton.innerHTML = ICONS.SEND;
       this.submitButton.title = 'Send prompt';
+      this.setSendButtonActive();
     }
   }
 
@@ -539,59 +875,76 @@ export class SidebarController {
   }
 
   private appendThinkingMessage(): HTMLDivElement {
-    const thinkingMessageElement = document.createElement('div');
-    thinkingMessageElement.classList.add('message', 'thinking');
-    thinkingMessageElement.textContent = 'Waiting for model response... (0.0s)';
-    this.messagesDiv.appendChild(thinkingMessageElement);
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('message', 'thinking');
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'typing';
+    typingDiv.innerHTML =
+      '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    wrapper.appendChild(typingDiv);
+    this.messagesDiv.appendChild(wrapper);
     this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
-    return thinkingMessageElement;
+    return wrapper;
   }
 
   private async appendMessage(sender: string, text: string, duration?: number) {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', sender);
     if (sender === 'model') {
-      messageElement.innerHTML = await marked.parse(text);
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'ai-content';
+      contentDiv.innerHTML = await marked.parse(text);
+      messageElement.appendChild(contentDiv);
 
-      const footer = document.createElement('div');
-      footer.className = 'message-footer';
-
+      // Footer with duration
       if (typeof duration === 'number') {
+        const footer = document.createElement('div');
+        footer.className = 'message-footer';
         const durationSpan = document.createElement('span');
         durationSpan.className = 'response-duration';
         durationSpan.textContent = `${duration.toFixed(1)}s`;
         footer.appendChild(durationSpan);
+        messageElement.appendChild(footer);
       }
 
-      const copyBtn = document.createElement('button');
-      copyBtn.className = 'copy-button';
-      copyBtn.title = 'Copy markdown to clipboard';
-      copyBtn.innerHTML = ICONS.COPY;
-      copyBtn.onclick = () => this.copyToClipboard(text, copyBtn);
-      footer.appendChild(copyBtn);
+      // Action bar: copy, redo, speak
+      const actions = document.createElement('div');
+      actions.className = 'message-actions';
+      actions.innerHTML = `
+        <button class="action-btn" data-action="copy" title="Copy">
+          <span class="copy-icon">${ICONS.COPY}</span>
+          <span class="check-icon">${ICONS.CHECK}</span>
+        </button>
+        <button class="action-btn" data-action="redo" title="Regenerate">
+          ${ICONS.REDO}
+        </button>
+        <button class="action-btn" data-action="speak" title="Read aloud">
+          ${ICONS.SPEAK}
+        </button>
+      `;
+      messageElement.appendChild(actions);
+    } else if (sender === 'user') {
+      // User message — bubble style
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = text;
+      messageElement.appendChild(bubble);
 
-      messageElement.appendChild(footer);
+      // Edit button
+      const actions = document.createElement('div');
+      actions.className = 'message-actions';
+      actions.innerHTML = `
+        <button class="action-btn" data-action="edit" title="Edit message">
+          ${ICONS.EDIT}
+        </button>
+      `;
+      messageElement.appendChild(actions);
     } else {
+      // System, error, or thinking — plain text, no actions
       messageElement.textContent = text;
     }
     this.messagesDiv.appendChild(messageElement);
     this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
-  }
-
-  private async copyToClipboard(text: string, button: HTMLButtonElement) {
-    try {
-      await navigator.clipboard.writeText(text);
-      button.innerHTML = `${ICONS.CHECK}<span>Copied markdown to clipboard</span>`;
-      button.classList.add('success');
-      button.title = 'Copied markdown to clipboard';
-      setTimeout(() => {
-        button.innerHTML = ICONS.COPY;
-        button.classList.remove('success');
-        button.title = 'Copy markdown to clipboard';
-      }, 2000);
-    } catch (err) {
-      console.error('Failed to copy!', err);
-    }
   }
 
   private async exportChat() {

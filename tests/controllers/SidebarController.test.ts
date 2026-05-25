@@ -630,7 +630,9 @@ describe('SidebarController', () => {
 
       const modelMsg = messagesDiv.querySelector('.message.model');
       expect(modelMsg?.querySelector('.message-footer')).toBeTruthy();
-      expect(modelMsg?.querySelector('.copy-button')).toBeTruthy();
+      expect(
+        modelMsg?.querySelector('.action-btn[data-action="copy"]'),
+      ).toBeTruthy();
     });
 
     it('should copy text to clipboard and show success state when copy button is clicked', async () => {
@@ -661,20 +663,18 @@ describe('SidebarController', () => {
       });
 
       const copyBtn = messagesDiv.querySelector(
-        '.copy-button',
+        '.action-btn[data-action="copy"]',
       ) as HTMLButtonElement;
       expect(copyBtn).toBeTruthy();
 
       await copyBtn.click();
 
       expect(mockClipboard.writeText).toHaveBeenCalledWith('Response to copy');
-      expect(copyBtn.classList.contains('success')).toBe(true);
-      expect(copyBtn.textContent).toContain('Copied markdown to clipboard');
+      expect(copyBtn.classList.contains('copied')).toBe(true);
 
       // Verify it resets after timeout
       vi.advanceTimersByTime(2100);
-      expect(copyBtn.classList.contains('success')).toBe(false);
-      expect(copyBtn.textContent).not.toContain('Copied markdown to clipboard');
+      expect(copyBtn.classList.contains('copied')).toBe(false);
 
       vi.useRealTimers();
     });
@@ -1171,7 +1171,7 @@ describe('SidebarController', () => {
 
       const messagesDiv = document.getElementById('messages') as HTMLDivElement;
       expect(messagesDiv.querySelector('.welcome-container')).not.toBeNull();
-      expect(messagesDiv.textContent).toContain('Browser Engine');
+      expect(messagesDiv.textContent).toContain('Hello!');
     });
 
     it('should show welcome message after clicking New Chat', async () => {
@@ -1203,7 +1203,7 @@ describe('SidebarController', () => {
       await newChatButton.click();
 
       expect(messagesDiv.querySelector('.welcome-container')).not.toBeNull();
-      expect(messagesDiv.textContent).not.toContain('Hello');
+      expect(messagesDiv.textContent).toContain('Hello!');
     });
 
     it('should hide welcome message when a prompt is sent', async () => {
@@ -1251,7 +1251,7 @@ describe('SidebarController', () => {
       vi.useRealTimers();
     });
 
-    it('should show live timer updates in thinking message', async () => {
+    it('should show dot animation in thinking message', async () => {
       const promptInput = document.getElementById(
         'prompt-input',
       ) as HTMLInputElement;
@@ -1271,14 +1271,13 @@ describe('SidebarController', () => {
 
       promptForm.dispatchEvent(new Event('submit'));
 
-      // Advance time by 1.5 seconds
-      await vi.advanceTimersByTimeAsync(1500);
-
-      const thinkingMsg = messagesDiv.querySelector('.message.thinking');
-      // Allow for small variations in timing (1.4s, 1.5s, or 1.6s)
-      expect(thinkingMsg?.textContent).toMatch(
-        /Waiting for model response... \(1\.[4-6]s\)/,
-      );
+      const thinkingMsg = messagesDiv.querySelector(
+        '.message.thinking',
+      ) as HTMLDivElement;
+      expect(thinkingMsg).toBeTruthy();
+      // Verify dot animation elements are rendered
+      const dots = thinkingMsg.querySelectorAll('.dot');
+      expect(dots.length).toBe(3);
 
       // Resolve message
       resolveMessage!({ reply: 'Response' });
