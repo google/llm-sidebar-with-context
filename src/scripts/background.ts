@@ -21,26 +21,42 @@ import {
 } from './services/storageService';
 import { ChromeTabService } from './services/tabService';
 import { GeminiService } from './services/geminiService';
+import { OllamaService } from './services/ollamaService';
+import { ChromeDNRService } from './services/dnrService';
 import { ChromeMessageService } from './services/messageService';
+import { GoogleGeminiChatProvider } from './services/googleGeminiChatProvider';
+import { OllamaChatProvider } from './services/ollamaChatProvider';
 import { ChatHistory } from './models/ChatHistory';
 import { ContextManager } from './models/ContextManager';
+import { Providers } from './constants';
 
 const localStorageService = new ChromeLocalStorageService();
 const syncStorageService = new ChromeSyncStorageService();
 const tabService = new ChromeTabService();
-const geminiService = new GeminiService();
 const messageService = new ChromeMessageService();
 
 const chatHistory = new ChatHistory(localStorageService);
 const contextManager = new ContextManager(localStorageService, tabService);
+
+const providers = {
+  [Providers.GOOGLE_GEMINI]: new GoogleGeminiChatProvider(
+    new GeminiService(),
+    syncStorageService,
+  ),
+  [Providers.OLLAMA]: new OllamaChatProvider(
+    new OllamaService(),
+    new ChromeDNRService(),
+    syncStorageService,
+  ),
+};
 
 const controller = new BackgroundController(
   chatHistory,
   contextManager,
   syncStorageService,
   tabService,
-  geminiService,
   messageService,
+  providers,
 );
 
 controller.start();

@@ -22,6 +22,7 @@ import {
   MessageTypes,
   StorageKeys,
   DEFAULT_MODEL,
+  Providers,
 } from '../../src/scripts/constants';
 import {
   ExtensionMessage,
@@ -93,22 +94,22 @@ describe('SidebarController', () => {
       expect(promptForm?.classList.contains('hidden')).toBe(false);
     });
 
-    it('should show settings-view and hide messages/form if API key is missing', async () => {
+    it('should show settings-view and hide messages and the bottom panel if API key is missing', async () => {
       vi.mocked(mockSyncStorage.get).mockResolvedValue(undefined);
 
       await controller.start();
 
       const settingsView = document.getElementById('settings-view');
       const messages = document.getElementById('messages');
-      const promptForm = document.getElementById('prompt-form');
+      const bottomPanel = document.getElementById('bottom-panel');
       expect(settingsView?.classList.contains('hidden')).toBe(false);
       expect(messages?.classList.contains('hidden')).toBe(true);
-      expect(promptForm?.classList.contains('hidden')).toBe(true);
+      expect(bottomPanel?.classList.contains('hidden')).toBe(true);
     });
 
     it('should load selected model from storage', async () => {
       vi.mocked(mockSyncStorage.get).mockImplementation(async (key) => {
-        if (key === StorageKeys.SELECTED_MODEL) return 'gemini-2.5-pro';
+        if (key === StorageKeys.GEMINI_MODEL) return 'gemini-2.5-pro';
         return undefined;
       });
 
@@ -133,7 +134,7 @@ describe('SidebarController', () => {
 
     it('should fallback to default model if an unsupported model is found in storage', async () => {
       vi.mocked(mockSyncStorage.get).mockImplementation(async (key) => {
-        if (key === StorageKeys.SELECTED_MODEL) return 'gemini-2.5-flash-lite';
+        if (key === StorageKeys.GEMINI_MODEL) return 'gemini-2.5-flash-lite';
         return undefined;
       });
 
@@ -147,7 +148,7 @@ describe('SidebarController', () => {
   });
 
   describe('Settings UI Overhaul', () => {
-    it('should show settings-view and hide messages/form when settings button is clicked', async () => {
+    it('should show settings-view and hide messages and the whole bottom panel when settings button is clicked', async () => {
       vi.mocked(mockSyncStorage.get).mockResolvedValue('fake-key');
       await controller.start();
 
@@ -155,20 +156,24 @@ describe('SidebarController', () => {
         'settings-view',
       ) as HTMLElement;
       const messages = document.getElementById('messages') as HTMLElement;
-      const promptForm = document.getElementById('prompt-form') as HTMLElement;
+      const bottomPanel = document.getElementById(
+        'bottom-panel',
+      ) as HTMLElement;
       const settingsButton = document.getElementById(
         'toggle-settings-button',
       ) as HTMLButtonElement;
 
       expect(settingsView.classList.contains('hidden')).toBe(true);
       expect(messages.classList.contains('hidden')).toBe(false);
-      expect(promptForm.classList.contains('hidden')).toBe(false);
+      expect(bottomPanel.classList.contains('hidden')).toBe(false);
 
       settingsButton.click();
 
       expect(settingsView.classList.contains('hidden')).toBe(false);
       expect(messages.classList.contains('hidden')).toBe(true);
-      expect(promptForm.classList.contains('hidden')).toBe(true);
+      // The whole bottom panel (current tab, provider/model controls, prompt
+      // form) is hidden so nothing outside the settings view is interactive.
+      expect(bottomPanel.classList.contains('hidden')).toBe(true);
     });
 
     it('should stay in settings-view when settings button is clicked twice', async () => {
@@ -285,6 +290,9 @@ describe('SidebarController', () => {
       themeSelect.dispatchEvent(new Event('change'));
       expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
 
+      // Only writes from the cancel action itself matter below.
+      vi.mocked(mockSyncStorage.set).mockClear();
+
       cancelButton.click();
 
       expect(document.documentElement.getAttribute('data-theme')).toBe('light');
@@ -317,6 +325,8 @@ describe('SidebarController', () => {
       ) as HTMLDivElement;
 
       apiKeyInput.value = '   ';
+      // Only writes from the failed save attempt itself matter below.
+      vi.mocked(mockSyncStorage.set).mockClear();
       await saveButton.click();
 
       expect(settingsError.textContent).toBe(
@@ -1348,6 +1358,735 @@ describe('SidebarController', () => {
       const messagesDiv = document.getElementById('messages') as HTMLDivElement;
       const durationSpan = messagesDiv.querySelector('.response-duration');
       expect(durationSpan).toBeNull();
+    });
+  });
+
+  describe('Provider settings (Gemini + Ollama)', () => {
+    function el<T extends HTMLElement>(id: string): T {
+      return document.getElementById(id) as T;
+    }
+
+    function stubStorage(values: Record<string, unknown>) {
+      vi.mocked(mockSyncStorage.get).mockImplementation(
+        async (key: string) => values[key],
+      );
+    }
+
+    function stubOllamaMessages(models: string[] | null) {
+      vi.mocked(mockMessageService.sendMessage).mockImplementation(
+        async (msg: ExtensionMessage) => {
+          if (
+            msg.type === MessageTypes.OLLAMA_LIST_MODELS ||
+            msg.type === MessageTypes.OLLAMA_TEST_CONNECTION
+          ) {
+            return models
+              ? { success: true, models }
+              : { success: false, models: [], error: 'unreachable' };
+          }
+          return { success: true, history: [] };
+        },
+      );
+    }
+
+    const savedOllama = {
+      enabled: true,
+      host: 'http://localhost:9999',
+      numCtx: '8192',
+      keepAlive: '10m',
+    };
+
+    describe('panel collapse', () => {
+      it('should collapse a provider panel body when its toggle is off', async () => {
+        stubStorage({ [StorageKeys.API_KEY]: 'key' });
+        await controller.start();
+
+        const geminiBody = el<HTMLDivElement>('gemini-panel-body');
+        const ollamaBody = el<HTMLDivElement>('ollama-panel-body');
+        // Gemini defaults to enabled; Ollama defaults to disabled.
+        expect(geminiBody.classList.contains('hidden')).toBe(false);
+        expect(ollamaBody.classList.contains('hidden')).toBe(true);
+
+        const geminiToggle = el<HTMLInputElement>('gemini-enabled-toggle');
+        geminiToggle.checked = false;
+        geminiToggle.dispatchEvent(new Event('change'));
+        expect(geminiBody.classList.contains('hidden')).toBe(true);
+
+        const ollamaToggle = el<HTMLInputElement>('ollama-enabled-toggle');
+        ollamaToggle.checked = true;
+        ollamaToggle.dispatchEvent(new Event('change'));
+        expect(ollamaBody.classList.contains('hidden')).toBe(false);
+      });
+
+      it('should disable Save iff both providers are off', async () => {
+        stubStorage({ [StorageKeys.API_KEY]: 'key' });
+        await controller.start();
+
+        const geminiToggle = el<HTMLInputElement>('gemini-enabled-toggle');
+        const ollamaToggle = el<HTMLInputElement>('ollama-enabled-toggle');
+        const saveButton = el<HTMLButtonElement>('save-settings-button');
+
+        expect(saveButton.disabled).toBe(false);
+
+        geminiToggle.checked = false;
+        geminiToggle.dispatchEvent(new Event('change'));
+        expect(saveButton.disabled).toBe(true);
+
+        ollamaToggle.checked = true;
+        ollamaToggle.dispatchEvent(new Event('change'));
+        expect(saveButton.disabled).toBe(false);
+      });
+    });
+
+    describe('saving', () => {
+      it('should save with an empty API key when only Ollama is enabled, wiping the key', async () => {
+        stubStorage({ [StorageKeys.API_KEY]: 'old-key' });
+        stubOllamaMessages(['llama3.1:8b']);
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        el<HTMLInputElement>('api-key-input').value = '';
+        const geminiToggle = el<HTMLInputElement>('gemini-enabled-toggle');
+        geminiToggle.checked = false;
+        geminiToggle.dispatchEvent(new Event('change'));
+        const ollamaToggle = el<HTMLInputElement>('ollama-enabled-toggle');
+        ollamaToggle.checked = true;
+        ollamaToggle.dispatchEvent(new Event('change'));
+
+        el<HTMLButtonElement>('save-settings-button').click();
+
+        // The settings view closing is the last step of a successful save.
+        await vi.waitFor(() => {
+          expect(
+            el<HTMLDivElement>('settings-view').classList.contains('hidden'),
+          ).toBe(true);
+        });
+        expect(mockSyncStorage.set).toHaveBeenCalledWith(
+          StorageKeys.API_KEY,
+          '',
+        );
+        expect(mockSyncStorage.set).toHaveBeenCalledWith(
+          StorageKeys.GEMINI_ENABLED,
+          false,
+        );
+        expect(mockSyncStorage.set).toHaveBeenCalledWith(
+          StorageKeys.OLLAMA_SETTINGS,
+          { enabled: true, host: '', numCtx: '', keepAlive: '' },
+        );
+      });
+
+      it('should block saving when Ollama is enabled with an invalid host', async () => {
+        stubStorage({ [StorageKeys.API_KEY]: 'key' });
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        const ollamaToggle = el<HTMLInputElement>('ollama-enabled-toggle');
+        ollamaToggle.checked = true;
+        ollamaToggle.dispatchEvent(new Event('change'));
+        el<HTMLInputElement>('ollama-host-input').value = 'not a url';
+
+        vi.mocked(mockSyncStorage.set).mockClear();
+        el<HTMLButtonElement>('save-settings-button').click();
+
+        await vi.waitFor(() => {
+          expect(el<HTMLDivElement>('settings-error').textContent).toBe(
+            'Please enter a valid Ollama host URL.',
+          );
+        });
+        expect(mockSyncStorage.set).not.toHaveBeenCalled();
+      });
+
+      it('should block saving when Ollama is enabled with a non-numeric num_ctx', async () => {
+        stubStorage({ [StorageKeys.API_KEY]: 'key' });
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        const ollamaToggle = el<HTMLInputElement>('ollama-enabled-toggle');
+        ollamaToggle.checked = true;
+        ollamaToggle.dispatchEvent(new Event('change'));
+        el<HTMLInputElement>('ollama-num-ctx-input').value = '-42';
+
+        vi.mocked(mockSyncStorage.set).mockClear();
+        el<HTMLButtonElement>('save-settings-button').click();
+
+        await vi.waitFor(() => {
+          expect(el<HTMLDivElement>('settings-error').textContent).toBe(
+            'num_ctx must be a positive whole number.',
+          );
+        });
+        expect(mockSyncStorage.set).not.toHaveBeenCalled();
+      });
+
+      it('should expand the collapsed advanced section when num_ctx is invalid', async () => {
+        // Regression: an invalid num_ctx saved while Ollama was disabled, and
+        // the advanced section collapsed — the validation error must reveal
+        // the offending field, not point at a hidden input.
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: {
+            enabled: false,
+            host: '',
+            numCtx: 'notavalid',
+            keepAlive: '',
+          },
+        });
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        const advanced = el<HTMLDetailsElement>('ollama-advanced');
+        advanced.open = false;
+        const ollamaToggle = el<HTMLInputElement>('ollama-enabled-toggle');
+        ollamaToggle.checked = true;
+        ollamaToggle.dispatchEvent(new Event('change'));
+
+        el<HTMLButtonElement>('save-settings-button').click();
+
+        await vi.waitFor(() => {
+          expect(el<HTMLDivElement>('settings-error').textContent).toBe(
+            'num_ctx must be a positive whole number.',
+          );
+        });
+        expect(advanced.open).toBe(true);
+        expect(
+          el<HTMLInputElement>('ollama-num-ctx-input').classList.contains(
+            'input-error',
+          ),
+        ).toBe(true);
+      });
+
+      it('should accept empty host and num_ctx when Ollama is enabled (defaults apply)', async () => {
+        stubStorage({ [StorageKeys.API_KEY]: 'key' });
+        stubOllamaMessages(['llama3.1:8b']);
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        const ollamaToggle = el<HTMLInputElement>('ollama-enabled-toggle');
+        ollamaToggle.checked = true;
+        ollamaToggle.dispatchEvent(new Event('change'));
+
+        el<HTMLButtonElement>('save-settings-button').click();
+
+        await vi.waitFor(() => {
+          expect(mockSyncStorage.set).toHaveBeenCalledWith(
+            StorageKeys.OLLAMA_SETTINGS,
+            { enabled: true, host: '', numCtx: '', keepAlive: '' },
+          );
+        });
+      });
+
+      it('should save disabled-provider fields verbatim, even garbage', async () => {
+        stubStorage({ [StorageKeys.API_KEY]: 'key' });
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        // Ollama stays disabled; type garbage into its fields.
+        el<HTMLInputElement>('ollama-host-input').value = 'not a url';
+        el<HTMLInputElement>('ollama-num-ctx-input').value = 'many';
+
+        el<HTMLButtonElement>('save-settings-button').click();
+
+        await vi.waitFor(() => {
+          expect(mockSyncStorage.set).toHaveBeenCalledWith(
+            StorageKeys.OLLAMA_SETTINGS,
+            {
+              enabled: false,
+              host: 'not a url',
+              numCtx: 'many',
+              keepAlive: '',
+            },
+          );
+        });
+      });
+    });
+
+    describe('cancel and reset', () => {
+      it('should restore provider fields on Cancel', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+        });
+        stubOllamaMessages(['llama3.1:8b']);
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        const geminiToggle = el<HTMLInputElement>('gemini-enabled-toggle');
+        geminiToggle.checked = false;
+        geminiToggle.dispatchEvent(new Event('change'));
+        el<HTMLInputElement>('ollama-host-input').value = 'edited:1234';
+        el<HTMLInputElement>('ollama-num-ctx-input').value = '1';
+
+        el<HTMLButtonElement>('cancel-settings-button').click();
+
+        expect(el<HTMLInputElement>('gemini-enabled-toggle').checked).toBe(
+          true,
+        );
+        expect(el<HTMLInputElement>('ollama-host-input').value).toBe(
+          'http://localhost:9999',
+        );
+        expect(el<HTMLInputElement>('ollama-num-ctx-input').value).toBe('8192');
+        expect(el<HTMLInputElement>('ollama-keep-alive-input').value).toBe(
+          '10m',
+        );
+      });
+
+      it('should clear Ollama fields on Reset Defaults after confirmation', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+        });
+        stubOllamaMessages(['llama3.1:8b']);
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        el<HTMLButtonElement>('ollama-reset-button').click();
+
+        // The in-page confirmation dialog opens.
+        const overlay = el<HTMLDivElement>('confirm-overlay');
+        expect(overlay.classList.contains('hidden')).toBe(false);
+        expect(el<HTMLParagraphElement>('confirm-message').textContent).toBe(
+          'Reset Ollama settings to defaults?',
+        );
+
+        el<HTMLButtonElement>('confirm-ok-button').click();
+
+        await vi.waitFor(() => {
+          expect(overlay.classList.contains('hidden')).toBe(true);
+          expect(el<HTMLInputElement>('ollama-host-input').value).toBe('');
+        });
+        expect(el<HTMLInputElement>('ollama-num-ctx-input').value).toBe('');
+        expect(el<HTMLInputElement>('ollama-keep-alive-input').value).toBe('');
+      });
+
+      it('should keep Ollama fields when Reset Defaults is not confirmed', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+        });
+        stubOllamaMessages(['llama3.1:8b']);
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        el<HTMLButtonElement>('ollama-reset-button').click();
+
+        const overlay = el<HTMLDivElement>('confirm-overlay');
+        expect(overlay.classList.contains('hidden')).toBe(false);
+
+        el<HTMLButtonElement>('confirm-cancel-button').click();
+
+        await vi.waitFor(() => {
+          expect(overlay.classList.contains('hidden')).toBe(true);
+        });
+        expect(el<HTMLInputElement>('ollama-host-input').value).toBe(
+          'http://localhost:9999',
+        );
+      });
+    });
+
+    describe('connection status', () => {
+      it('should auto-ping Ollama when settings open and show success', async () => {
+        stubStorage({ [StorageKeys.API_KEY]: 'key' });
+        stubOllamaMessages(['a', 'b', 'c']);
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+
+        await vi.waitFor(() => {
+          const status = el<HTMLDivElement>('ollama-status');
+          expect(status.textContent).toBe('● Ollama is online (3 models)');
+          expect(status.classList.contains('success')).toBe(true);
+          expect(status.classList.contains('hidden')).toBe(false);
+        });
+      });
+
+      it('should show a failure status when Ollama is unreachable', async () => {
+        stubStorage({ [StorageKeys.API_KEY]: 'key' });
+        stubOllamaMessages(null);
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+
+        await vi.waitFor(() => {
+          const status = el<HTMLDivElement>('ollama-status');
+          expect(status.textContent).toBe('● Ollama not found');
+          expect(status.classList.contains('error')).toBe(true);
+        });
+      });
+
+      it('should test the unsaved host value without caching its models', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+        });
+        stubOllamaMessages(['m1']);
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        // Wait for the auto-ping to finish (it disables the Test button).
+        await vi.waitFor(() => {
+          expect(el<HTMLButtonElement>('ollama-test-button').disabled).toBe(
+            false,
+          );
+          expect(
+            el<HTMLDivElement>('ollama-status').classList.contains('hidden'),
+          ).toBe(false);
+        });
+        // Manual test of an arbitrary unsaved host must not touch the cache
+        // that backs the saved host's model list.
+        vi.mocked(mockLocalStorage.set).mockClear();
+        el<HTMLInputElement>('ollama-host-input').value = 'other-host:1234';
+        el<HTMLButtonElement>('ollama-test-button').click();
+
+        await vi.waitFor(() => {
+          expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+            type: MessageTypes.OLLAMA_TEST_CONNECTION,
+            host: 'other-host:1234',
+          });
+        });
+        expect(mockLocalStorage.set).not.toHaveBeenCalledWith(
+          StorageKeys.OLLAMA_MODELS_CACHE,
+          ['m1'],
+        );
+      });
+    });
+
+    describe('provider and model dropdowns', () => {
+      function providerOptions(): string[] {
+        return Array.from(el<HTMLSelectElement>('provider-select').options).map(
+          (o) => o.value,
+        );
+      }
+
+      function modelOptions(): string[] {
+        return Array.from(el<HTMLSelectElement>('model-select').options).map(
+          (o) => o.value,
+        );
+      }
+
+      it('should list both providers without an Add Provider entry when both are enabled', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+        });
+        stubOllamaMessages(['llama3.1:8b', 'qwen3:4b']);
+        await controller.start();
+
+        expect(providerOptions()).toEqual([
+          Providers.GOOGLE_GEMINI,
+          Providers.OLLAMA,
+        ]);
+        // Gemini is the default provider, so the models are Gemini's.
+        expect(el<HTMLSelectElement>('model-select').value).toBe(DEFAULT_MODEL);
+      });
+
+      it('should offer Add Provider when exactly one provider is enabled', async () => {
+        stubStorage({ [StorageKeys.API_KEY]: 'key' });
+        await controller.start();
+
+        expect(providerOptions()).toEqual([
+          Providers.GOOGLE_GEMINI,
+          'add-provider',
+        ]);
+      });
+
+      it('should open the settings when Add Provider is chosen and revert the selection', async () => {
+        stubStorage({ [StorageKeys.API_KEY]: 'key' });
+        await controller.start();
+
+        const providerSelect = el<HTMLSelectElement>('provider-select');
+        providerSelect.value = 'add-provider';
+        providerSelect.dispatchEvent(new Event('change'));
+
+        expect(providerSelect.value).toBe(Providers.GOOGLE_GEMINI);
+        expect(
+          el<HTMLDivElement>('settings-view').classList.contains('hidden'),
+        ).toBe(false);
+      });
+
+      it('should only list Ollama (plus Add Provider) when Gemini is disabled', async () => {
+        stubStorage({
+          [StorageKeys.GEMINI_ENABLED]: false,
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+        });
+        stubOllamaMessages(['llama3.1:8b']);
+        await controller.start();
+
+        expect(providerOptions()).toEqual([Providers.OLLAMA, 'add-provider']);
+        expect(modelOptions()).toEqual(['llama3.1:8b']);
+      });
+
+      it('should fall back to cached models from the same host when the fetch fails', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+          [StorageKeys.SELECTED_PROVIDER]: Providers.OLLAMA,
+        });
+        stubOllamaMessages(null);
+        vi.mocked(mockLocalStorage.get).mockImplementation(
+          async (key: string) =>
+            key === StorageKeys.OLLAMA_MODELS_CACHE
+              ? { host: savedOllama.host, models: ['cached-model'] }
+              : undefined,
+        );
+        await controller.start();
+
+        expect(modelOptions()).toEqual(['cached-model']);
+      });
+
+      it('should ignore cached models fetched from a different host', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+          [StorageKeys.SELECTED_PROVIDER]: Providers.OLLAMA,
+        });
+        stubOllamaMessages(null);
+        vi.mocked(mockLocalStorage.get).mockImplementation(
+          async (key: string) =>
+            key === StorageKeys.OLLAMA_MODELS_CACHE
+              ? { host: 'http://other-host:1234', models: ['foreign-model'] }
+              : undefined,
+        );
+        await controller.start();
+
+        const modelSelect = el<HTMLSelectElement>('model-select');
+        expect(modelSelect.options.length).toBe(1);
+        expect(modelSelect.options[0].disabled).toBe(true);
+      });
+
+      it('should ignore a legacy plain-array cache', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+          [StorageKeys.SELECTED_PROVIDER]: Providers.OLLAMA,
+        });
+        stubOllamaMessages(null);
+        vi.mocked(mockLocalStorage.get).mockImplementation(
+          async (key: string) =>
+            key === StorageKeys.OLLAMA_MODELS_CACHE
+              ? ['legacy-model']
+              : undefined,
+        );
+        await controller.start();
+
+        const modelSelect = el<HTMLSelectElement>('model-select');
+        expect(modelSelect.options.length).toBe(1);
+        expect(modelSelect.options[0].disabled).toBe(true);
+      });
+
+      it('should accept an empty successful model list and overwrite the cache', async () => {
+        // Regression: after `ollama rm` removes the last model, the server's
+        // truthful empty answer must not be masked by a stale cache — not
+        // even via the refresh button.
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+          [StorageKeys.SELECTED_PROVIDER]: Providers.OLLAMA,
+        });
+        stubOllamaMessages([]);
+        vi.mocked(mockLocalStorage.get).mockImplementation(
+          async (key: string) =>
+            key === StorageKeys.OLLAMA_MODELS_CACHE
+              ? { host: savedOllama.host, models: ['removed-model'] }
+              : undefined,
+        );
+        await controller.start();
+
+        const modelSelect = el<HTMLSelectElement>('model-select');
+        expect(modelOptions()).not.toContain('removed-model');
+        expect(modelSelect.options[0].disabled).toBe(true);
+        expect(modelSelect.options[0].textContent).toContain(
+          'No models installed',
+        );
+        expect(mockLocalStorage.set).toHaveBeenCalledWith(
+          StorageKeys.OLLAMA_MODELS_CACHE,
+          { host: savedOllama.host, models: [] },
+        );
+
+        // The refresh button goes through the same authoritative path.
+        vi.mocked(mockLocalStorage.set).mockClear();
+        el<HTMLButtonElement>('refresh-models-button').click();
+        await vi.waitFor(() => {
+          expect(mockLocalStorage.set).toHaveBeenCalledWith(
+            StorageKeys.OLLAMA_MODELS_CACHE,
+            { host: savedOllama.host, models: [] },
+          );
+        });
+        expect(modelOptions()).not.toContain('removed-model');
+      });
+
+      it('should not persist the displayed fallback when the stored model is missing', async () => {
+        // Regression: a transiently missing model (e.g. stale cache) must not
+        // overwrite the user's stored choice; only a user's pick persists.
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+          [StorageKeys.SELECTED_PROVIDER]: Providers.OLLAMA,
+          [StorageKeys.OLLAMA_MODEL]: 'qwen3:4b',
+        });
+        stubOllamaMessages(['llama3.1:8b']);
+        await controller.start();
+
+        expect(el<HTMLSelectElement>('model-select').value).toBe('llama3.1:8b');
+        expect(mockSyncStorage.set).not.toHaveBeenCalledWith(
+          StorageKeys.OLLAMA_MODEL,
+          expect.anything(),
+        );
+      });
+
+      it('should show a disabled placeholder when no Ollama models are available', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+          [StorageKeys.SELECTED_PROVIDER]: Providers.OLLAMA,
+        });
+        stubOllamaMessages(null); // fetch fails
+        vi.mocked(mockLocalStorage.get).mockResolvedValue(undefined); // no cache
+        await controller.start();
+
+        const modelSelect = el<HTMLSelectElement>('model-select');
+        expect(modelSelect.options.length).toBe(1);
+        expect(modelSelect.options[0].disabled).toBe(true);
+        expect(modelSelect.options[0].textContent).toContain('No models found');
+        // The placeholder must never be persisted as a model choice.
+        expect(mockSyncStorage.set).not.toHaveBeenCalledWith(
+          StorageKeys.OLLAMA_MODEL,
+          expect.anything(),
+        );
+      });
+
+      it('should restore a persisted Ollama selection and show the refresh button', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+          [StorageKeys.SELECTED_PROVIDER]: Providers.OLLAMA,
+          [StorageKeys.OLLAMA_MODEL]: 'qwen3:4b',
+        });
+        stubOllamaMessages(['llama3.1:8b', 'qwen3:4b']);
+        await controller.start();
+
+        expect(el<HTMLSelectElement>('provider-select').value).toBe(
+          Providers.OLLAMA,
+        );
+        expect(el<HTMLSelectElement>('model-select').value).toBe('qwen3:4b');
+        expect(
+          el<HTMLButtonElement>('refresh-models-button').classList.contains(
+            'hidden',
+          ),
+        ).toBe(false);
+      });
+
+      it('should repopulate models and persist the provider when switching providers', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+        });
+        stubOllamaMessages(['llama3.1:8b']);
+        await controller.start();
+
+        const providerSelect = el<HTMLSelectElement>('provider-select');
+        const refresh = el<HTMLButtonElement>('refresh-models-button');
+        expect(providerSelect.value).toBe(Providers.GOOGLE_GEMINI);
+        expect(refresh.classList.contains('hidden')).toBe(true);
+
+        providerSelect.value = Providers.OLLAMA;
+        providerSelect.dispatchEvent(new Event('change'));
+
+        await vi.waitFor(() => {
+          expect(modelOptions()).toEqual(['llama3.1:8b']);
+        });
+        expect(refresh.classList.contains('hidden')).toBe(false);
+        expect(mockSyncStorage.set).toHaveBeenCalledWith(
+          StorageKeys.SELECTED_PROVIDER,
+          Providers.OLLAMA,
+        );
+      });
+
+      it('should persist the model for the selected provider on model change', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+          [StorageKeys.SELECTED_PROVIDER]: Providers.OLLAMA,
+        });
+        stubOllamaMessages(['llama3.1:8b', 'qwen3:4b']);
+        await controller.start();
+
+        const modelSelect = el<HTMLSelectElement>('model-select');
+        modelSelect.value = 'qwen3:4b';
+        modelSelect.dispatchEvent(new Event('change'));
+
+        expect(mockSyncStorage.set).toHaveBeenCalledWith(
+          StorageKeys.OLLAMA_MODEL,
+          'qwen3:4b',
+        );
+      });
+
+      it('should include the provider when sending a chat message', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+          [StorageKeys.SELECTED_PROVIDER]: Providers.OLLAMA,
+          [StorageKeys.OLLAMA_MODEL]: 'llama3.1:8b',
+        });
+        stubOllamaMessages(['llama3.1:8b']);
+        await controller.start();
+
+        el<HTMLInputElement>('prompt-input').value = 'Hello';
+        el<HTMLFormElement>('prompt-form').dispatchEvent(new Event('submit'));
+
+        await vi.waitFor(() => {
+          expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+            type: MessageTypes.CHAT_MESSAGE,
+            message: 'Hello',
+            model: 'llama3.1:8b',
+            includeCurrentTab: true,
+            provider: Providers.OLLAMA,
+          });
+        });
+      });
+    });
+
+    describe('startup', () => {
+      it('should not force-open settings when only Ollama is configured', async () => {
+        stubStorage({ [StorageKeys.OLLAMA_SETTINGS]: savedOllama });
+        stubOllamaMessages(['llama3.1:8b']);
+        await controller.start();
+
+        expect(
+          el<HTMLDivElement>('settings-view').classList.contains('hidden'),
+        ).toBe(true);
+      });
+
+      it('should force-open settings when the key exists but Gemini is disabled and Ollama is off', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.GEMINI_ENABLED]: false,
+        });
+        await controller.start();
+
+        expect(
+          el<HTMLDivElement>('settings-view').classList.contains('hidden'),
+        ).toBe(false);
+      });
+
+      it('should display raw stored Ollama values in the settings fields', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: {
+            enabled: false,
+            host: 'not a url',
+            numCtx: 'garbage',
+            keepAlive: 42,
+          },
+        });
+        await controller.start();
+
+        expect(el<HTMLInputElement>('ollama-host-input').value).toBe(
+          'not a url',
+        );
+        expect(el<HTMLInputElement>('ollama-num-ctx-input').value).toBe(
+          'garbage',
+        );
+        // Non-string values fall back to empty (placeholder shows).
+        expect(el<HTMLInputElement>('ollama-keep-alive-input').value).toBe('');
+      });
     });
   });
 });

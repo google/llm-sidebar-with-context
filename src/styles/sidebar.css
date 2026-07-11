@@ -187,9 +187,24 @@ body {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  padding: var(--spacing-xl) var(--spacing-md);
-  overflow-y: auto;
+  padding: var(--spacing-xl) var(--spacing-md) var(--spacing-md);
+  overflow: hidden;
   background-color: var(--bg-main);
+}
+
+/* Scrollable settings body; actions and legal links stay fixed below. */
+.settings-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.settings-footer {
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-main);
 }
 
 .settings-container {
@@ -249,7 +264,10 @@ body {
   margin-top: 2px;
 }
 
-#api-key-input {
+#api-key-input,
+#ollama-host-input,
+#ollama-num-ctx-input,
+#ollama-keep-alive-input {
   width: 100%;
   border: 1px solid var(--border-main);
   background-color: var(--bg-surface);
@@ -261,13 +279,166 @@ body {
   box-sizing: border-box;
 }
 
-#api-key-input:focus {
+#api-key-input:focus,
+#ollama-host-input:focus,
+#ollama-num-ctx-input:focus,
+#ollama-keep-alive-input:focus {
   border-color: var(--border-focus);
 }
 
-#api-key-input.input-error {
+#api-key-input.input-error,
+#ollama-host-input.input-error,
+#ollama-num-ctx-input.input-error {
   border-color: var(--error);
   box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.2);
+}
+
+.settings-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ollama-status {
+  font-size: var(--font-sm);
+  font-weight: 500;
+}
+
+.ollama-status.success {
+  color: var(--success);
+}
+
+.ollama-status.error {
+  color: var(--error);
+}
+
+.settings-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.settings-panel-body.hidden {
+  display: none;
+}
+
+.ollama-buttons {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+#ollama-test-button,
+#ollama-reset-button {
+  background-color: var(--bg-alt);
+  color: var(--text-bright);
+  border: 1px solid var(--border-alt);
+  padding: var(--spacing-xs) 10px;
+  cursor: pointer;
+  font-size: var(--font-sm);
+  border-radius: var(--radius-md);
+  transition: background-color 0.2s;
+}
+
+#ollama-test-button:hover,
+#ollama-reset-button:hover {
+  background-color: var(--bg-hover);
+}
+
+#ollama-test-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#ollama-advanced summary {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ollama-advanced-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+#save-settings-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Confirmation dialog (window.confirm is unavailable in extension pages) */
+#confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+#confirm-overlay.hidden {
+  display: none;
+}
+
+.confirm-dialog {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  max-width: 300px;
+  margin: var(--spacing-md);
+}
+
+#confirm-message {
+  color: var(--text-bright);
+  font-size: var(--font-md);
+  margin: 0 0 var(--spacing-md);
+}
+
+.confirm-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+}
+
+#confirm-ok-button,
+#confirm-cancel-button {
+  padding: var(--spacing-xs) 10px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#confirm-ok-button {
+  background-color: var(--primary);
+  color: var(--text-on-primary);
+  border: 1px solid var(--primary);
+}
+
+#confirm-ok-button:hover {
+  opacity: 0.9;
+}
+
+#confirm-cancel-button {
+  background-color: var(--bg-alt);
+  color: var(--text-bright);
+  border: 1px solid var(--border-alt);
+}
+
+#confirm-cancel-button:hover {
+  background-color: var(--bg-hover);
 }
 
 .settings-error {
@@ -318,8 +489,7 @@ body {
 }
 
 #legal-panel {
-  margin-top: auto;
-  padding-top: var(--spacing-xl);
+  padding-top: var(--spacing-md);
 }
 
 .legal-links {
@@ -673,6 +843,14 @@ body {
   align-items: center;
 }
 
+.model-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+#provider-select,
 #model-select,
 #theme-select {
   background-color: var(--bg-main);
@@ -684,6 +862,17 @@ body {
   outline: none;
 }
 
+#provider-select {
+  width: 84px;
+  flex-shrink: 0;
+}
+
+#model-select {
+  flex: 1;
+  min-width: 0;
+}
+
+#provider-select:focus,
 #model-select:focus,
 #theme-select:focus {
   border-color: var(--border-focus);
@@ -692,6 +881,30 @@ body {
 .button-group {
   display: flex;
   gap: 6px;
+}
+
+#refresh-models-button {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+#refresh-models-button:hover {
+  color: var(--text-bright);
+}
+
+#refresh-models-button:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+#refresh-models-button.hidden {
+  display: none;
 }
 
 #toggle-settings-button,

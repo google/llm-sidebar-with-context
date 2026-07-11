@@ -25,64 +25,141 @@
       <div id="messages"></div>
 
       <div id="settings-view" class="hidden">
-        <div class="settings-container">
-          <h2>Settings</h2>
-          <div id="settings-error" class="settings-error hidden"></div>
-          <div class="settings-section">
-            <div class="settings-label">Theme</div>
-            <select id="theme-select">
-              <option value="system">Default (System)</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </div>
+        <div class="settings-scroll">
+          <div class="settings-container">
+            <h2>Settings</h2>
+            <div id="settings-error" class="settings-error hidden"></div>
+            <div class="settings-section">
+              <div class="settings-label">Theme</div>
+              <select id="theme-select">
+                <option value="system">Default (System)</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </div>
 
-          <div class="settings-section">
-            <div class="settings-label">Gemini API Key</div>
-            <div class="api-key-help">
-              Get your API Key for free on
-              <a href="https://aistudio.google.com/api-keys" target="_blank"
-                >Google AI Studio</a
-              >
-              <div class="terms-text">
-                Please read the API's
-                <a href="https://ai.google.dev/gemini-api/terms" target="_blank"
-                  >terms of service</a
-                >
+            <div class="settings-section">
+              <div class="settings-section-header">
+                <div class="settings-label">Google Gemini</div>
+                <label class="toggle-label">
+                  <input type="checkbox" id="gemini-enabled-toggle" />
+                  Enabled
+                </label>
+              </div>
+              <div id="gemini-panel-body" class="settings-panel-body">
+                <div class="api-key-help">
+                  Get your API Key for free on
+                  <a href="https://aistudio.google.com/api-keys" target="_blank"
+                    >Google AI Studio</a
+                  >
+                  <div class="terms-text">
+                    Please read the API's
+                    <a
+                      href="https://ai.google.dev/gemini-api/terms"
+                      target="_blank"
+                      >terms of service</a
+                    >
+                  </div>
+                </div>
+                <input
+                  type="password"
+                  id="api-key-input"
+                  placeholder="Enter your Gemini API Key"
+                />
               </div>
             </div>
-            <input
-              type="password"
-              id="api-key-input"
-              placeholder="Enter your Gemini API Key"
-            />
-          </div>
 
+            <div class="settings-section">
+              <div class="settings-section-header">
+                <div class="settings-label">Ollama</div>
+                <label class="toggle-label">
+                  <input type="checkbox" id="ollama-enabled-toggle" />
+                  Enabled
+                </label>
+              </div>
+              <div id="ollama-panel-body" class="settings-panel-body">
+                <div id="ollama-status" class="ollama-status hidden"></div>
+                <input
+                  type="text"
+                  id="ollama-host-input"
+                  placeholder="http://127.0.0.1:11434"
+                />
+                <div class="ollama-buttons">
+                  <button id="ollama-test-button" type="button">
+                    Test Connection
+                  </button>
+                  <button id="ollama-reset-button" type="button">
+                    Reset Defaults
+                  </button>
+                </div>
+                <details id="ollama-advanced">
+                  <summary>Advanced</summary>
+                  <div class="ollama-advanced-body">
+                    <div class="settings-label">Context window (num_ctx)</div>
+                    <input
+                      type="text"
+                      inputmode="numeric"
+                      id="ollama-num-ctx-input"
+                      placeholder="4096"
+                    />
+                    <div class="settings-label">Keep alive</div>
+                    <input
+                      type="text"
+                      id="ollama-keep-alive-input"
+                      placeholder="5m"
+                    />
+                  </div>
+                </details>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-footer">
           <div class="settings-actions">
             <button id="save-settings-button">Save Changes</button>
             <button id="cancel-settings-button">Cancel</button>
           </div>
-        </div>
-
-        <div id="legal-panel">
-          <div class="legal-links">
-            <a href="{{LEGAL_NOTICE_URL}}" target="_blank"
-              >Legal Notice (Impressum)</a
-            >
-            <a href="{{PRIVACY_POLICY_URL}}" target="_blank">Privacy Policy</a>
-            <a href="{{LICENSE_URL}}" target="_blank">License</a>
+          <div id="legal-panel">
+            <div class="legal-links">
+              <a href="{{LEGAL_NOTICE_URL}}" target="_blank"
+                >Legal Notice (Impressum)</a
+              >
+              <a href="{{PRIVACY_POLICY_URL}}" target="_blank"
+                >Privacy Policy</a
+              >
+              <a href="{{LICENSE_URL}}" target="_blank">License</a>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="bottom-panel">
+      <div id="confirm-overlay" class="hidden">
+        <div class="confirm-dialog">
+          <p id="confirm-message"></p>
+          <div class="confirm-actions">
+            <button id="confirm-ok-button">Confirm</button>
+            <button id="confirm-cancel-button">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="bottom-panel" class="bottom-panel">
         <div id="pinned-tabs-container">
           <div id="current-tab"></div>
           <div id="pinned-tabs"></div>
         </div>
 
         <div id="controls-container">
-          <select id="model-select"></select>
+          <div class="model-controls">
+            <select id="provider-select"></select>
+            <select id="model-select"></select>
+            <button
+              id="refresh-models-button"
+              class="hidden"
+              title="Refresh Ollama model list"
+            ></button>
+          </div>
           <div class="button-group">
             <button id="new-chat-button" title="New Chat">New Chat</button>
             <button id="toggle-settings-button" title="Settings">

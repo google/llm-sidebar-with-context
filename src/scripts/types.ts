@@ -14,7 +14,28 @@
  * limitations under the License.
  */
 
-import { MessageTypes } from './constants';
+import { MessageTypes, Providers } from './constants';
+
+export type LLMProvider = (typeof Providers)[keyof typeof Providers];
+
+// Stored shape: raw input strings, saved verbatim (may hold invalid values
+// for a disabled provider; validated on save only when enabled).
+export interface OllamaSettings {
+  enabled: boolean;
+  host: string;
+  numCtx: string;
+  keepAlive: string;
+}
+
+// Use-time shape: parsed and validated via sanitizeOllamaSettings.
+export interface OllamaConfig {
+  enabled: boolean;
+  host: string;
+  // Optional override; when absent, Ollama's own configuration applies.
+  numCtx?: number;
+  // Optional override; when absent, Ollama's own configuration applies.
+  keepAlive?: string;
+}
 
 export interface TabInfo {
   id: number;
@@ -33,6 +54,16 @@ export interface ChatMessageRequest {
   message: string;
   model: string;
   includeCurrentTab: boolean;
+  provider?: LLMProvider;
+}
+
+export interface OllamaListModelsRequest {
+  type: typeof MessageTypes.OLLAMA_LIST_MODELS;
+}
+
+export interface OllamaTestConnectionRequest {
+  type: typeof MessageTypes.OLLAMA_TEST_CONNECTION;
+  host: string;
 }
 
 export interface GetContextRequest {
@@ -82,12 +113,20 @@ export type ExtensionMessage =
   | ClearChatRequest
   | GetHistoryRequest
   | CurrentTabInfoMessage
-  | StopGenerationRequest;
+  | StopGenerationRequest
+  | OllamaListModelsRequest
+  | OllamaTestConnectionRequest;
 
-export interface GeminiResponse {
+export interface LLMResponse {
   reply?: string;
   error?: string;
   aborted?: boolean;
+}
+
+export interface OllamaModelsResponse {
+  success: boolean;
+  models: string[];
+  error?: string;
 }
 
 export interface GetContextResponse {
@@ -111,8 +150,9 @@ export interface GetHistoryResponse {
 }
 
 export type ExtensionResponse =
-  | GeminiResponse
+  | LLMResponse
   | GetContextResponse
   | SuccessResponse
   | CheckPinnedTabsResponse
-  | GetHistoryResponse;
+  | GetHistoryResponse
+  | OllamaModelsResponse;

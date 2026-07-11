@@ -19,6 +19,10 @@ import { BackgroundController } from '../../src/scripts/controllers/BackgroundCo
 import { ISyncStorageService } from '../../src/scripts/services/storageService';
 import { ITabService, ChromeTab } from '../../src/scripts/services/tabService';
 import { IGeminiService } from '../../src/scripts/services/geminiService';
+import { IOllamaService } from '../../src/scripts/services/ollamaService';
+import { IDNRService } from '../../src/scripts/services/dnrService';
+import { GoogleGeminiChatProvider } from '../../src/scripts/services/googleGeminiChatProvider';
+import { OllamaChatProvider } from '../../src/scripts/services/ollamaChatProvider';
 import { IMessageService } from '../../src/scripts/services/messageService';
 import { ChatHistory } from '../../src/scripts/models/ChatHistory';
 import { ContextManager } from '../../src/scripts/models/ContextManager';
@@ -26,6 +30,7 @@ import {
   MessageTypes,
   StorageKeys,
   DEFAULT_MODEL,
+  Providers,
 } from '../../src/scripts/constants';
 import {
   ExtensionMessage,
@@ -39,6 +44,8 @@ describe('BackgroundController', () => {
   let mockSyncStorage: ISyncStorageService;
   let mockTabService: ITabService;
   let mockGeminiService: IGeminiService;
+  let mockOllamaService: IOllamaService;
+  let mockDNRService: IDNRService;
   let mockMessageService: IMessageService;
   let mockChatHistory: ChatHistory;
   let mockContextManager: ContextManager;
@@ -73,6 +80,12 @@ describe('BackgroundController', () => {
       getTab: vi.fn(),
     };
     mockGeminiService = { generateContent: vi.fn() };
+    mockOllamaService = { listModels: vi.fn(), generateContent: vi.fn() };
+    mockDNRService = {
+      ensureRule: vi.fn(),
+      setTestRule: vi.fn(),
+      removeTestRule: vi.fn(),
+    };
     mockMessageService = {
       sendMessage: vi.fn().mockResolvedValue({}),
       onMessage: vi.fn(),
@@ -91,7 +104,7 @@ describe('BackgroundController', () => {
       load: vi.fn(),
       getActiveTabContent: vi.fn(),
       getAllContent: vi.fn(),
-      getPinnedTabs: vi.fn(),
+      getPinnedTabs: vi.fn().mockReturnValue([]),
       addTab: vi.fn(),
       removeTab: vi.fn(),
       clear: vi.fn(),
@@ -104,8 +117,18 @@ describe('BackgroundController', () => {
       mockContextManager,
       mockSyncStorage,
       mockTabService,
-      mockGeminiService,
       mockMessageService,
+      {
+        [Providers.GOOGLE_GEMINI]: new GoogleGeminiChatProvider(
+          mockGeminiService,
+          mockSyncStorage,
+        ),
+        [Providers.OLLAMA]: new OllamaChatProvider(
+          mockOllamaService,
+          mockDNRService,
+          mockSyncStorage,
+        ),
+      },
     );
   });
 
@@ -331,7 +354,7 @@ describe('BackgroundController', () => {
       } as chrome.runtime.InstalledDetails);
 
       expect(mockSyncStorage.set).toHaveBeenCalledWith(
-        StorageKeys.SELECTED_MODEL,
+        StorageKeys.GEMINI_MODEL,
         DEFAULT_MODEL,
       );
     });
@@ -348,7 +371,7 @@ describe('BackgroundController', () => {
       } as chrome.runtime.InstalledDetails);
 
       expect(mockSyncStorage.set).not.toHaveBeenCalledWith(
-        StorageKeys.SELECTED_MODEL,
+        StorageKeys.GEMINI_MODEL,
         expect.any(String),
       );
     });
@@ -365,7 +388,7 @@ describe('BackgroundController', () => {
       } as chrome.runtime.InstalledDetails);
 
       expect(mockSyncStorage.set).toHaveBeenCalledWith(
-        StorageKeys.SELECTED_MODEL,
+        StorageKeys.GEMINI_MODEL,
         DEFAULT_MODEL,
       );
     });
@@ -818,6 +841,338 @@ describe('BackgroundController', () => {
       });
 
       expect(response).toEqual({ success: false, error: 'Load Error' });
+    });
+  });
+
+  describe('Ollama', () => {
+    const enabledSettings = {
+      enabled: true,
+      host: 'http://127.0.0.1:11434',
+      numCtx: '8192',
+      keepAlive: '10m',
+    };
+
+    function stubStorage(values: Record<string, unknown>) {
+      vi.mocked(mockSyncStorage.get).mockImplementation(
+        async (key: string) => values[key],
+      );
+    }
+
+    it('should route CHAT_MESSAGE to Ollama without requiring an API key', async () => {
+      stubStorage({ [StorageKeys.OLLAMA_SETTINGS]: enabledSettings });
+      vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([]);
+      vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
+      vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
+      vi.mocked(mockOllamaService.generateContent).mockResolvedValue({
+        reply: 'Hello from Ollama',
+      });
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.CHAT_MESSAGE,
+        message: 'Hi',
+        model: 'llama3.1:8b',
+        includeCurrentTab: false,
+        provider: Providers.OLLAMA,
+      });
+
+      expect(response).toEqual({ reply: 'Hello from Ollama' });
+      expect(mockDNRService.ensureRule).toHaveBeenCalledWith(
+        expect.objectContaining({
+          enabled: true,
+          host: 'http://127.0.0.1:11434',
+        }),
+      );
+      expect(mockOllamaService.generateContent).toHaveBeenCalledWith(
+        'http://127.0.0.1:11434',
+        'llama3.1:8b',
+        [],
+        expect.any(Array),
+        { numCtx: 8192, keepAlive: '10m' },
+        expect.any(AbortSignal),
+      );
+      expect(mockGeminiService.generateContent).not.toHaveBeenCalled();
+    });
+
+    it('should return an error for Ollama chat when Ollama is disabled', async () => {
+      stubStorage({
+        [StorageKeys.OLLAMA_SETTINGS]: { ...enabledSettings, enabled: false },
+      });
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.CHAT_MESSAGE,
+        message: 'Hi',
+        model: 'llama3.1:8b',
+        includeCurrentTab: false,
+        provider: Providers.OLLAMA,
+      });
+
+      expect(response).toEqual({
+        error: 'Ollama is not enabled. Please enable it in the Settings.',
+      });
+      expect(mockOllamaService.generateContent).not.toHaveBeenCalled();
+    });
+
+    it('should compute the per-tab char limit from num_ctx and tab count', async () => {
+      stubStorage({ [StorageKeys.OLLAMA_SETTINGS]: enabledSettings });
+      vi.mocked(mockContextManager.getPinnedTabs).mockReturnValue([
+        { tabId: 1 },
+      ] as unknown as TabContext[]);
+      vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([]);
+      vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
+      vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
+      vi.mocked(mockOllamaService.generateContent).mockResolvedValue({
+        reply: 'ok',
+      });
+
+      await controller.handleMessage({
+        type: MessageTypes.CHAT_MESSAGE,
+        message: 'Hi',
+        model: 'llama3.1:8b',
+        includeCurrentTab: true,
+        provider: Providers.OLLAMA,
+      });
+
+      // ((8192 - 1024 reserved) * 0.75 * 3) / 2 tabs = 8064 chars per tab
+      expect(mockContextManager.getActiveTabContent).toHaveBeenCalledWith(8064);
+      expect(mockContextManager.getAllContent).toHaveBeenCalledWith(8064);
+    });
+
+    it('should not double-count the current tab when it is already pinned', async () => {
+      stubStorage({ [StorageKeys.OLLAMA_SETTINGS]: enabledSettings });
+      vi.mocked(mockContextManager.getPinnedTabs).mockReturnValue([
+        { tabId: 1 },
+      ] as unknown as TabContext[]);
+      vi.mocked(mockTabService.query).mockResolvedValue([
+        { id: 1, url: 'https://pinned.com', active: true },
+      ] as ChromeTab[]);
+      vi.mocked(mockContextManager.isTabPinned).mockReturnValue(true);
+      vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([]);
+      vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
+      vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
+      vi.mocked(mockOllamaService.generateContent).mockResolvedValue({
+        reply: 'ok',
+      });
+
+      await controller.handleMessage({
+        type: MessageTypes.CHAT_MESSAGE,
+        message: 'Hi',
+        model: 'llama3.1:8b',
+        includeCurrentTab: true,
+        provider: Providers.OLLAMA,
+      });
+
+      // The pinned active tab contributes only a placeholder, so the budget
+      // is for 1 tab: (8192 - 1024) * 0.75 * 3 = 16128
+      expect(mockContextManager.getAllContent).toHaveBeenCalledWith(16128);
+    });
+
+    it('should omit num_ctx and budget with the assumed window when unset', async () => {
+      stubStorage({
+        [StorageKeys.OLLAMA_SETTINGS]: { ...enabledSettings, numCtx: '' },
+      });
+      vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([]);
+      vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
+      vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
+      vi.mocked(mockOllamaService.generateContent).mockResolvedValue({
+        reply: 'ok',
+      });
+
+      await controller.handleMessage({
+        type: MessageTypes.CHAT_MESSAGE,
+        message: 'Hi',
+        model: 'llama3.1:8b',
+        includeCurrentTab: true,
+        provider: Providers.OLLAMA,
+      });
+
+      // Budget assumes a 4096 window: ((4096 - 1024) * 0.75 * 3) / 1 tab = 6912
+      expect(mockContextManager.getActiveTabContent).toHaveBeenCalledWith(6912);
+      expect(mockOllamaService.generateContent).toHaveBeenCalledWith(
+        'http://127.0.0.1:11434',
+        'llama3.1:8b',
+        [],
+        expect.any(Array),
+        { numCtx: undefined, keepAlive: '10m' },
+        expect.any(AbortSignal),
+      );
+    });
+
+    it('should handle OLLAMA_LIST_MODELS when enabled', async () => {
+      stubStorage({ [StorageKeys.OLLAMA_SETTINGS]: enabledSettings });
+      vi.mocked(mockOllamaService.listModels).mockResolvedValue({
+        models: ['llama3.1:8b', 'qwen3:4b'],
+      });
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.OLLAMA_LIST_MODELS,
+      });
+
+      expect(response).toEqual({
+        success: true,
+        models: ['llama3.1:8b', 'qwen3:4b'],
+      });
+      expect(mockDNRService.ensureRule).toHaveBeenCalled();
+    });
+
+    it('should fail OLLAMA_LIST_MODELS when disabled', async () => {
+      stubStorage({
+        [StorageKeys.OLLAMA_SETTINGS]: { ...enabledSettings, enabled: false },
+      });
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.OLLAMA_LIST_MODELS,
+      });
+
+      expect(response).toEqual({
+        success: false,
+        models: [],
+        error: 'Ollama is not enabled.',
+      });
+      expect(mockOllamaService.listModels).not.toHaveBeenCalled();
+    });
+
+    it('should test connection against the provided (unsaved) host via the test rule', async () => {
+      stubStorage({
+        [StorageKeys.OLLAMA_SETTINGS]: { ...enabledSettings, enabled: false },
+      });
+      vi.mocked(mockOllamaService.listModels).mockResolvedValue({
+        models: ['llama3.1:8b'],
+      });
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.OLLAMA_TEST_CONNECTION,
+        host: 'localhost:9999',
+      });
+
+      expect(response).toEqual({ success: true, models: ['llama3.1:8b'] });
+      expect(mockOllamaService.listModels).toHaveBeenCalledWith(
+        'http://localhost:9999',
+      );
+      // The test uses its own temporary rule and cleans it up afterwards.
+      expect(mockDNRService.setTestRule).toHaveBeenCalledWith(
+        'http://localhost:9999',
+      );
+      expect(mockDNRService.removeTestRule).toHaveBeenCalled();
+      // The main rule — and any chat relying on it — is never touched.
+      expect(mockDNRService.ensureRule).not.toHaveBeenCalled();
+    });
+
+    it('should not mask the test result when removing the test rule fails', async () => {
+      stubStorage({
+        [StorageKeys.OLLAMA_SETTINGS]: { ...enabledSettings, enabled: false },
+      });
+      vi.mocked(mockOllamaService.listModels).mockResolvedValue({
+        models: ['llama3.1:8b'],
+      });
+      vi.mocked(mockDNRService.removeTestRule).mockRejectedValue(
+        new Error('DNR update failed'),
+      );
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.OLLAMA_TEST_CONNECTION,
+        host: 'localhost:9999',
+      });
+
+      expect(response).toEqual({ success: true, models: ['llama3.1:8b'] });
+    });
+
+    it('should remove the test rule even when the probe fails', async () => {
+      stubStorage({
+        [StorageKeys.OLLAMA_SETTINGS]: { ...enabledSettings, enabled: false },
+      });
+      vi.mocked(mockOllamaService.listModels).mockResolvedValue({
+        error: 'connection refused',
+      });
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.OLLAMA_TEST_CONNECTION,
+        host: 'localhost:9999',
+      });
+
+      expect(response).toEqual({
+        success: false,
+        models: [],
+        error: 'connection refused',
+      });
+      expect(mockDNRService.removeTestRule).toHaveBeenCalled();
+    });
+
+    it('should default to the standard host when testing with an empty host', async () => {
+      stubStorage({});
+      vi.mocked(mockOllamaService.listModels).mockResolvedValue({ models: [] });
+
+      const response = await controller.handleMessage({
+        type: MessageTypes.OLLAMA_TEST_CONNECTION,
+        host: '   ',
+      });
+
+      expect(response).toEqual({ success: true, models: [] });
+      expect(mockOllamaService.listModels).toHaveBeenCalledWith(
+        'http://127.0.0.1:11434',
+      );
+    });
+
+    it('should reject an invalid host in OLLAMA_TEST_CONNECTION', async () => {
+      const response = await controller.handleMessage({
+        type: MessageTypes.OLLAMA_TEST_CONNECTION,
+        host: 'not a url',
+      });
+
+      expect(response).toEqual({
+        success: false,
+        models: [],
+        error: 'Invalid Ollama host URL.',
+      });
+      expect(mockOllamaService.listModels).not.toHaveBeenCalled();
+    });
+
+    it('should reconcile the DNR rules on start()', async () => {
+      stubStorage({ [StorageKeys.OLLAMA_SETTINGS]: enabledSettings });
+
+      controller.start();
+
+      await vi.waitFor(() => {
+        expect(mockDNRService.ensureRule).toHaveBeenCalledWith(
+          expect.objectContaining({
+            enabled: true,
+            host: 'http://127.0.0.1:11434',
+          }),
+        );
+        // A test rule left behind by an interrupted test is also dropped.
+        expect(mockDNRService.removeTestRule).toHaveBeenCalled();
+      });
+    });
+
+    it('should honor a STOP_GENERATION that arrives during session setup', async () => {
+      // Hold the Ollama settings read open so the stop lands while
+      // startSession() is still awaiting storage.
+      let resolveSettings!: (value: unknown) => void;
+      vi.mocked(mockSyncStorage.get).mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveSettings = resolve;
+        }),
+      );
+      vi.mocked(mockContextManager.getActiveTabContent).mockResolvedValue([]);
+      vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
+      vi.mocked(mockChatHistory.getMessages).mockReturnValue([]);
+
+      const chatPromise = controller.handleMessage({
+        type: MessageTypes.CHAT_MESSAGE,
+        message: 'Hi',
+        model: 'llama3.1:8b',
+        includeCurrentTab: false,
+        provider: Providers.OLLAMA,
+      });
+      // Let the chat message reach the pending settings read.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      await controller.handleMessage({ type: MessageTypes.STOP_GENERATION });
+      resolveSettings(enabledSettings);
+
+      const response = await chatPromise;
+      expect(response).toEqual({ aborted: true });
+      expect(mockOllamaService.generateContent).not.toHaveBeenCalled();
+      expect(mockChatHistory.removeLastMessage).toHaveBeenCalled();
     });
   });
 });

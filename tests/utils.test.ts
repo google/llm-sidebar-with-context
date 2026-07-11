@@ -19,6 +19,8 @@ import {
   isRestrictedURL,
   isAbortError,
   sandwichTruncate,
+  validateChatHistory,
+  toLLMErrorResponse,
 } from '../src/scripts/utils';
 import { CONTEXT_MESSAGES } from '../src/scripts/constants';
 
@@ -122,6 +124,41 @@ describe('Utils', () => {
       expect(result.startsWith('12345')).toBe(true);
       expect(result.endsWith('FGHIJ')).toBe(true);
       expect(result.length).toBe(limit);
+    });
+  });
+
+  describe('validateChatHistory', () => {
+    it('should reject an empty history', () => {
+      expect(validateChatHistory([])).toBe('Chat history cannot be empty');
+    });
+
+    it('should reject a history not ending with a user message', () => {
+      expect(
+        validateChatHistory([
+          { role: 'user', text: 'Hi' },
+          { role: 'model', text: 'Hello' },
+        ]),
+      ).toBe('The last message must be from the user');
+    });
+
+    it('should accept a history ending with a user message', () => {
+      expect(validateChatHistory([{ role: 'user', text: 'Hi' }])).toBeNull();
+    });
+  });
+
+  describe('toLLMErrorResponse', () => {
+    it('should map abort errors to an aborted response', () => {
+      expect(
+        toLLMErrorResponse(new DOMException('Aborted', 'AbortError')),
+      ).toEqual({ aborted: true });
+    });
+
+    it('should map other errors to their message', () => {
+      expect(toLLMErrorResponse(new Error('boom'))).toEqual({ error: 'boom' });
+    });
+
+    it('should stringify non-Error values', () => {
+      expect(toLLMErrorResponse('boom')).toEqual({ error: 'boom' });
     });
   });
 });

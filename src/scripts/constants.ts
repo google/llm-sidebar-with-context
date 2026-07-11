@@ -27,6 +27,14 @@ export const MessageTypes = {
   CLEAR_CHAT: 'clearChat',
   GET_HISTORY: 'getHistory',
   STOP_GENERATION: 'stopGeneration',
+  OLLAMA_LIST_MODELS: 'ollamaListModels',
+  OLLAMA_TEST_CONNECTION: 'ollamaTestConnection',
+} as const;
+
+export const Providers = {
+  // Stored value kept as 'gemini' for backward compatibility.
+  GOOGLE_GEMINI: 'gemini',
+  OLLAMA: 'ollama',
 } as const;
 
 export const Themes = {
@@ -37,12 +45,50 @@ export const Themes = {
 
 export const StorageKeys = {
   API_KEY: 'geminiApiKey',
+  GEMINI_ENABLED: 'geminiEnabled',
   PINNED_CONTEXTS: 'pinnedContexts',
-  SELECTED_MODEL: 'selectedModel',
+  // Stored value kept as 'selectedModel' for backward compatibility.
+  GEMINI_MODEL: 'selectedModel',
   CHAT_HISTORY: 'chatHistory',
   INCLUDE_CURRENT_TAB: 'includeCurrentTab',
   THEME: 'theme',
+  OLLAMA_SETTINGS: 'ollamaSettings',
+  SELECTED_PROVIDER: 'selectedProvider',
+  OLLAMA_MODEL: 'ollamaModel',
+  OLLAMA_MODELS_CACHE: 'ollamaModelsCache',
 };
+
+// Stored/UI shape: empty strings mean "use the defaults below".
+export const DEFAULT_OLLAMA_SETTINGS = {
+  enabled: false,
+  host: '',
+  numCtx: '',
+  keepAlive: '',
+} as const;
+
+export const OLLAMA_DEFAULT_HOST = 'http://127.0.0.1:11434';
+// Assumed context window for budgeting tab content when the user has not set
+// num_ctx. Used only for truncation math — never sent to Ollama, so the
+// server's own configuration applies to the actual request.
+export const OLLAMA_ASSUMED_NUM_CTX = 4096;
+export const OLLAMA_NUM_CTX_MIN = 512;
+export const OLLAMA_NUM_CTX_MAX = 1048576;
+// Tokens reserved for the model's output (including "thinking" tokens on
+// reasoning models); the rest of the window is budgeted for input.
+export const OLLAMA_RESPONSE_RESERVE_TOKENS = 1024;
+// Conservative chars-per-token estimate for real page content (markdown,
+// links, unicode measure closer to ~3 than the often-quoted 4).
+export const CHARS_PER_TOKEN = 3;
+export const MIN_CONTEXT_LENGTH_CHARS_PER_TAB = 1000;
+export const OLLAMA_DNR_RULE_ID = 1;
+// Separate rule for connection tests against a (possibly unsaved) host, so
+// testing never disturbs the main rule used by in-flight chat requests.
+// Higher priority: when the tested host equals the saved host both rules
+// match, and the test rule's header value must win deterministically.
+export const OLLAMA_TEST_DNR_RULE_ID = 2;
+// Bounds every Ollama model-list fetch so an unreachable host (hanging TCP
+// connect) cannot stall callers such as sidebar startup.
+export const OLLAMA_LIST_MODELS_TIMEOUT_MS = 5000;
 
 export const RestrictedURLs = [
   'chrome://',
@@ -64,6 +110,8 @@ export const CONTEXT_MESSAGES = {
   ERROR_PREFIX: '(Could not extract content from',
   TRUNCATION_MESSAGE:
     '\n... CONTENT TRUNCATED DUE TO LIMITED CONTEXT WINDOW ...\n',
+  FILE_CONTENT_UNSUPPORTED:
+    '(Video/file content is not supported by Ollama and was omitted)',
 };
 
 export const NOISE_SELECTORS = [

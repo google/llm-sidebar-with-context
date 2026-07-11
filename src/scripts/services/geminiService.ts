@@ -15,8 +15,8 @@
  */
 
 import { DEFAULT_MODEL } from '../constants';
-import { ChatMessage, GeminiResponse, ContentPart } from '../types';
-import { isAbortError } from '../utils';
+import { ChatMessage, LLMResponse, ContentPart } from '../types';
+import { toLLMErrorResponse, validateChatHistory } from '../utils';
 
 interface GeminiApiResponse {
   candidates?: Array<{
@@ -38,7 +38,7 @@ export interface IGeminiService {
     history: ChatMessage[],
     model?: string,
     signal?: AbortSignal,
-  ): Promise<GeminiResponse>;
+  ): Promise<LLMResponse>;
 }
 
 export class GeminiService implements IGeminiService {
@@ -48,16 +48,14 @@ export class GeminiService implements IGeminiService {
     history: ChatMessage[],
     model: string = DEFAULT_MODEL,
     signal?: AbortSignal,
-  ): Promise<GeminiResponse> {
+  ): Promise<LLMResponse> {
     try {
       if (!apiKey) {
         return { error: 'API key is required' };
       }
-      if (history.length === 0) {
-        return { error: 'Chat history cannot be empty' };
-      }
-      if (history[history.length - 1].role !== 'user') {
-        return { error: 'The last message must be from the user' };
+      const historyError = validateChatHistory(history);
+      if (historyError) {
+        return { error: historyError };
       }
 
       // Map history to Gemini API format
@@ -121,11 +119,7 @@ export class GeminiService implements IGeminiService {
         return { error: 'Unknown error from Gemini API.' };
       }
     } catch (error: unknown) {
-      if (isAbortError(error)) {
-        return { aborted: true };
-      }
-      const message = error instanceof Error ? error.message : String(error);
-      return { error: message };
+      return toLLMErrorResponse(error);
     }
   }
 }

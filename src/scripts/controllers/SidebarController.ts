@@ -22,25 +22,33 @@ import {
   Themes,
   SUPPORTED_MODELS,
   DEFAULT_MODEL,
+  DEFAULT_OLLAMA_SETTINGS,
+  Providers,
 } from '../constants';
 import {
   ExtensionMessage,
   ExtensionResponse,
   TabInfo,
-  GeminiResponse,
+  LLMResponse,
+  LLMProvider,
+  OllamaSettings,
+  OllamaModelsResponse,
   GetContextResponse,
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
 } from '../types';
+import { normalizeOllamaHost, toStoredOllamaSettings } from '../ollamaUtils';
 import {
   ISyncStorageService,
   ILocalStorageService,
 } from '../services/storageService';
 import { IMessageService } from '../services/messageService';
+import { OllamaModelsClient } from '../services/ollamaModels';
 import { ICONS } from '../../../third_party/lucide/lucideIcons';
 
 export class SidebarController {
+  private bottomPanel: HTMLDivElement;
   private promptForm: HTMLFormElement;
   private promptInput: HTMLInputElement;
   private submitButton: HTMLButtonElement;
@@ -52,24 +60,60 @@ export class SidebarController {
   private cancelSettingsButton: HTMLButtonElement;
   private pinnedTabsDiv: HTMLDivElement;
   private currentTabDiv: HTMLDivElement;
+  private providerSelect: HTMLSelectElement;
   private modelSelect: HTMLSelectElement;
   private themeSelect: HTMLSelectElement;
   private toggleSettingsButton: HTMLButtonElement;
   private newChatButton: HTMLButtonElement;
+  private geminiEnabledToggle: HTMLInputElement;
+  private geminiPanelBody: HTMLDivElement;
+  private ollamaEnabledToggle: HTMLInputElement;
+  private ollamaPanelBody: HTMLDivElement;
+  private ollamaStatus: HTMLDivElement;
+  private ollamaHostInput: HTMLInputElement;
+  private ollamaTestButton: HTMLButtonElement;
+  private ollamaResetButton: HTMLButtonElement;
+  private ollamaNumCtxInput: HTMLInputElement;
+  private ollamaKeepAliveInput: HTMLInputElement;
+  private refreshModelsButton: HTMLButtonElement;
+  private confirmOverlay: HTMLDivElement;
+  private confirmMessage: HTMLParagraphElement;
+  private confirmOkButton: HTMLButtonElement;
+  private confirmCancelButton: HTMLButtonElement;
+
+  // Sentinel option value in the provider dropdown that opens the settings.
+  private static readonly ADD_PROVIDER_OPTION = 'add-provider';
 
   private pinnedContexts: TabInfo[] = [];
   private currentTab: TabInfo | null = null;
   private isCurrentTabShared: boolean = true;
   private isGenerating: boolean = false;
   private isSettingsOpen: boolean = false;
+  // Last valid provider selection (the dropdown may briefly hold the
+  // "Add Provider" sentinel).
+  private selectedProvider: LLMProvider = Providers.GOOGLE_GEMINI;
   private initialTheme: string = Themes.SYSTEM;
   private initialApiKey: string = '';
+  private initialGeminiEnabled: boolean = true;
+  private initialOllamaSettings: OllamaSettings = {
+    ...DEFAULT_OLLAMA_SETTINGS,
+  };
+
+  private ollamaModels: OllamaModelsClient;
 
   constructor(
     private syncStorageService: ISyncStorageService,
     private localStorageService: ILocalStorageService,
     private messageService: IMessageService,
   ) {
+    this.ollamaModels = new OllamaModelsClient(
+      syncStorageService,
+      localStorageService,
+      messageService,
+    );
+    this.bottomPanel = document.getElementById(
+      'bottom-panel',
+    ) as HTMLDivElement;
     this.promptForm = document.getElementById('prompt-form') as HTMLFormElement;
     this.promptInput = document.getElementById(
       'prompt-input',
@@ -99,6 +143,9 @@ export class SidebarController {
     this.currentTabDiv = document.getElementById(
       'current-tab',
     ) as HTMLDivElement;
+    this.providerSelect = document.getElementById(
+      'provider-select',
+    ) as HTMLSelectElement;
     this.modelSelect = document.getElementById(
       'model-select',
     ) as HTMLSelectElement;
@@ -110,6 +157,52 @@ export class SidebarController {
     ) as HTMLButtonElement;
     this.newChatButton = document.getElementById(
       'new-chat-button',
+    ) as HTMLButtonElement;
+    this.geminiEnabledToggle = document.getElementById(
+      'gemini-enabled-toggle',
+    ) as HTMLInputElement;
+    this.geminiPanelBody = document.getElementById(
+      'gemini-panel-body',
+    ) as HTMLDivElement;
+    this.ollamaEnabledToggle = document.getElementById(
+      'ollama-enabled-toggle',
+    ) as HTMLInputElement;
+    this.ollamaPanelBody = document.getElementById(
+      'ollama-panel-body',
+    ) as HTMLDivElement;
+    this.ollamaStatus = document.getElementById(
+      'ollama-status',
+    ) as HTMLDivElement;
+    this.ollamaHostInput = document.getElementById(
+      'ollama-host-input',
+    ) as HTMLInputElement;
+    this.ollamaTestButton = document.getElementById(
+      'ollama-test-button',
+    ) as HTMLButtonElement;
+    this.ollamaResetButton = document.getElementById(
+      'ollama-reset-button',
+    ) as HTMLButtonElement;
+    this.ollamaNumCtxInput = document.getElementById(
+      'ollama-num-ctx-input',
+    ) as HTMLInputElement;
+    this.ollamaKeepAliveInput = document.getElementById(
+      'ollama-keep-alive-input',
+    ) as HTMLInputElement;
+    this.refreshModelsButton = document.getElementById(
+      'refresh-models-button',
+    ) as HTMLButtonElement;
+    this.refreshModelsButton.innerHTML = ICONS.REFRESH;
+    this.confirmOverlay = document.getElementById(
+      'confirm-overlay',
+    ) as HTMLDivElement;
+    this.confirmMessage = document.getElementById(
+      'confirm-message',
+    ) as HTMLParagraphElement;
+    this.confirmOkButton = document.getElementById(
+      'confirm-ok-button',
+    ) as HTMLButtonElement;
+    this.confirmCancelButton = document.getElementById(
+      'confirm-cancel-button',
     ) as HTMLButtonElement;
 
     this.setupEventListeners();
@@ -162,12 +255,51 @@ export class SidebarController {
       }
     });
 
+    this.providerSelect.addEventListener('change', async () => {
+      if (this.providerSelect.value === SidebarController.ADD_PROVIDER_OPTION) {
+        // Revert to the actual provider and open the settings instead.
+        this.providerSelect.value = this.selectedProvider;
+        this.openSettings();
+        return;
+      }
+      this.selectedProvider =
+        this.providerSelect.value === Providers.OLLAMA
+          ? Providers.OLLAMA
+          : Providers.GOOGLE_GEMINI;
+      await this.syncStorageService.set(
+        StorageKeys.SELECTED_PROVIDER,
+        this.selectedProvider,
+      );
+      await this.populateModelSelect();
+    });
+
     this.modelSelect.addEventListener('change', () => {
       this.syncStorageService.set(
-        StorageKeys.SELECTED_MODEL,
+        this.selectedProvider === Providers.OLLAMA
+          ? StorageKeys.OLLAMA_MODEL
+          : StorageKeys.GEMINI_MODEL,
         this.modelSelect.value,
       );
     });
+
+    this.refreshModelsButton.addEventListener('click', () =>
+      this.refreshOllamaModels(),
+    );
+
+    this.geminiEnabledToggle.addEventListener('change', () =>
+      this.updateSettingsControlsState(),
+    );
+    this.ollamaEnabledToggle.addEventListener('change', () =>
+      this.updateSettingsControlsState(),
+    );
+
+    this.ollamaTestButton.addEventListener('click', () =>
+      this.testOllamaConnection(),
+    );
+
+    this.ollamaResetButton.addEventListener('click', () =>
+      this.resetOllamaDefaults(),
+    );
 
     this.themeSelect.addEventListener('change', () => {
       this.applyTheme(this.themeSelect.value);
@@ -210,14 +342,17 @@ export class SidebarController {
   }
 
   public async start() {
-    this.populateModelSelect();
-
-    // Load API Key, Selected Model, and Theme
+    // Load API Key, provider settings, and Theme
     const apiKey = await this.syncStorageService.get<string>(
       StorageKeys.API_KEY,
     );
-    const selectedModel = await this.syncStorageService.get<string>(
-      StorageKeys.SELECTED_MODEL,
+    const geminiEnabled = await this.syncStorageService.get<boolean>(
+      StorageKeys.GEMINI_ENABLED,
+    );
+    const ollamaSettings = toStoredOllamaSettings(
+      await this.syncStorageService.get<OllamaSettings>(
+        StorageKeys.OLLAMA_SETTINGS,
+      ),
     );
 
     const theme = await this.syncStorageService.get<string>(StorageKeys.THEME);
@@ -230,18 +365,25 @@ export class SidebarController {
 
     if (apiKey) {
       this.apiKeyInput.value = apiKey;
+    }
+    // Existing users predate the toggle: treat "unset" as enabled.
+    this.geminiEnabledToggle.checked = geminiEnabled ?? true;
+    this.setOllamaFields(ollamaSettings);
+    this.updateSettingsControlsState();
+
+    await this.populateProviderSelect();
+    // Model population may hit the network (Ollama); don't block startup —
+    // the settings decision, context load, and history rehydrate below must
+    // render immediately even when the Ollama host is unreachable.
+    void this.populateModelSelect().catch((error) =>
+      console.error('Failed to populate models:', error),
+    );
+
+    const geminiConfigured = this.geminiEnabledToggle.checked && !!apiKey;
+    if (geminiConfigured || ollamaSettings.enabled) {
       this.toggleSettingsView(false);
     } else {
       this.openSettings();
-    }
-
-    if (
-      selectedModel &&
-      Object.prototype.hasOwnProperty.call(SUPPORTED_MODELS, selectedModel)
-    ) {
-      this.modelSelect.value = selectedModel;
-    } else {
-      this.modelSelect.value = DEFAULT_MODEL;
     }
 
     // Load Sharing Preference
@@ -272,41 +414,204 @@ export class SidebarController {
     await this.loadHistory();
   }
 
-  private populateModelSelect() {
-    this.modelSelect.innerHTML = '';
-    (Object.entries(SUPPORTED_MODELS) as [string, string][]).forEach(
-      ([id, label]) => {
-        const option = document.createElement('option');
-        option.value = id;
-        option.textContent = label;
-        this.modelSelect.appendChild(option);
-      },
+  /**
+   * Rebuilds both dropdowns: providers first, then the selected provider's
+   * models.
+   */
+  private async populateProviderAndModels() {
+    await this.populateProviderSelect();
+    await this.populateModelSelect();
+  }
+
+  /**
+   * Rebuilds the provider dropdown from the enabled providers, restoring the
+   * persisted selection. With exactly one provider enabled, an extra
+   * "Add Provider" entry opens the settings.
+   */
+  private async populateProviderSelect() {
+    const geminiOn = this.geminiEnabledToggle.checked;
+    const ollamaOn = this.ollamaEnabledToggle.checked;
+    this.providerSelect.innerHTML = '';
+
+    const addOption = (value: string, label: string) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      this.providerSelect.appendChild(option);
+    };
+    if (geminiOn) {
+      addOption(Providers.GOOGLE_GEMINI, 'Google');
+    }
+    if (ollamaOn) {
+      addOption(Providers.OLLAMA, 'Ollama');
+    }
+    if ((geminiOn ? 1 : 0) + (ollamaOn ? 1 : 0) === 1) {
+      addOption(SidebarController.ADD_PROVIDER_OPTION, 'Add Provider…');
+    }
+
+    const stored = await this.syncStorageService.get<LLMProvider>(
+      StorageKeys.SELECTED_PROVIDER,
     );
+    if (stored === Providers.OLLAMA && ollamaOn) {
+      this.selectedProvider = Providers.OLLAMA;
+    } else if (stored === Providers.GOOGLE_GEMINI && geminiOn) {
+      this.selectedProvider = Providers.GOOGLE_GEMINI;
+    } else if (geminiOn) {
+      this.selectedProvider = Providers.GOOGLE_GEMINI;
+    } else if (ollamaOn) {
+      this.selectedProvider = Providers.OLLAMA;
+    }
+    this.providerSelect.value = this.selectedProvider;
+    if (stored !== this.selectedProvider) {
+      await this.syncStorageService.set(
+        StorageKeys.SELECTED_PROVIDER,
+        this.selectedProvider,
+      );
+    }
+  }
+
+  /**
+   * Rebuilds the model dropdown for the selected provider (Ollama models are
+   * fetched, falling back to the cached list) and restores the provider's
+   * persisted model.
+   */
+  private async populateModelSelect() {
+    const provider = this.selectedProvider;
+    this.modelSelect.innerHTML = '';
+
+    let models: [string, string][];
+    let emptyMessage = 'No models available';
+    if (provider === Providers.OLLAMA) {
+      const result = await this.ollamaModels.fetchModels();
+      models = result.models.map((name) => [name, name]);
+      // An authoritative empty answer from the server means "nothing
+      // installed"; an empty cache fallback means "couldn't reach it".
+      emptyMessage = result.fromCache
+        ? 'No models found — check Ollama connection'
+        : 'No models installed — pull one with `ollama pull`';
+    } else {
+      models = Object.entries(SUPPORTED_MODELS) as [string, string][];
+    }
+    if (models.length === 0) {
+      // Show guidance instead of an empty dropdown, and persist nothing.
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = emptyMessage;
+      option.disabled = true;
+      option.selected = true;
+      this.modelSelect.appendChild(option);
+      this.updateRefreshButtonVisibility();
+      return;
+    }
+    models.forEach(([id, label]) => {
+      const option = document.createElement('option');
+      option.value = id;
+      option.textContent = label;
+      this.modelSelect.appendChild(option);
+    });
+
+    const modelKey =
+      provider === Providers.OLLAMA
+        ? StorageKeys.OLLAMA_MODEL
+        : StorageKeys.GEMINI_MODEL;
+    const storedModel = await this.syncStorageService.get<string>(modelKey);
+    const options = Array.from(this.modelSelect.options);
+    // Display-only fallback: the stored preference is never overwritten here,
+    // so a transiently missing model (e.g. stale cache) is re-selected once
+    // it is available again. Only a user's pick (change listener) persists.
+    const selected =
+      options.find((o) => o.value === storedModel) ??
+      (provider === Providers.GOOGLE_GEMINI
+        ? options.find((o) => o.value === DEFAULT_MODEL)
+        : undefined) ??
+      options[0];
+    if (selected) {
+      this.modelSelect.value = selected.value;
+    }
+    this.updateRefreshButtonVisibility();
+  }
+
+  private updateRefreshButtonVisibility() {
+    this.refreshModelsButton.classList.toggle(
+      'hidden',
+      this.selectedProvider !== Providers.OLLAMA,
+    );
+  }
+
+  private async refreshOllamaModels() {
+    this.refreshModelsButton.disabled = true;
+    try {
+      await this.populateModelSelect();
+    } finally {
+      this.refreshModelsButton.disabled = false;
+    }
   }
 
   private openSettings() {
     this.clearError();
     this.initialTheme = this.themeSelect.value;
     this.initialApiKey = this.apiKeyInput.value;
+    this.initialGeminiEnabled = this.geminiEnabledToggle.checked;
+    this.initialOllamaSettings = this.getOllamaFieldsFromUI();
     this.isSettingsOpen = true;
     this.toggleSettingsView(true);
     this.apiKeyInput.focus();
+    // Detect a local Ollama regardless of the toggle state (status line only;
+    // the model cache is owned by fetchOllamaModels).
+    this.pingOllama(this.ollamaHostInput.value);
   }
 
   private async saveSettings() {
     this.clearError();
-    const apiKey = this.apiKeyInput.value;
-    if (!apiKey || apiKey.trim() === '') {
-      this.showError('Please enter your Gemini API Key.', this.apiKeyInput);
+    const geminiOn = this.geminiEnabledToggle.checked;
+    const ollamaOn = this.ollamaEnabledToggle.checked;
+
+    // The Save button is disabled in this state; this is a safety net.
+    if (!geminiOn && !ollamaOn) {
+      this.showError('Enable at least one provider to save.');
       return;
     }
 
+    // Only enabled providers are validated; disabled providers' fields are
+    // saved verbatim (they cannot be used until enabled and fixed).
+    if (geminiOn && this.apiKeyInput.value.trim() === '') {
+      this.showError('Please enter your Gemini API Key.', this.apiKeyInput);
+      return;
+    }
+    if (ollamaOn) {
+      const host = this.ollamaHostInput.value.trim();
+      if (host !== '' && !normalizeOllamaHost(host)) {
+        this.showError(
+          'Please enter a valid Ollama host URL.',
+          this.ollamaHostInput,
+        );
+        return;
+      }
+      const numCtx = this.ollamaNumCtxInput.value.trim();
+      if (numCtx !== '' && !/^\d+$/.test(numCtx)) {
+        this.showError(
+          'num_ctx must be a positive whole number.',
+          this.ollamaNumCtxInput,
+        );
+        return;
+      }
+    }
+
     try {
-      await this.syncStorageService.set(StorageKeys.API_KEY, apiKey);
+      await this.syncStorageService.set(
+        StorageKeys.API_KEY,
+        this.apiKeyInput.value,
+      );
+      await this.syncStorageService.set(StorageKeys.GEMINI_ENABLED, geminiOn);
+      await this.syncStorageService.set(
+        StorageKeys.OLLAMA_SETTINGS,
+        this.getOllamaFieldsFromUI(),
+      );
       await this.syncStorageService.set(
         StorageKeys.THEME,
         this.themeSelect.value,
       );
+      await this.populateProviderAndModels();
       this.isSettingsOpen = false;
       this.toggleSettingsView(false);
       this.toggleSettingsButton.focus();
@@ -321,15 +626,126 @@ export class SidebarController {
     this.applyTheme(this.initialTheme);
     this.themeSelect.value = this.initialTheme;
     this.apiKeyInput.value = this.initialApiKey;
+    this.geminiEnabledToggle.checked = this.initialGeminiEnabled;
+    this.setOllamaFields(this.initialOllamaSettings);
+    this.updateSettingsControlsState();
     this.isSettingsOpen = false;
     this.toggleSettingsView(false);
     this.toggleSettingsButton.focus();
+  }
+
+  private getOllamaFieldsFromUI(): OllamaSettings {
+    return {
+      enabled: this.ollamaEnabledToggle.checked,
+      host: this.ollamaHostInput.value,
+      numCtx: this.ollamaNumCtxInput.value,
+      keepAlive: this.ollamaKeepAliveInput.value,
+    };
+  }
+
+  private setOllamaFields(settings: OllamaSettings) {
+    this.ollamaEnabledToggle.checked = settings.enabled;
+    this.ollamaHostInput.value = settings.host;
+    this.ollamaNumCtxInput.value = settings.numCtx;
+    this.ollamaKeepAliveInput.value = settings.keepAlive;
+  }
+
+  /**
+   * Collapses/expands the provider panel bodies to match their toggles and
+   * keeps the Save button disabled while no provider is enabled.
+   */
+  private updateSettingsControlsState() {
+    this.geminiPanelBody.classList.toggle(
+      'hidden',
+      !this.geminiEnabledToggle.checked,
+    );
+    this.ollamaPanelBody.classList.toggle(
+      'hidden',
+      !this.ollamaEnabledToggle.checked,
+    );
+    this.saveSettingsButton.disabled =
+      !this.geminiEnabledToggle.checked && !this.ollamaEnabledToggle.checked;
+  }
+
+  /**
+   * Shows the in-page confirmation dialog (window.confirm is not available
+   * in Chrome extension pages such as the side panel).
+   */
+  private showConfirm(message: string): Promise<boolean> {
+    this.confirmMessage.textContent = message;
+    this.confirmOverlay.classList.remove('hidden');
+    return new Promise((resolve) => {
+      const finish = (result: boolean) => {
+        this.confirmOverlay.classList.add('hidden');
+        this.confirmOkButton.removeEventListener('click', onOk);
+        this.confirmCancelButton.removeEventListener('click', onCancel);
+        resolve(result);
+      };
+      const onOk = () => finish(true);
+      const onCancel = () => finish(false);
+      this.confirmOkButton.addEventListener('click', onOk);
+      this.confirmCancelButton.addEventListener('click', onCancel);
+    });
+  }
+
+  private async resetOllamaDefaults() {
+    if (!(await this.showConfirm('Reset Ollama settings to defaults?'))) {
+      return;
+    }
+    this.setOllamaFields({
+      ...DEFAULT_OLLAMA_SETTINGS,
+      enabled: this.ollamaEnabledToggle.checked,
+    });
+  }
+
+  /**
+   * Pings the given (possibly unsaved) host and reflects the result in the
+   * status line. Purely a status check: the model cache is written only by
+   * fetchOllamaModels, so pinging can never pollute the fallback model list.
+   */
+  private async pingOllama(host: string) {
+    this.ollamaTestButton.disabled = true;
+    try {
+      const response =
+        await this.messageService.sendMessage<OllamaModelsResponse>({
+          type: MessageTypes.OLLAMA_TEST_CONNECTION,
+          host: host,
+        });
+      if (response && response.success && Array.isArray(response.models)) {
+        const count = response.models.length;
+        this.ollamaStatus.textContent = `● Ollama is online (${count} model${count === 1 ? '' : 's'})`;
+        this.ollamaStatus.classList.add('success');
+        this.ollamaStatus.classList.remove('error');
+      } else {
+        this.ollamaStatus.textContent = '● Ollama not found';
+        this.ollamaStatus.classList.add('error');
+        this.ollamaStatus.classList.remove('success');
+      }
+    } catch (error) {
+      console.error('Failed to reach Ollama:', error);
+      this.ollamaStatus.textContent = '● Ollama not found';
+      this.ollamaStatus.classList.add('error');
+      this.ollamaStatus.classList.remove('success');
+    } finally {
+      this.ollamaStatus.classList.remove('hidden');
+      this.ollamaTestButton.disabled = false;
+    }
+  }
+
+  private async testOllamaConnection() {
+    await this.pingOllama(this.ollamaHostInput.value);
   }
 
   private showError(message: string, errorElement?: HTMLElement) {
     this.settingsError.textContent = message;
     this.settingsError.classList.remove('hidden');
     if (errorElement) {
+      // The offending field may sit inside a collapsed section (e.g. Ollama
+      // advanced settings); expand it so the highlight is actually visible.
+      const details = errorElement.closest('details');
+      if (details) {
+        details.open = true;
+      }
       errorElement.classList.add('input-error');
       errorElement.focus();
     }
@@ -343,15 +759,19 @@ export class SidebarController {
     });
   }
 
+  // The whole bottom panel (current tab, provider/model controls, prompt
+  // form) is hidden with the chat: none of it is usable mid-settings, and a
+  // still-interactive provider dropdown could re-open the settings and
+  // re-snapshot half-edited values as the "initial" state Cancel restores.
   private toggleSettingsView(show: boolean) {
     if (show) {
       this.settingsView.classList.remove('hidden');
       this.messagesDiv.classList.add('hidden');
-      this.promptForm.classList.add('hidden');
+      this.bottomPanel.classList.add('hidden');
     } else {
       this.settingsView.classList.add('hidden');
       this.messagesDiv.classList.remove('hidden');
-      this.promptForm.classList.remove('hidden');
+      this.bottomPanel.classList.remove('hidden');
     }
   }
 
@@ -442,11 +862,12 @@ export class SidebarController {
     }, 100);
 
     try {
-      const response = await this.messageService.sendMessage<GeminiResponse>({
+      const response = await this.messageService.sendMessage<LLMResponse>({
         type: MessageTypes.CHAT_MESSAGE,
         message: message,
         model: this.modelSelect.value,
         includeCurrentTab: this.isCurrentTabShared,
+        provider: this.selectedProvider,
       });
 
       clearInterval(timerInterval);
@@ -473,6 +894,9 @@ export class SidebarController {
         this.appendMessage('model', response.reply, duration);
       } else if (response && response.error) {
         this.appendMessage('error', `Error: ${response.error}`);
+      } else {
+        // Never fail silently (e.g. an unexpected empty reply).
+        this.appendMessage('error', 'Error: No response received.');
       }
     } catch (error: unknown) {
       clearInterval(timerInterval);

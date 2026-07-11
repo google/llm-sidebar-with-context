@@ -19,15 +19,16 @@ import {
   StorageKeys,
   SUPPORTED_MODELS,
   DEFAULT_MODEL,
+  Providers,
 } from '../constants';
 import { ChatHistory } from '../models/ChatHistory';
 import { ContextManager } from '../models/ContextManager';
 import { TabContext } from '../models/TabContext';
-import { IGeminiService } from '../services/geminiService';
+import { IChatProvider } from '../services/chatProvider';
 import { ISyncStorageService } from '../services/storageService';
 import { ITabService } from '../services/tabService';
 import { IMessageService } from '../services/messageService';
-import { isRestrictedURL } from '../utils';
+import { isRestrictedURL, isAbortError } from '../utils';
 import {
   ExtensionMessage,
   ExtensionResponse,
@@ -35,7 +36,9 @@ import {
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
-  GeminiResponse,
+  LLMResponse,
+  LLMProvider,
+  OllamaModelsResponse,
   ContentPart,
 } from '../types';
 
@@ -47,8 +50,10 @@ export class BackgroundController {
     private contextManager: ContextManager,
     private syncStorageService: ISyncStorageService,
     private tabService: ITabService,
-    private geminiService: IGeminiService,
     private messageService: IMessageService,
+    // One entry per provider; adding a provider means implementing
+    // IChatProvider and registering it in background.ts.
+    private providers: Record<LLMProvider, IChatProvider>,
   ) {}
 
   /**
@@ -58,6 +63,15 @@ export class BackgroundController {
     this.setupEventListeners();
     // Initial context update on startup
     this.broadcastCurrentTabInfo();
+    // Let each provider reconcile the environment it owns (e.g. persisted
+    // DNR rules) with the saved settings.
+    for (const provider of Object.values(this.providers)) {
+      provider
+        .reconcile?.()
+        .catch((error) =>
+          console.error('Failed to reconcile provider state:', error),
+        );
+    }
   }
 
   private setupEventListeners() {
@@ -128,14 +142,14 @@ export class BackgroundController {
 
     // Initialize or validate default model
     const currentModel = await this.syncStorageService.get<string>(
-      StorageKeys.SELECTED_MODEL,
+      StorageKeys.GEMINI_MODEL,
     );
     if (
       !currentModel ||
       !Object.prototype.hasOwnProperty.call(SUPPORTED_MODELS, currentModel)
     ) {
       await this.syncStorageService.set(
-        StorageKeys.SELECTED_MODEL,
+        StorageKeys.GEMINI_MODEL,
         DEFAULT_MODEL,
       );
     }
@@ -184,7 +198,12 @@ export class BackgroundController {
             request.message,
             request.model,
             request.includeCurrentTab,
+            request.provider ?? Providers.GOOGLE_GEMINI,
           );
+        case MessageTypes.OLLAMA_LIST_MODELS:
+          return await this.handleOllamaListModels();
+        case MessageTypes.OLLAMA_TEST_CONNECTION:
+          return await this.handleOllamaTestConnection(request.host);
         case MessageTypes.GET_CONTEXT:
           return await this.handleGetContext();
         case MessageTypes.PIN_TAB:
@@ -226,17 +245,19 @@ export class BackgroundController {
     message: string,
     model: string,
     includeCurrentTab: boolean,
-  ): Promise<GeminiResponse> {
-    const apiKey = await this.getApiKey();
-    if (!apiKey) {
-      return {
-        error: 'Gemini API Key not set. Please set it in the Settings.',
-      };
-    }
-
+    provider: LLMProvider,
+  ): Promise<LLMResponse> {
+    // Created before any awaits so a STOP_GENERATION arriving during session
+    // setup is not lost.
     this.abortController = new AbortController();
 
     try {
+      const start = await this.providers[provider].startSession();
+      if (start.error !== undefined) {
+        return { error: start.error };
+      }
+      const session = start.session;
+
       // 1. Add User Message to History
       await this.chatHistory.addMessage({ role: 'user', text: message });
 
@@ -244,22 +265,29 @@ export class BackgroundController {
         throw new DOMException('Aborted', 'AbortError');
       }
 
-      // 2. Build Context
+      // 2. Build Context. A pinned current tab contributes only a short
+      // placeholder, so it doesn't count against the per-tab budget.
+      const countCurrentTab =
+        includeCurrentTab && !(await this.isActiveTabPinned());
+      const numTabs =
+        this.contextManager.getPinnedTabs().length + (countCurrentTab ? 1 : 0);
+      const charLimit = session.charLimitPerTab(numTabs);
+
       let activeContext: ContentPart[] = [];
       if (includeCurrentTab) {
-        activeContext = await this.contextManager.getActiveTabContent();
+        activeContext =
+          await this.contextManager.getActiveTabContent(charLimit);
       }
 
       if (this.abortController.signal.aborted) {
         throw new DOMException('Aborted', 'AbortError');
       }
 
-      const pinnedContent = await this.contextManager.getAllContent();
+      const pinnedContent = await this.contextManager.getAllContent(charLimit);
       const fullContext = [...activeContext, ...pinnedContent];
 
-      // 3. Send to Gemini
-      const response = await this.geminiService.generateContent(
-        apiKey,
+      // 3. Send to the selected provider
+      const response = await session.generateContent(
         fullContext,
         this.chatHistory.getMessages(),
         model,
@@ -280,14 +308,7 @@ export class BackgroundController {
 
       return response;
     } catch (error: unknown) {
-      const err = error as Error;
-      const isAbort =
-        err.name === 'AbortError' ||
-        (err.message &&
-          typeof err.message === 'string' &&
-          err.message.toLowerCase().includes('aborted'));
-
-      if (isAbort) {
+      if (isAbortError(error)) {
         // Remove the user's message from history so it can be restored to the input
         await this.chatHistory.removeLastMessage();
         return { aborted: true };
@@ -296,6 +317,14 @@ export class BackgroundController {
     } finally {
       this.abortController = null;
     }
+  }
+
+  private async isActiveTabPinned(): Promise<boolean> {
+    const [tab] = await this.tabService.query({
+      active: true,
+      currentWindow: true,
+    });
+    return tab?.id !== undefined && this.contextManager.isTabPinned(tab.id);
   }
 
   private async handleGetContext(): Promise<GetContextResponse> {
@@ -380,10 +409,29 @@ export class BackgroundController {
     return { success: true };
   }
 
-  private async getApiKey(): Promise<string | null> {
-    const apiKey = await this.syncStorageService.get<string>(
-      StorageKeys.API_KEY,
-    );
-    return apiKey || null;
+  private async handleOllamaListModels(): Promise<OllamaModelsResponse> {
+    const provider = this.providers[Providers.OLLAMA];
+    if (!provider.listModels) {
+      return {
+        success: false,
+        models: [],
+        error: 'Provider does not support model listing.',
+      };
+    }
+    return provider.listModels();
+  }
+
+  private async handleOllamaTestConnection(
+    host: string,
+  ): Promise<OllamaModelsResponse> {
+    const provider = this.providers[Providers.OLLAMA];
+    if (!provider.testConnection) {
+      return {
+        success: false,
+        models: [],
+        error: 'Provider does not support connection testing.',
+      };
+    }
+    return provider.testConnection(host);
   }
 }

@@ -15,6 +15,7 @@
  */
 
 import { RestrictedURLs, CONTEXT_MESSAGES } from './constants';
+import { ChatMessage, LLMResponse } from './types';
 
 /**
  * Checks if a URL is restricted (e.g., chrome://, about:, file://).
@@ -52,6 +53,34 @@ export function sandwichTruncate(text: string, charLimit: number): string {
     truncationMessage +
     text.substring(text.length - endChars)
   );
+}
+
+/**
+ * Validates that a chat history is sendable to an LLM provider.
+ * @param history - The chat history to validate.
+ * @returns A user-facing error message, or null when the history is valid.
+ */
+export function validateChatHistory(history: ChatMessage[]): string | null {
+  if (history.length === 0) {
+    return 'Chat history cannot be empty';
+  }
+  if (history[history.length - 1].role !== 'user') {
+    return 'The last message must be from the user';
+  }
+  return null;
+}
+
+/**
+ * Maps a caught error to the LLMResponse shape shared by all providers:
+ * aborts become `{ aborted: true }`, everything else a user-facing error.
+ * @param error - The caught error.
+ */
+export function toLLMErrorResponse(error: unknown): LLMResponse {
+  if (isAbortError(error)) {
+    return { aborted: true };
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  return { error: message };
 }
 
 /**
