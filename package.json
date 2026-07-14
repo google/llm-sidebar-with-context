@@ -6,7 +6,7 @@
   "scripts": {
     "test": "vitest run",
     "build": "node build-scripts/build.js",
-    "type-check": "tsc",
+    "type-check": "tsc -p src && tsc -p tests",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",

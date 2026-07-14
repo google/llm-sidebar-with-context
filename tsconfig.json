@@ -1,17 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "allowJs": false,
-    "checkJs": false,
-    "noEmit": true,
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "types": ["chrome", "marked", "node"],
-    "rootDir": "."
-  },
-  "include": ["src/**/*", "tests/**/*"]
+  "files": [],
+  "references": [{ "path": "./src" }, { "path": "./tests" }]
 }

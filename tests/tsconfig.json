@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    // Tests run under Node (vitest + jsdom), so Node globals are available.
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["chrome", "marked", "node"]
+  },
+  "include": ["**/*", "../src/**/*"]
+}
