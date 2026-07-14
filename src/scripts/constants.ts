@@ -120,6 +120,7 @@ export const NOISE_SELECTORS = [
   'script',
   'style',
   'noscript',
+  'source',
   '.ad',
   '.ads',
   '.social-share',
