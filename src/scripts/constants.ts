@@ -138,3 +138,21 @@ export const SUPPORTED_MODELS = {
 export type SupportedModelId = keyof typeof SUPPORTED_MODELS;
 
 export const DEFAULT_MODEL: SupportedModelId = 'gemini-3.1-flash-lite';
+
+// Shown one at a time under the "Waiting for model response..." indicator.
+export const GENERAL_TIPS = [
+  'Using a local Ollama model keeps your data on your device.',
+  'Gemini models can watch and summarize YouTube videos.',
+  'Pasting a response into a Google Doc? Use Edit > Paste from Markdown to keep the formatting.',
+  'Click the eye icon to control whether your current tab is shared with the model.',
+  `Pin up to ${MAX_PINNED_TABS} tabs to use as context for the model.`,
+  'The more tabs you pin, the more tokens are used.',
+  'Longer chats use more tokens.',
+  `Like this extension? <a href="${process.env.STORE_URL}" target="_blank" rel="noopener">Share it</a> with a friend.`,
+];
+
+export const OLLAMA_TIPS = [
+  'Browse ollama.com/library to find popular local models.',
+  "You can raise or lower the model's context window in Ollama's Advanced Settings, depending on your hardware.",
+  'The first response from a newly loaded Ollama model takes longer. Configure how long it stays loaded in Advanced Settings.',
+];

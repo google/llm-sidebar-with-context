@@ -13,6 +13,7 @@ async function build() {
     'LEGAL_NOTICE_URL',
     'PRIVACY_POLICY_URL',
     'LICENSE_URL',
+    'STORE_URL',
   ];
   const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
 
@@ -79,6 +80,14 @@ async function build() {
 
   const iifeEntryPoints = [path.join(srcDir, 'scripts/webExtraction.ts')];
 
+  // Inline into every bundle, since any of them may import constants.ts.
+  const define = Object.fromEntries(
+    requiredEnvVars.map((name) => [
+      `process.env.${name}`,
+      JSON.stringify(process.env[name]),
+    ]),
+  );
+
   // ESM Build (Background, Sidebar)
   await esbuild.build({
     entryPoints: esmEntryPoints,
@@ -88,15 +97,7 @@ async function build() {
     platform: 'browser',
     target: ['es2022'],
     sourcemap: true,
-    define: {
-      'process.env.LEGAL_NOTICE_URL': JSON.stringify(
-        process.env.LEGAL_NOTICE_URL,
-      ),
-      'process.env.PRIVACY_POLICY_URL': JSON.stringify(
-        process.env.PRIVACY_POLICY_URL,
-      ),
-      'process.env.LICENSE_URL': JSON.stringify(process.env.LICENSE_URL),
-    },
+    define,
   });
 
   // IIFE Build (Web Extraction)
@@ -108,6 +109,7 @@ async function build() {
     platform: 'browser',
     target: ['es2022'],
     sourcemap: true,
+    define,
   });
 
   console.log('Build complete! Output in dist/');

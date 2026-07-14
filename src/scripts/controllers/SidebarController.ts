@@ -24,6 +24,8 @@ import {
   DEFAULT_MODEL,
   DEFAULT_OLLAMA_SETTINGS,
   Providers,
+  GENERAL_TIPS,
+  OLLAMA_TIPS,
 } from '../constants';
 import {
   ExtensionMessage,
@@ -855,10 +857,13 @@ export class SidebarController {
     this.promptInput.value = '';
 
     const thinkingMessageElement = this.appendThinkingMessage();
+    const thinkingStatusElement = thinkingMessageElement.querySelector(
+      '.thinking-status',
+    ) as HTMLSpanElement;
     const startTime = Date.now();
     const timerInterval = setInterval(() => {
       const elapsed = (Date.now() - startTime) / 1000;
-      thinkingMessageElement.textContent = `Waiting for model response... (${elapsed.toFixed(1)}s)`;
+      thinkingStatusElement.textContent = `Waiting for model response... (${elapsed.toFixed(1)}s)`;
     }, 100);
 
     try {
@@ -931,10 +936,30 @@ export class SidebarController {
     }
   }
 
+  private getRandomTip(): string {
+    const tips =
+      this.selectedProvider === Providers.OLLAMA
+        ? [...GENERAL_TIPS, ...OLLAMA_TIPS]
+        : GENERAL_TIPS;
+    return tips[Math.floor(Math.random() * tips.length)];
+  }
+
   private appendThinkingMessage(): HTMLDivElement {
     const thinkingMessageElement = document.createElement('div');
     thinkingMessageElement.classList.add('message', 'thinking');
-    thinkingMessageElement.textContent = 'Waiting for model response... (0.0s)';
+
+    const statusSpan = document.createElement('span');
+    statusSpan.className = 'thinking-status';
+    statusSpan.textContent = 'Waiting for model response... (0.0s)';
+    thinkingMessageElement.appendChild(statusSpan);
+
+    const tipDiv = document.createElement('div');
+    tipDiv.className = 'thinking-tip';
+    // Tip strings are static, developer-authored content (see constants.ts),
+    // never user input, so innerHTML here carries no injection risk.
+    tipDiv.innerHTML = `TIP: ${this.getRandomTip()}`;
+    thinkingMessageElement.appendChild(tipDiv);
+
     this.messagesDiv.appendChild(thinkingMessageElement);
     this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
     return thinkingMessageElement;

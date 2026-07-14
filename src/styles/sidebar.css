@@ -629,6 +629,14 @@ body {
   font-size: 12px;
 }
 
+.thinking-tip {
+  margin-top: var(--spacing-xs);
+}
+
+.thinking-tip a {
+  color: var(--link);
+}
+
 .message.error,
 .message.system {
   font-style: italic;
