@@ -129,15 +129,16 @@ export const NOISE_SELECTORS = [
 ];
 
 export const SUPPORTED_MODELS = {
+  'gemini-3.5-flash-lite': 'Gemini 3.5 Flash Lite',
   'gemini-3.1-flash-lite': 'Gemini 3.1 Flash Lite',
+  'gemini-3.6-flash': 'Gemini 3.6 Flash',
   'gemini-3.5-flash': 'Gemini 3.5 Flash',
   'gemini-2.5-pro': 'Gemini 2.5 Pro',
-  'gemini-2.5-flash': 'Gemini 2.5 Flash',
 } as const;
 
 export type SupportedModelId = keyof typeof SUPPORTED_MODELS;
 
-export const DEFAULT_MODEL: SupportedModelId = 'gemini-3.1-flash-lite';
+export const DEFAULT_MODEL: SupportedModelId = 'gemini-3.5-flash-lite';
 
 // Shown one at a time under the "Waiting for model response..." indicator.
 export const GENERAL_TIPS = [
