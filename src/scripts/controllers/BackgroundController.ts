@@ -90,6 +90,16 @@ export class BackgroundController {
     // Update context when active tab changes
     chrome.tabs.onActivated.addListener(() => this.broadcastCurrentTabInfo());
 
+    // Update context when the focused window changes. Switching back to a
+    // window whose active tab never changed fires no tab event at all, so
+    // without this listener the sidebar keeps showing the tab from whichever
+    // window last activated a tab.
+    chrome.windows.onFocusChanged.addListener((windowId) => {
+      if (windowId !== chrome.windows.WINDOW_ID_NONE) {
+        this.broadcastCurrentTabInfo();
+      }
+    });
+
     // Update context when tab URL or Title changes
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       if (

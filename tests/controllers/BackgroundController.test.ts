@@ -59,6 +59,10 @@ describe('BackgroundController', () => {
         onUpdated: { addListener: vi.fn() },
         onRemoved: { addListener: vi.fn() },
       },
+      windows: {
+        onFocusChanged: { addListener: vi.fn() },
+        WINDOW_ID_NONE: -1,
+      },
       action: {
         onClicked: { addListener: vi.fn() },
       },
@@ -391,6 +395,84 @@ describe('BackgroundController', () => {
         StorageKeys.GEMINI_MODEL,
         DEFAULT_MODEL,
       );
+    });
+  });
+
+  describe('multi-window current tab tracking', () => {
+    it('should show the focused window tab again after switching back from another window', async () => {
+      // Fake browser: two windows, one active tab each, plus which window
+      // currently has focus. query() answers the way Chrome does from a
+      // service worker: currentWindow/lastFocusedWindow resolve to the
+      // window that has focus.
+      const tabA = {
+        id: 1,
+        windowId: 1,
+        active: true,
+        url: 'https://tab-a.com',
+        title: 'Tab A',
+      };
+      const tabB = {
+        id: 2,
+        windowId: 2,
+        active: true,
+        url: 'https://tab-b.com',
+        title: 'Tab B',
+      };
+      const world = { focusedWindowId: 1, tabs: [tabA] };
+
+      vi.mocked(mockTabService.query).mockImplementation(
+        async (queryInfo: chrome.tabs.QueryInfo) => {
+          let result = world.tabs;
+          if (queryInfo.active) {
+            result = result.filter((t) => t.active);
+          }
+          if (queryInfo.currentWindow || queryInfo.lastFocusedWindow) {
+            result = result.filter((t) => t.windowId === world.focusedWindowId);
+          }
+          return result as ChromeTab[];
+        },
+      );
+
+      const dispatchActivated = async (info: chrome.tabs.OnActivatedInfo) => {
+        for (const [listener] of vi.mocked(chrome.tabs.onActivated.addListener)
+          .mock.calls) {
+          await listener(info);
+        }
+      };
+      const dispatchWindowFocusChanged = async (windowId: number) => {
+        for (const [listener] of vi.mocked(
+          chrome.windows.onFocusChanged.addListener,
+        ).mock.calls) {
+          await listener(windowId);
+        }
+      };
+
+      // Window A is open with Tab A; the sidebar is opened there.
+      await controller.start();
+
+      // User opens Window B with Tab B: Tab B activates and Window B
+      // takes focus.
+      world.tabs.push(tabB);
+      world.focusedWindowId = 2;
+      await dispatchActivated({ tabId: tabB.id, windowId: tabB.windowId });
+      await dispatchWindowFocusChanged(2);
+
+      // User clicks back into Window A. Chrome fires only a window focus
+      // change — no tab activation, since Tab A was already active in
+      // its window.
+      world.focusedWindowId = 1;
+      await dispatchWindowFocusChanged(1);
+
+      // The sidebar in Window A should show Tab A, the active tab of the
+      // now-focused window.
+      const currentTabMessages = vi
+        .mocked(mockMessageService.sendMessage)
+        .mock.calls.map(([message]) => message)
+        .filter((message) => message.type === MessageTypes.CURRENT_TAB_INFO);
+      const lastBroadcast = currentTabMessages.at(-1);
+      expect(lastBroadcast).toMatchObject({
+        tab: { id: tabA.id, url: tabA.url, title: tabA.title },
+      });
     });
   });
 
