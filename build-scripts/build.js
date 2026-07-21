@@ -1,7 +1,7 @@
 const esbuild = require('esbuild');
 const fs = require('fs-extra');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
 const projectRoot = path.resolve(__dirname, '..');
 const distDir = path.join(projectRoot, 'dist');
