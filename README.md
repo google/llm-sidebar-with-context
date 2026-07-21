@@ -25,10 +25,11 @@ This Chrome Extension allows you to interact with Gemini or a local Ollama model
 - **Current Tab Sharing:** Toggle "Share Current Tab" (Eye icon) to dynamically include the active tab's content in your context as you browse.
 - **Two Providers:**
   - **Gemini:** Choose between several Gemini models:
-    - Gemini 3.1 Flash Lite (Default)
+    - Gemini 3.5 Flash Lite (Default)
+    - Gemini 3.1 Flash Lite
+    - Gemini 3.6 Flash
     - Gemini 3.5 Flash
     - Gemini 2.5 Pro
-    - Gemini 2.5 Flash
   - **Ollama:** Connect to a locally running [Ollama](https://ollama.com) server and chat with any model you have pulled. The extension lists the models available on your host and lets you test the connection before switching over.
 - **Privacy Focused:**
   - Your API Key and Ollama host settings are stored locally in your browser (`chrome.storage.sync`).
