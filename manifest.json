@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LLM Sidebar with Context",
-  "version": "1.4",
+  "version": "1.5.0",
   "description": "Simple, context-aware AI sidebar for Chrome, Edge, Brave & Vivaldi. Free and open source.",
   "permissions": [
     "activeTab",
