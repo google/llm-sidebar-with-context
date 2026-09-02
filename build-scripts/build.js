@@ -39,6 +39,14 @@ async function build() {
       dest: path.join(distDir, 'icon16.png'),
     },
     {
+      src: path.join(projectRoot, 'icon24.png'),
+      dest: path.join(distDir, 'icon24.png'),
+    },
+    {
+      src: path.join(projectRoot, 'icon32.png'),
+      dest: path.join(distDir, 'icon32.png'),
+    },
+    {
       src: path.join(projectRoot, 'icon48.png'),
       dest: path.join(distDir, 'icon48.png'),
     },
