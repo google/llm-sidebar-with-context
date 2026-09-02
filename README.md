@@ -27,6 +27,7 @@ This Chrome Extension allows you to interact with Gemini or a local Ollama model
   - **Gemini:** Choose between several Gemini models:
     - Gemini 3.5 Flash Lite (Default)
     - Gemini 3.1 Flash Lite
+    - Gemini 3.8 Flash
     - Gemini 3.7 Flash
     - Gemini 3.6 Flash
     - Gemini 2.5 Pro
