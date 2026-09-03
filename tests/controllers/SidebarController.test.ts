@@ -1761,10 +1761,15 @@ describe('SidebarController', () => {
         );
       }
 
-      it('should list both providers without an Add Provider entry when both are enabled', async () => {
+      it('should list all three providers without an Add Provider entry when all three are enabled', async () => {
         stubStorage({
           [StorageKeys.API_KEY]: 'key',
           [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            enabled: true,
+            apiKey: 'sk-or-test',
+            mode: 'top5',
+          },
         });
         stubOllamaMessages(['llama3.1:8b', 'qwen3:4b']);
         await controller.start();
@@ -1772,9 +1777,25 @@ describe('SidebarController', () => {
         expect(providerOptions()).toEqual([
           Providers.GOOGLE_GEMINI,
           Providers.OLLAMA,
+          Providers.OPENROUTER,
         ]);
         // Gemini is the default provider, so the models are Gemini's.
         expect(el<HTMLSelectElement>('model-select').value).toBe(DEFAULT_MODEL);
+      });
+
+      it('should offer Add Provider when two providers are enabled', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+        });
+        stubOllamaMessages(['llama3.1:8b']);
+        await controller.start();
+
+        expect(providerOptions()).toEqual([
+          Providers.GOOGLE_GEMINI,
+          Providers.OLLAMA,
+          'add-provider',
+        ]);
       });
 
       it('should offer Add Provider when exactly one provider is enabled', async () => {

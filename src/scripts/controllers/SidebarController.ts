@@ -635,7 +635,7 @@ export class SidebarController {
     }
     const enabledCount =
       (geminiOn ? 1 : 0) + (ollamaOn ? 1 : 0) + (openRouterOn ? 1 : 0);
-    if (enabledCount === 1) {
+    if (enabledCount < 3) {
       addOption(SidebarController.ADD_PROVIDER_OPTION, 'Add Provider…');
     }
 
