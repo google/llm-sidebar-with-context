@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-import { CONTEXT_MESSAGES, OLLAMA_LIST_MODELS_TIMEOUT_MS } from '../constants';
-import { ChatMessage, LLMResponse, ContentPart } from '../types';
-import { toLLMErrorResponse, validateChatHistory } from '../utils';
+import { OLLAMA_LIST_MODELS_TIMEOUT_MS } from '../constants';
+import { ChatMessage, ContentPart, LLMResponse } from '../types';
+import {
+  formatMessagesWithContext,
+  toLLMErrorResponse,
+  validateChatHistory,
+} from '../utils';
 
 interface OllamaTagsResponse {
   models?: Array<{ name: string } | null>;
@@ -101,27 +105,8 @@ export class OllamaService implements IOllamaService {
         return { error: historyError };
       }
 
-      // Map history to Ollama chat format ('model' role becomes 'assistant')
-      const messages: { role: string; content: string }[] = history.map(
-        (msg) => ({
-          role: msg.role === 'model' ? 'assistant' : msg.role,
-          content: msg.text,
-        }),
-      );
-
-      // Inject context into the last user message. Ollama has no file/video
-      // input support, so file_data parts become a text placeholder.
-      if (context.length > 0) {
-        const contextText = context
-          .map((part) =>
-            part.type === 'text'
-              ? part.text
-              : CONTEXT_MESSAGES.FILE_CONTENT_UNSUPPORTED,
-          )
-          .join('\n');
-        const lastMessage = messages[messages.length - 1];
-        lastMessage.content = `${contextText}\n\n${lastMessage.content}`;
-      }
+      // Map history and inject context into the last user message
+      const messages = formatMessagesWithContext(context, history);
 
       const response = await fetch(`${host}/api/chat`, {
         method: 'POST',

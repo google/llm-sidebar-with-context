@@ -27,7 +27,7 @@ import {
  */
 export interface ChatSession {
   /** Per-tab character budget for page content shared as context. */
-  charLimitPerTab(numTabs: number): number;
+  charLimitPerTab(numTabs: number, model?: string): number;
 
   generateContent(
     context: ContentPart[],

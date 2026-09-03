@@ -18,6 +18,22 @@ import { MessageTypes, Providers } from './constants';
 
 export type LLMProvider = (typeof Providers)[keyof typeof Providers];
 
+export type OpenRouterModelMode = 'top5' | 'custom';
+
+export interface OpenRouterModelConfig {
+  id: string;
+  name: string;
+  isFree?: boolean;
+  contextLength?: number;
+}
+
+export interface OpenRouterSettings {
+  enabled: boolean;
+  apiKey: string;
+  mode: OpenRouterModelMode;
+  customModels?: OpenRouterModelConfig[];
+}
+
 // Stored shape: raw input strings, saved verbatim (may hold invalid values
 // for a disabled provider; validated on save only when enabled).
 export interface OllamaSettings {
@@ -64,6 +80,19 @@ export interface OllamaListModelsRequest {
 export interface OllamaTestConnectionRequest {
   type: typeof MessageTypes.OLLAMA_TEST_CONNECTION;
   host: string;
+}
+
+export interface OpenRouterVerifyKeyRequest {
+  type: typeof MessageTypes.OPENROUTER_VERIFY_KEY;
+  apiKey: string;
+}
+
+export interface OpenRouterListModelsRequest {
+  type: typeof MessageTypes.OPENROUTER_LIST_MODELS;
+}
+
+export interface OpenRouterListAllModelsRequest {
+  type: typeof MessageTypes.OPENROUTER_LIST_ALL_MODELS;
 }
 
 export interface GetContextRequest {
@@ -115,7 +144,10 @@ export type ExtensionMessage =
   | CurrentTabInfoMessage
   | StopGenerationRequest
   | OllamaListModelsRequest
-  | OllamaTestConnectionRequest;
+  | OllamaTestConnectionRequest
+  | OpenRouterVerifyKeyRequest
+  | OpenRouterListModelsRequest
+  | OpenRouterListAllModelsRequest;
 
 export interface LLMResponse {
   reply?: string;
@@ -126,6 +158,19 @@ export interface LLMResponse {
 export interface OllamaModelsResponse {
   success: boolean;
   models: string[];
+  error?: string;
+}
+
+export interface OpenRouterVerifyKeyResponse {
+  success: boolean;
+  balance?: number;
+  isFreeTier?: boolean;
+  error?: string;
+}
+
+export interface OpenRouterListModelsResponse {
+  success: boolean;
+  models: OpenRouterModelConfig[];
   error?: string;
 }
 
@@ -155,4 +200,6 @@ export type ExtensionResponse =
   | SuccessResponse
   | CheckPinnedTabsResponse
   | GetHistoryResponse
-  | OllamaModelsResponse;
+  | OllamaModelsResponse
+  | OpenRouterVerifyKeyResponse
+  | OpenRouterListModelsResponse;

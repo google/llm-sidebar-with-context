@@ -25,6 +25,10 @@ import { ChatHistory } from '../models/ChatHistory';
 import { ContextManager } from '../models/ContextManager';
 import { TabContext } from '../models/TabContext';
 import { IChatProvider } from '../services/chatProvider';
+import {
+  IOpenRouterService,
+  OpenRouterService,
+} from '../services/openRouterService';
 import { ISyncStorageService } from '../services/storageService';
 import { ITabService } from '../services/tabService';
 import { IMessageService } from '../services/messageService';
@@ -53,7 +57,8 @@ export class BackgroundController {
     private messageService: IMessageService,
     // One entry per provider; adding a provider means implementing
     // IChatProvider and registering it in background.ts.
-    private providers: Record<LLMProvider, IChatProvider>,
+    private providers: Partial<Record<LLMProvider, IChatProvider>>,
+    private openRouterService: IOpenRouterService = new OpenRouterService(),
   ) {}
 
   /**
@@ -214,6 +219,12 @@ export class BackgroundController {
           return await this.handleOllamaListModels();
         case MessageTypes.OLLAMA_TEST_CONNECTION:
           return await this.handleOllamaTestConnection(request.host);
+        case MessageTypes.OPENROUTER_VERIFY_KEY:
+          return await this.openRouterService.verifyKey(request.apiKey);
+        case MessageTypes.OPENROUTER_LIST_MODELS:
+          return await this.openRouterService.fetchTopFreeModels();
+        case MessageTypes.OPENROUTER_LIST_ALL_MODELS:
+          return await this.openRouterService.fetchAllModels();
         case MessageTypes.GET_CONTEXT:
           return await this.handleGetContext();
         case MessageTypes.PIN_TAB:
@@ -261,8 +272,13 @@ export class BackgroundController {
     // setup is not lost.
     this.abortController = new AbortController();
 
+    const providerImpl = this.providers[provider];
+    if (!providerImpl) {
+      return { error: `Unsupported provider: ${provider}` };
+    }
+
     try {
-      const start = await this.providers[provider].startSession();
+      const start = await providerImpl.startSession();
       if (start.error !== undefined) {
         return { error: start.error };
       }
@@ -281,7 +297,7 @@ export class BackgroundController {
         includeCurrentTab && !(await this.isActiveTabPinned());
       const numTabs =
         this.contextManager.getPinnedTabs().length + (countCurrentTab ? 1 : 0);
-      const charLimit = session.charLimitPerTab(numTabs);
+      const charLimit = session.charLimitPerTab(numTabs, model);
 
       let activeContext: ContentPart[] = [];
       if (includeCurrentTab) {
@@ -421,7 +437,7 @@ export class BackgroundController {
 
   private async handleOllamaListModels(): Promise<OllamaModelsResponse> {
     const provider = this.providers[Providers.OLLAMA];
-    if (!provider.listModels) {
+    if (!provider || !provider.listModels) {
       return {
         success: false,
         models: [],
@@ -435,7 +451,7 @@ export class BackgroundController {
     host: string,
   ): Promise<OllamaModelsResponse> {
     const provider = this.providers[Providers.OLLAMA];
-    if (!provider.testConnection) {
+    if (!provider || !provider.testConnection) {
       return {
         success: false,
         models: [],

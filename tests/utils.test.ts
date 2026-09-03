@@ -21,8 +21,15 @@ import {
   sandwichTruncate,
   validateChatHistory,
   toLLMErrorResponse,
+  formatMessagesWithContext,
+  calculateOpenRouterCharLimitPerTab,
+  formatContextLength,
 } from '../src/scripts/utils';
-import { CONTEXT_MESSAGES } from '../src/scripts/constants';
+import {
+  CONTEXT_MESSAGES,
+  MIN_CONTEXT_LENGTH_CHARS_PER_TAB,
+  MAX_CONTEXT_LENGTH_CHARS_PER_TAB_DEFAULT,
+} from '../src/scripts/constants';
 
 describe('Utils', () => {
   describe('isRestrictedURL', () => {
@@ -159,6 +166,137 @@ describe('Utils', () => {
 
     it('should stringify non-Error values', () => {
       expect(toLLMErrorResponse('boom')).toEqual({ error: 'boom' });
+    });
+  });
+
+  describe('formatMessagesWithContext', () => {
+    it('should map history roles to OpenAI/Ollama compatible roles', () => {
+      const history = [
+        { role: 'user' as const, text: 'Hello' },
+        { role: 'model' as const, text: 'Hi there!' },
+        { role: 'user' as const, text: 'How are you?' },
+      ];
+
+      const result = formatMessagesWithContext([], history);
+
+      expect(result).toEqual([
+        { role: 'user', content: 'Hello' },
+        { role: 'assistant', content: 'Hi there!' },
+        { role: 'user', content: 'How are you?' },
+      ]);
+    });
+
+    it('should prepend text context to the last user message', () => {
+      const history = [{ role: 'user' as const, text: 'Summarize this page' }];
+      const context = [
+        { type: 'text' as const, text: 'Page title: Example' },
+        { type: 'text' as const, text: 'Page body: Hello world' },
+      ];
+
+      const result = formatMessagesWithContext(context, history);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].role).toBe('user');
+      expect(result[0].content).toBe(
+        'Page title: Example\nPage body: Hello world\n\nSummarize this page',
+      );
+    });
+
+    it('should replace non-text context parts with unsupported placeholder', () => {
+      const history = [{ role: 'user' as const, text: 'Look at this' }];
+      const context = [
+        { type: 'text' as const, text: 'Some text' },
+        {
+          type: 'file_data' as const,
+          mimeType: 'video/mp4',
+          fileUri: 'http://video.mp4',
+        },
+      ];
+
+      const result = formatMessagesWithContext(context, history);
+
+      expect(result[0].content).toContain('Some text');
+      expect(result[0].content).toContain(
+        CONTEXT_MESSAGES.FILE_CONTENT_UNSUPPORTED,
+      );
+      expect(result[0].content).toContain('Look at this');
+    });
+
+    it('should allow custom unsupported placeholder', () => {
+      const history = [{ role: 'user' as const, text: 'Look at this' }];
+      const context = [
+        {
+          type: 'file_data' as const,
+          mimeType: 'image/png',
+          fileUri: 'http://img.png',
+        },
+      ];
+
+      const result = formatMessagesWithContext(
+        context,
+        history,
+        '(Custom placeholder)',
+      );
+
+      expect(result[0].content).toBe('(Custom placeholder)\n\nLook at this');
+    });
+  });
+
+  describe('calculateOpenRouterCharLimitPerTab', () => {
+    it('should budget based on default assumed context length (32768) for 1 tab', () => {
+      // (32768 - 2048) * 0.75 * 3 / 1 = 69120
+      const limit = calculateOpenRouterCharLimitPerTab(1);
+      expect(limit).toBe(69120);
+    });
+
+    it('should split budget equally across multiple tabs', () => {
+      // (32768 - 2048) * 0.75 * 3 / 2 = 34560
+      const limit = calculateOpenRouterCharLimitPerTab(2);
+      expect(limit).toBe(34560);
+    });
+
+    it('should cap limit at MAX_CONTEXT_LENGTH_CHARS_PER_TAB_DEFAULT for very large models', () => {
+      // (131072 - 2048) * 0.75 * 3 / 1 = 290304 -> capped at 250000
+      const limit = calculateOpenRouterCharLimitPerTab(1, 131072);
+      expect(limit).toBe(MAX_CONTEXT_LENGTH_CHARS_PER_TAB_DEFAULT);
+    });
+
+    it('should clamp limit at MIN_CONTEXT_LENGTH_CHARS_PER_TAB for very small windows or many tabs', () => {
+      // (2048 - 2048) = 0 -> clamped at 1000
+      const limit = calculateOpenRouterCharLimitPerTab(10, 2048);
+      expect(limit).toBe(MIN_CONTEXT_LENGTH_CHARS_PER_TAB);
+    });
+  });
+
+  describe('formatContextLength', () => {
+    it('should return empty string for undefined, zero, or negative numbers', () => {
+      expect(formatContextLength(undefined)).toBe('');
+      expect(formatContextLength(0)).toBe('');
+      expect(formatContextLength(-100)).toBe('');
+    });
+
+    it('should format binary multiples of 1024 as thousands with k suffix', () => {
+      expect(formatContextLength(32768)).toBe('32k');
+      expect(formatContextLength(65536)).toBe('64k');
+      expect(formatContextLength(131072)).toBe('128k');
+      expect(formatContextLength(16384)).toBe('16k');
+      expect(formatContextLength(8192)).toBe('8k');
+      expect(formatContextLength(4096)).toBe('4k');
+    });
+
+    it('should format round thousand token counts with k suffix', () => {
+      expect(formatContextLength(64000)).toBe('64k');
+      expect(formatContextLength(128000)).toBe('128k');
+    });
+
+    it('should format millions of tokens with M suffix', () => {
+      expect(formatContextLength(1048576)).toBe('1M');
+      expect(formatContextLength(2097152)).toBe('2M');
+      expect(formatContextLength(1000000)).toBe('1M');
+    });
+
+    it('should format small token counts verbatim', () => {
+      expect(formatContextLength(500)).toBe('500');
     });
   });
 });

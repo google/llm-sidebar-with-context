@@ -23,6 +23,8 @@ import { IOllamaService } from '../../src/scripts/services/ollamaService';
 import { IDNRService } from '../../src/scripts/services/dnrService';
 import { GoogleGeminiChatProvider } from '../../src/scripts/services/googleGeminiChatProvider';
 import { OllamaChatProvider } from '../../src/scripts/services/ollamaChatProvider';
+import { OpenRouterChatProvider } from '../../src/scripts/services/openRouterChatProvider';
+import { IOpenRouterService } from '../../src/scripts/services/openRouterService';
 import { IMessageService } from '../../src/scripts/services/messageService';
 import { ChatHistory } from '../../src/scripts/models/ChatHistory';
 import { ContextManager } from '../../src/scripts/models/ContextManager';
@@ -1255,6 +1257,304 @@ describe('BackgroundController', () => {
       expect(response).toEqual({ aborted: true });
       expect(mockOllamaService.generateContent).not.toHaveBeenCalled();
       expect(mockChatHistory.removeLastMessage).toHaveBeenCalled();
+    });
+
+    describe('OpenRouter', () => {
+      it('should delegate OPENROUTER_VERIFY_KEY to openRouterService', async () => {
+        const mockOpenRouterService: IOpenRouterService = {
+          verifyKey: vi.fn().mockResolvedValue({
+            success: true,
+            balance: 5.0,
+            isFreeTier: false,
+          }),
+          fetchTopFreeModels: vi.fn(),
+          fetchAllModels: vi.fn(),
+          generateContent: vi.fn(),
+        };
+        const controllerWithOpenRouter = new BackgroundController(
+          mockChatHistory,
+          mockContextManager,
+          mockSyncStorage,
+          mockTabService,
+          mockMessageService,
+          {
+            [Providers.GOOGLE_GEMINI]: new GoogleGeminiChatProvider(
+              mockGeminiService,
+              mockSyncStorage,
+            ),
+            [Providers.OLLAMA]: new OllamaChatProvider(
+              mockOllamaService,
+              mockDNRService,
+              mockSyncStorage,
+            ),
+          },
+          mockOpenRouterService,
+        );
+
+        const response = await controllerWithOpenRouter.handleMessage({
+          type: MessageTypes.OPENROUTER_VERIFY_KEY,
+          apiKey: 'test-key',
+        });
+
+        expect(mockOpenRouterService.verifyKey).toHaveBeenCalledWith(
+          'test-key',
+        );
+        expect(response).toEqual({
+          success: true,
+          balance: 5.0,
+          isFreeTier: false,
+        });
+      });
+
+      it('should delegate OPENROUTER_LIST_MODELS to openRouterService', async () => {
+        const mockModels = [
+          {
+            id: 'openrouter/free',
+            name: 'openrouter/free: Free Models Router',
+          },
+          {
+            id: 'meta-llama/llama-3.3-70b-instruct:free',
+            name: 'Meta: Llama 3.3 70B',
+          },
+        ];
+        const mockOpenRouterService: IOpenRouterService = {
+          verifyKey: vi.fn(),
+          fetchTopFreeModels: vi.fn().mockResolvedValue({
+            success: true,
+            models: mockModels,
+          }),
+          fetchAllModels: vi.fn(),
+          generateContent: vi.fn(),
+        };
+        const controllerWithOpenRouter = new BackgroundController(
+          mockChatHistory,
+          mockContextManager,
+          mockSyncStorage,
+          mockTabService,
+          mockMessageService,
+          {
+            [Providers.GOOGLE_GEMINI]: new GoogleGeminiChatProvider(
+              mockGeminiService,
+              mockSyncStorage,
+            ),
+            [Providers.OLLAMA]: new OllamaChatProvider(
+              mockOllamaService,
+              mockDNRService,
+              mockSyncStorage,
+            ),
+          },
+          mockOpenRouterService,
+        );
+
+        const response = await controllerWithOpenRouter.handleMessage({
+          type: MessageTypes.OPENROUTER_LIST_MODELS,
+        });
+
+        expect(mockOpenRouterService.fetchTopFreeModels).toHaveBeenCalled();
+        expect(response).toEqual({
+          success: true,
+          models: mockModels,
+        });
+      });
+
+      it('should delegate OPENROUTER_LIST_ALL_MODELS to openRouterService.fetchAllModels', async () => {
+        const mockAllModels = [
+          { id: 'openai/gpt-4o', name: 'OpenAI: GPT-4o' },
+          {
+            id: 'anthropic/claude-3.5-sonnet',
+            name: 'Anthropic: Claude 3.5 Sonnet',
+          },
+        ];
+        const mockOpenRouterService: IOpenRouterService = {
+          verifyKey: vi.fn(),
+          fetchTopFreeModels: vi.fn(),
+          fetchAllModels: vi.fn().mockResolvedValue({
+            success: true,
+            models: mockAllModels,
+          }),
+          generateContent: vi.fn(),
+        };
+        const controllerWithOpenRouter = new BackgroundController(
+          mockChatHistory,
+          mockContextManager,
+          mockSyncStorage,
+          mockTabService,
+          mockMessageService,
+          {
+            [Providers.GOOGLE_GEMINI]: new GoogleGeminiChatProvider(
+              mockGeminiService,
+              mockSyncStorage,
+            ),
+            [Providers.OLLAMA]: new OllamaChatProvider(
+              mockOllamaService,
+              mockDNRService,
+              mockSyncStorage,
+            ),
+          },
+          mockOpenRouterService,
+        );
+
+        const response = await controllerWithOpenRouter.handleMessage({
+          type: MessageTypes.OPENROUTER_LIST_ALL_MODELS,
+        });
+
+        expect(mockOpenRouterService.fetchAllModels).toHaveBeenCalled();
+        expect(response).toEqual({
+          success: true,
+          models: mockAllModels,
+        });
+      });
+
+      it('should dispatch CHAT_MESSAGE to OpenRouterChatProvider and return reply', async () => {
+        const mockOpenRouterService: IOpenRouterService = {
+          verifyKey: vi.fn(),
+          fetchTopFreeModels: vi.fn(),
+          fetchAllModels: vi.fn(),
+          generateContent: vi.fn().mockResolvedValue({
+            reply: 'Hello from OpenRouter!',
+          }),
+        };
+
+        vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
+        vi.mocked(mockChatHistory.getMessages).mockReturnValue([
+          { role: 'user', text: 'Hello OpenRouter' },
+        ]);
+
+        vi.mocked(mockSyncStorage.get).mockImplementation(async (key) => {
+          if (key === StorageKeys.OPENROUTER_SETTINGS) {
+            return {
+              enabled: true,
+              apiKey: 'sk-or-valid',
+              mode: 'top5',
+            };
+          }
+          return undefined;
+        });
+
+        const controllerWithOpenRouter = new BackgroundController(
+          mockChatHistory,
+          mockContextManager,
+          mockSyncStorage,
+          mockTabService,
+          mockMessageService,
+          {
+            [Providers.OPENROUTER]: new OpenRouterChatProvider(
+              mockOpenRouterService,
+              mockSyncStorage,
+            ),
+          },
+          mockOpenRouterService,
+        );
+
+        const response = await controllerWithOpenRouter.handleMessage({
+          type: MessageTypes.CHAT_MESSAGE,
+          message: 'Hello OpenRouter',
+          model: 'openrouter/free',
+          includeCurrentTab: false,
+          provider: Providers.OPENROUTER,
+        });
+
+        expect(mockOpenRouterService.generateContent).toHaveBeenCalledWith(
+          'sk-or-valid',
+          'openrouter/free',
+          [],
+          expect.any(Array),
+          expect.any(AbortSignal),
+        );
+        expect(mockChatHistory.addMessage).toHaveBeenCalledWith({
+          role: 'user',
+          text: 'Hello OpenRouter',
+        });
+        expect(mockChatHistory.addMessage).toHaveBeenCalledWith({
+          role: 'model',
+          text: 'Hello from OpenRouter!',
+        });
+        expect(response).toEqual({
+          reply: 'Hello from OpenRouter!',
+        });
+      });
+
+      it('should return error when OpenRouter provider is not enabled', async () => {
+        const mockOpenRouterService: IOpenRouterService = {
+          verifyKey: vi.fn(),
+          fetchTopFreeModels: vi.fn(),
+          fetchAllModels: vi.fn(),
+          generateContent: vi.fn(),
+        };
+
+        vi.mocked(mockSyncStorage.get).mockResolvedValue(undefined);
+
+        const controllerWithOpenRouter = new BackgroundController(
+          mockChatHistory,
+          mockContextManager,
+          mockSyncStorage,
+          mockTabService,
+          mockMessageService,
+          {
+            [Providers.OPENROUTER]: new OpenRouterChatProvider(
+              mockOpenRouterService,
+              mockSyncStorage,
+            ),
+          },
+          mockOpenRouterService,
+        );
+
+        const response = await controllerWithOpenRouter.handleMessage({
+          type: MessageTypes.CHAT_MESSAGE,
+          message: 'Hello',
+          model: 'openrouter/free',
+          includeCurrentTab: false,
+          provider: Providers.OPENROUTER,
+        });
+
+        expect(response).toEqual({
+          error: 'OpenRouter is not enabled. Please enable it in the Settings.',
+        });
+      });
+
+      it('should roll back user message if OpenRouter generation is aborted', async () => {
+        const mockOpenRouterService: IOpenRouterService = {
+          verifyKey: vi.fn(),
+          fetchTopFreeModels: vi.fn(),
+          fetchAllModels: vi.fn(),
+          generateContent: vi.fn().mockResolvedValue({
+            aborted: true,
+          }),
+        };
+
+        vi.mocked(mockContextManager.getAllContent).mockResolvedValue([]);
+        vi.mocked(mockSyncStorage.get).mockResolvedValue({
+          enabled: true,
+          apiKey: 'sk-or-valid',
+          mode: 'top5',
+        });
+
+        const controllerWithOpenRouter = new BackgroundController(
+          mockChatHistory,
+          mockContextManager,
+          mockSyncStorage,
+          mockTabService,
+          mockMessageService,
+          {
+            [Providers.OPENROUTER]: new OpenRouterChatProvider(
+              mockOpenRouterService,
+              mockSyncStorage,
+            ),
+          },
+          mockOpenRouterService,
+        );
+
+        const response = await controllerWithOpenRouter.handleMessage({
+          type: MessageTypes.CHAT_MESSAGE,
+          message: 'Hello',
+          model: 'openrouter/free',
+          includeCurrentTab: false,
+          provider: Providers.OPENROUTER,
+        });
+
+        expect(mockChatHistory.removeLastMessage).toHaveBeenCalled();
+        expect(response).toEqual({ aborted: true });
+      });
     });
   });
 });

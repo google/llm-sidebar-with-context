@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-import { RestrictedURLs, CONTEXT_MESSAGES } from './constants';
-import { ChatMessage, LLMResponse } from './types';
+import {
+  RestrictedURLs,
+  CONTEXT_MESSAGES,
+  MIN_CONTEXT_LENGTH_CHARS_PER_TAB,
+  MAX_CONTEXT_LENGTH_CHARS_PER_TAB_DEFAULT,
+  CHARS_PER_TOKEN,
+  OPENROUTER_ASSUMED_CONTEXT_LENGTH,
+} from './constants';
+import { ChatMessage, ContentPart, LLMResponse } from './types';
 
 /**
  * Checks if a URL is restricted (e.g., chrome://, about:, file://).
@@ -100,4 +107,89 @@ export function isAbortError(error: unknown): boolean {
     return true;
   }
   return false;
+}
+
+/**
+ * Formats ChatMessage history and context parts into OpenAI/Ollama compatible message objects.
+ * Maps 'model' role to 'assistant' and prepends context text to the last user message.
+ */
+export function formatMessagesWithContext(
+  context: ContentPart[],
+  history: ChatMessage[],
+  unsupportedPlaceholder: string = CONTEXT_MESSAGES.FILE_CONTENT_UNSUPPORTED,
+): Array<{ role: 'user' | 'assistant'; content: string }> {
+  const messages: Array<{ role: 'user' | 'assistant'; content: string }> =
+    history.map((msg) => ({
+      role: msg.role === 'model' ? 'assistant' : msg.role,
+      content: msg.text,
+    }));
+
+  if (context.length > 0 && messages.length > 0) {
+    const contextText = context
+      .map((part) =>
+        part.type === 'text' ? part.text : unsupportedPlaceholder,
+      )
+      .join('\n');
+    const lastMessage = messages[messages.length - 1];
+    lastMessage.content = `${contextText}\n\n${lastMessage.content}`;
+  }
+
+  return messages;
+}
+
+/**
+ * Calculates the per-tab character limit for OpenRouter page content from the
+ * model's context length.
+ * Tokens are reserved for response output and prompt overhead (2048 tokens);
+ * 75% of the remaining window is budgeted for tab content at ~3 chars/token.
+ * @param numTabs - Number of tabs contributing content (pinned + current).
+ * @param contextLengthTokens - The model's context window in tokens (defaults to 32768).
+ */
+export function calculateOpenRouterCharLimitPerTab(
+  numTabs: number,
+  contextLengthTokens: number = OPENROUTER_ASSUMED_CONTEXT_LENGTH,
+): number {
+  const reserveTokens = 2048;
+  const inputTokens = Math.max(0, contextLengthTokens - reserveTokens);
+  const budget = Math.floor(
+    (inputTokens * 0.75 * CHARS_PER_TOKEN) / Math.max(1, numTabs),
+  );
+  return Math.max(
+    MIN_CONTEXT_LENGTH_CHARS_PER_TAB,
+    Math.min(MAX_CONTEXT_LENGTH_CHARS_PER_TAB_DEFAULT, budget),
+  );
+}
+
+/**
+ * Formats a token count into a human-readable string (e.g. 32768 -> '32k', 1048576 -> '1M').
+ * @param tokens - Number of tokens.
+ * @returns Formatted string (e.g. '32k', '128k', '1M') or empty string if invalid.
+ */
+export function formatContextLength(tokens?: number): string {
+  if (!tokens || typeof tokens !== 'number' || tokens <= 0) {
+    return '';
+  }
+  if (tokens >= 1_000_000) {
+    if (tokens % 1_000_000 === 0) {
+      return `${tokens / 1_000_000}M`;
+    }
+    if (tokens % (1024 * 1024) === 0) {
+      return `${tokens / (1024 * 1024)}M`;
+    }
+    const decMillions = tokens / 1_000_000;
+    return decMillions % 1 === 0
+      ? `${decMillions}M`
+      : `${decMillions.toFixed(1)}M`;
+  }
+  if (tokens >= 1000) {
+    if (tokens % 1000 === 0) {
+      return `${tokens / 1000}k`;
+    }
+    if (tokens % 1024 === 0) {
+      return `${tokens / 1024}k`;
+    }
+    const thousands = Math.round(tokens / 1000);
+    return `${thousands}k`;
+  }
+  return `${tokens}`;
 }

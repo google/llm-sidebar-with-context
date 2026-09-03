@@ -121,6 +121,136 @@
                 </details>
               </div>
             </div>
+
+            <div class="settings-section">
+              <div class="settings-section-header">
+                <div class="settings-label">OpenRouter</div>
+                <label class="toggle-label">
+                  <input type="checkbox" id="openrouter-enabled-toggle" />
+                  Enabled
+                </label>
+              </div>
+              <div id="openrouter-panel-body" class="settings-panel-body">
+                <div class="api-key-help">
+                  Get your API Key on
+                  <a href="https://openrouter.ai/keys" target="_blank"
+                    >openrouter.ai</a
+                  >
+                  <div class="terms-text">
+                    Please read OpenRouter's
+                    <a href="https://openrouter.ai/terms" target="_blank"
+                      >terms of service</a
+                    >
+                  </div>
+                </div>
+                <div
+                  id="openrouter-status"
+                  class="openrouter-status hidden"
+                ></div>
+                <input
+                  type="password"
+                  id="openrouter-api-key-input"
+                  placeholder="Enter your OpenRouter API Key"
+                />
+                <div class="openrouter-buttons">
+                  <button id="openrouter-verify-button" type="button">
+                    Verify Key
+                  </button>
+                </div>
+
+                <div class="settings-label" style="margin-top: 8px">
+                  Model Selection
+                </div>
+                <div class="openrouter-mode-options">
+                  <label class="radio-label">
+                    <input
+                      type="radio"
+                      name="openrouter-mode"
+                      id="openrouter-mode-top5"
+                      value="top5"
+                      checked
+                    />
+                    Top 5 popular free models (Auto-updated)
+                  </label>
+                  <label class="radio-label">
+                    <input
+                      type="radio"
+                      name="openrouter-mode"
+                      id="openrouter-mode-custom"
+                      value="custom"
+                    />
+                    Custom model list
+                  </label>
+                </div>
+
+                <!-- Option 1: Top 5 preview container -->
+                <div id="openrouter-top5-container" class="openrouter-subpanel">
+                  <div class="openrouter-subpanel-header">
+                    <span class="terms-text"
+                      >openrouter/free: Free Models Router + top 5 weekly free
+                      models</span
+                    >
+                    <button
+                      id="openrouter-refresh-top-models-button"
+                      type="button"
+                      class="openrouter-small-button"
+                      title="Refresh models and credit balance"
+                    >
+                      Refresh Models
+                    </button>
+                  </div>
+                  <div
+                    id="openrouter-top5-models-list"
+                    class="openrouter-models-preview"
+                  ></div>
+                </div>
+
+                <!-- Option 2: Custom model list container -->
+                <div
+                  id="openrouter-custom-container"
+                  class="openrouter-subpanel hidden"
+                >
+                  <div class="openrouter-subpanel-header">
+                    <span class="openrouter-subpanel-title"
+                      >Configured Models</span
+                    >
+                    <button
+                      id="openrouter-refresh-custom-models-button"
+                      type="button"
+                      class="openrouter-small-button"
+                      title="Refresh model catalog from OpenRouter"
+                    >
+                      Refresh Models
+                    </button>
+                  </div>
+                  <div
+                    id="openrouter-custom-models-list"
+                    class="openrouter-custom-models-list"
+                  ></div>
+                  <div
+                    id="openrouter-custom-models-error"
+                    class="settings-error hidden"
+                  ></div>
+                  <div class="openrouter-add-model-row">
+                    <input
+                      type="text"
+                      id="openrouter-add-model-input"
+                      list="openrouter-models-datalist"
+                      placeholder="Search and select model to add..."
+                      autocomplete="off"
+                    />
+                    <datalist id="openrouter-models-datalist"></datalist>
+                  </div>
+                  <button
+                    id="openrouter-reset-models-button"
+                    type="button"
+                    class="openrouter-link-button"
+                  >
+                    Reset to Top 5 Free Models
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -166,7 +296,7 @@
             <button
               id="refresh-models-button"
               class="hidden"
-              title="Refresh Ollama model list"
+              title="Refresh model list"
             ></button>
           </div>
           <div class="button-group">

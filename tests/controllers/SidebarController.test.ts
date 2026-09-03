@@ -1912,6 +1912,36 @@ describe('SidebarController', () => {
         expect(modelOptions()).not.toContain('removed-model');
       });
 
+      it('should show temporary checkmark on refresh button and revert after 1500ms', async () => {
+        vi.useFakeTimers();
+        try {
+          stubStorage({
+            [StorageKeys.API_KEY]: 'key',
+            [StorageKeys.OLLAMA_SETTINGS]: savedOllama,
+            [StorageKeys.SELECTED_PROVIDER]: Providers.OLLAMA,
+          });
+          stubOllamaMessages(['model-1']);
+          await controller.start();
+
+          const refreshBtn = el<HTMLButtonElement>('refresh-models-button');
+          expect(refreshBtn.innerHTML).toContain('lucide-refresh-cw');
+          expect(refreshBtn.classList.contains('success')).toBe(false);
+
+          refreshBtn.click();
+          await vi.waitFor(() => {
+            expect(refreshBtn.innerHTML).toContain('lucide-check');
+          });
+          expect(refreshBtn.classList.contains('success')).toBe(true);
+
+          vi.advanceTimersByTime(1500);
+
+          expect(refreshBtn.innerHTML).toContain('lucide-refresh-cw');
+          expect(refreshBtn.classList.contains('success')).toBe(false);
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+
       it('should not persist the displayed fallback when the stored model is missing', async () => {
         // Regression: a transiently missing model (e.g. stale cache) must not
         // overwrite the user's stored choice; only a user's pick persists.
@@ -2086,6 +2116,799 @@ describe('SidebarController', () => {
         );
         // Non-string values fall back to empty (placeholder shows).
         expect(el<HTMLInputElement>('ollama-keep-alive-input').value).toBe('');
+      });
+    });
+
+    describe('OpenRouter Settings', () => {
+      const savedOpenRouter = {
+        enabled: true,
+        apiKey: 'sk-or-v1-saved',
+        mode: 'top5' as const,
+        customModels: [
+          {
+            id: 'openrouter/free',
+            name: 'openrouter/free: Free Models Router',
+          },
+          { id: 'custom-model-1', name: 'Custom Model 1' },
+        ],
+      };
+
+      it('should initialize OpenRouter fields with stored settings', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: savedOpenRouter,
+        });
+        await controller.start();
+
+        expect(el<HTMLInputElement>('openrouter-enabled-toggle').checked).toBe(
+          true,
+        );
+        expect(el<HTMLInputElement>('openrouter-api-key-input').value).toBe(
+          'sk-or-v1-saved',
+        );
+        expect(el<HTMLInputElement>('openrouter-mode-top5').checked).toBe(true);
+        expect(
+          el<HTMLDivElement>('openrouter-panel-body').classList.contains(
+            'hidden',
+          ),
+        ).toBe(false);
+        expect(
+          el<HTMLDivElement>('openrouter-top5-container').classList.contains(
+            'hidden',
+          ),
+        ).toBe(false);
+        expect(
+          el<HTMLDivElement>('openrouter-custom-container').classList.contains(
+            'hidden',
+          ),
+        ).toBe(true);
+      });
+
+      it('should collapse OpenRouter panel body when toggle is unchecked', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            ...savedOpenRouter,
+            enabled: false,
+          },
+        });
+        await controller.start();
+
+        const toggle = el<HTMLInputElement>('openrouter-enabled-toggle');
+        const panel = el<HTMLDivElement>('openrouter-panel-body');
+
+        expect(toggle.checked).toBe(false);
+        expect(panel.classList.contains('hidden')).toBe(true);
+
+        toggle.checked = true;
+        toggle.dispatchEvent(new Event('change'));
+        expect(panel.classList.contains('hidden')).toBe(false);
+
+        toggle.checked = false;
+        toggle.dispatchEvent(new Event('change'));
+        expect(panel.classList.contains('hidden')).toBe(true);
+      });
+
+      it('should switch between Option 1 (top5) and Option 2 (custom)', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: savedOpenRouter,
+        });
+        await controller.start();
+
+        const radioTop5 = el<HTMLInputElement>('openrouter-mode-top5');
+        const radioCustom = el<HTMLInputElement>('openrouter-mode-custom');
+        const top5Container = el<HTMLDivElement>('openrouter-top5-container');
+        const customContainer = el<HTMLDivElement>(
+          'openrouter-custom-container',
+        );
+
+        // Initially top5
+        expect(top5Container.classList.contains('hidden')).toBe(false);
+        expect(customContainer.classList.contains('hidden')).toBe(true);
+
+        // Switch to custom
+        radioCustom.checked = true;
+        radioCustom.dispatchEvent(new Event('change'));
+
+        expect(top5Container.classList.contains('hidden')).toBe(true);
+        expect(customContainer.classList.contains('hidden')).toBe(false);
+
+        // Switch back to top5
+        radioTop5.checked = true;
+        radioTop5.dispatchEvent(new Event('change'));
+
+        expect(top5Container.classList.contains('hidden')).toBe(false);
+        expect(customContainer.classList.contains('hidden')).toBe(true);
+      });
+
+      it('should allow saving when only OpenRouter is enabled', async () => {
+        stubStorage({
+          [StorageKeys.GEMINI_ENABLED]: false,
+          [StorageKeys.OLLAMA_SETTINGS]: { enabled: false },
+          [StorageKeys.OPENROUTER_SETTINGS]: savedOpenRouter,
+        });
+        await controller.start();
+
+        expect(el<HTMLButtonElement>('save-settings-button').disabled).toBe(
+          false,
+        );
+      });
+
+      it('should disable save button when all three providers are disabled', async () => {
+        stubStorage({
+          [StorageKeys.GEMINI_ENABLED]: false,
+          [StorageKeys.OLLAMA_SETTINGS]: { enabled: false },
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            ...savedOpenRouter,
+            enabled: false,
+          },
+        });
+        await controller.start();
+
+        expect(el<HTMLButtonElement>('save-settings-button').disabled).toBe(
+          true,
+        );
+      });
+
+      it('should show error and reject save if OpenRouter is enabled with empty key', async () => {
+        stubStorage({
+          [StorageKeys.GEMINI_ENABLED]: false,
+          [StorageKeys.OLLAMA_SETTINGS]: { enabled: false },
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            ...savedOpenRouter,
+            apiKey: '',
+          },
+        });
+        await controller.start();
+
+        el<HTMLInputElement>('openrouter-api-key-input').value = '   ';
+        vi.mocked(mockSyncStorage.set).mockClear();
+        el<HTMLButtonElement>('save-settings-button').click();
+
+        const errorDiv = el<HTMLDivElement>('settings-error');
+        expect(errorDiv.textContent).toBe(
+          'Please enter your OpenRouter API Key.',
+        );
+        expect(errorDiv.classList.contains('hidden')).toBe(false);
+        expect(mockSyncStorage.set).not.toHaveBeenCalled();
+      });
+
+      it('should persist OpenRouter settings to storage on save', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: savedOpenRouter,
+        });
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        el<HTMLInputElement>('openrouter-api-key-input').value = 'sk-or-v1-new';
+        el<HTMLInputElement>('openrouter-mode-custom').checked = true;
+        el<HTMLInputElement>('openrouter-mode-custom').dispatchEvent(
+          new Event('change'),
+        );
+
+        await el<HTMLButtonElement>('save-settings-button').click();
+
+        await vi.waitFor(() => {
+          expect(mockSyncStorage.set).toHaveBeenCalledWith(
+            StorageKeys.OPENROUTER_SETTINGS,
+            expect.objectContaining({
+              enabled: true,
+              apiKey: 'sk-or-v1-new',
+              mode: 'custom',
+            }),
+          );
+        });
+      });
+
+      it('should revert OpenRouter settings on cancel', async () => {
+        vi.mocked(mockLocalStorage.get).mockImplementation(async (key) => {
+          if (key === StorageKeys.OPENROUTER_ALL_MODELS_CACHE) {
+            return [{ id: 'temp-model', name: 'Temp Model' }];
+          }
+          return undefined;
+        });
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: savedOpenRouter,
+        });
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        el<HTMLInputElement>('openrouter-api-key-input').value =
+          'changed-unsaved-key';
+        el<HTMLInputElement>('openrouter-enabled-toggle').checked = false;
+        el<HTMLInputElement>('openrouter-enabled-toggle').dispatchEvent(
+          new Event('change'),
+        );
+
+        // Switch to custom mode and pick a model from list
+        el<HTMLInputElement>('openrouter-mode-custom').checked = true;
+        el<HTMLInputElement>('openrouter-mode-custom').dispatchEvent(
+          new Event('change'),
+        );
+        const addInput = el<HTMLInputElement>('openrouter-add-model-input');
+        addInput.value = 'temp-model';
+        addInput.dispatchEvent(new Event('input'));
+
+        const customList = el<HTMLDivElement>('openrouter-custom-models-list');
+        expect(customList.textContent).toContain('Temp Model');
+
+        el<HTMLButtonElement>('cancel-settings-button').click();
+
+        expect(el<HTMLInputElement>('openrouter-api-key-input').value).toBe(
+          'sk-or-v1-saved',
+        );
+        expect(el<HTMLInputElement>('openrouter-enabled-toggle').checked).toBe(
+          true,
+        );
+        expect(customList.textContent).not.toContain('Temp Model');
+        expect(customList.textContent).toContain('Custom Model 1');
+      });
+
+      it('should verify key and update balance ONLY on Verify Key click (no model fetch)', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: savedOpenRouter,
+        });
+        vi.mocked(mockMessageService.sendMessage).mockImplementation(
+          async (msg: ExtensionMessage) => {
+            if (msg.type === MessageTypes.OPENROUTER_VERIFY_KEY) {
+              return { success: true, balance: 12.34, isFreeTier: false };
+            }
+            return { success: true };
+          },
+        );
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        vi.mocked(mockMessageService.sendMessage).mockClear();
+
+        el<HTMLInputElement>('openrouter-api-key-input').value =
+          'sk-or-v1-check';
+        await el<HTMLButtonElement>('openrouter-verify-button').click();
+
+        await vi.waitFor(() => {
+          expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+            type: MessageTypes.OPENROUTER_VERIFY_KEY,
+            apiKey: 'sk-or-v1-check',
+          });
+        });
+        // CRITICAL: Verify Key must NOT call OPENROUTER_LIST_MODELS
+        expect(mockMessageService.sendMessage).not.toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: MessageTypes.OPENROUTER_LIST_MODELS,
+          }),
+        );
+
+        const status = el<HTMLDivElement>('openrouter-status');
+        expect(status.textContent).toContain('$12.34');
+        expect(status.classList.contains('success')).toBe(true);
+      });
+
+      it('should auto-check balance on opening settings if OpenRouter is enabled with key', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: savedOpenRouter,
+        });
+        vi.mocked(mockMessageService.sendMessage).mockImplementation(
+          async (msg: ExtensionMessage) => {
+            if (msg.type === MessageTypes.OPENROUTER_VERIFY_KEY) {
+              return { success: true, balance: 0, isFreeTier: true };
+            }
+            return { success: true };
+          },
+        );
+        await controller.start();
+
+        vi.mocked(mockMessageService.sendMessage).mockClear();
+        el<HTMLButtonElement>('toggle-settings-button').click();
+
+        expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+          type: MessageTypes.OPENROUTER_VERIFY_KEY,
+          apiKey: 'sk-or-v1-saved',
+        });
+      });
+
+      it('should auto-check balance when toggling OpenRouter enabled to true if key is present', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            ...savedOpenRouter,
+            enabled: false,
+          },
+        });
+        vi.mocked(mockMessageService.sendMessage).mockImplementation(
+          async (msg: ExtensionMessage) => {
+            if (msg.type === MessageTypes.OPENROUTER_VERIFY_KEY) {
+              return { success: true, balance: 5.0, isFreeTier: false };
+            }
+            return { success: true };
+          },
+        );
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        vi.mocked(mockMessageService.sendMessage).mockClear();
+
+        const toggle = el<HTMLInputElement>('openrouter-enabled-toggle');
+        toggle.checked = true;
+        toggle.dispatchEvent(new Event('change'));
+
+        expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+          type: MessageTypes.OPENROUTER_VERIFY_KEY,
+          apiKey: 'sk-or-v1-saved',
+        });
+      });
+
+      it('should refresh both models AND credit balance when settings refresh button is clicked in Option 1', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: savedOpenRouter,
+        });
+        const topModels = [
+          {
+            id: 'openrouter/free',
+            name: 'openrouter/free: Free Models Router',
+            contextLength: 32768,
+          },
+          {
+            id: 'deepseek/deepseek-r1:free',
+            name: 'DeepSeek: DeepSeek R1 (free)',
+            contextLength: 64000,
+          },
+        ];
+        vi.mocked(mockMessageService.sendMessage).mockImplementation(
+          async (msg: ExtensionMessage) => {
+            if (msg.type === MessageTypes.OPENROUTER_LIST_MODELS) {
+              return { success: true, models: topModels };
+            }
+            if (msg.type === MessageTypes.OPENROUTER_VERIFY_KEY) {
+              return { success: true, balance: 8.0, isFreeTier: false };
+            }
+            return { success: true };
+          },
+        );
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        vi.mocked(mockMessageService.sendMessage).mockClear();
+
+        const refreshBtn = el<HTMLButtonElement>(
+          'openrouter-refresh-top-models-button',
+        );
+        await refreshBtn.click();
+
+        await vi.waitFor(() => {
+          // Must call BOTH
+          expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+            type: MessageTypes.OPENROUTER_LIST_MODELS,
+          });
+          expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+            type: MessageTypes.OPENROUTER_VERIFY_KEY,
+            apiKey: 'sk-or-v1-saved',
+          });
+        });
+
+        expect(refreshBtn.textContent).toBe('Refresh Models');
+        expect(refreshBtn.disabled).toBe(false);
+
+        const top5List = el<HTMLDivElement>('openrouter-top5-models-list');
+        expect(top5List.textContent).toContain(
+          'DeepSeek: DeepSeek R1 (free) (64k)',
+        );
+      });
+
+      it('should allow adding, removing, and resetting custom models in Option 2, and reject random strings', async () => {
+        const mockAllModels = [
+          {
+            id: 'meta-llama/llama-3.3-70b-instruct:free',
+            name: 'Llama 3.3 70B',
+            contextLength: 131072,
+          },
+        ];
+        vi.mocked(mockLocalStorage.get).mockImplementation(async (key) => {
+          if (key === StorageKeys.OPENROUTER_ALL_MODELS_CACHE) {
+            return mockAllModels;
+          }
+          return undefined;
+        });
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            ...savedOpenRouter,
+            mode: 'custom',
+            customModels: [
+              {
+                id: 'openrouter/free',
+                name: 'openrouter/free: Free Models Router',
+                contextLength: 32768,
+              },
+            ],
+          },
+        });
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+
+        const customList = el<HTMLDivElement>('openrouter-custom-models-list');
+        expect(customList.textContent).toContain(
+          'openrouter/free: Free Models Router (32k)',
+        );
+
+        // Try to add a random string - must NOT be added
+        const addInput = el<HTMLInputElement>('openrouter-add-model-input');
+        addInput.value = 'random-unlisted-string';
+        addInput.dispatchEvent(new Event('input'));
+        expect(customList.textContent).not.toContain('random-unlisted-string');
+
+        // Select a valid model from list
+        addInput.value = 'meta-llama/llama-3.3-70b-instruct:free';
+        addInput.dispatchEvent(new Event('input'));
+
+        expect(customList.textContent).toContain('Llama 3.3 70B (128k)');
+        expect(addInput.value).toBe('');
+
+        // Remove model
+        const removeBtns = customList.querySelectorAll<HTMLButtonElement>(
+          '.openrouter-model-remove-btn',
+        );
+        expect(removeBtns.length).toBe(2);
+        removeBtns[1].click();
+
+        expect(customList.textContent).not.toContain('Llama 3.3 70B (128k)');
+
+        // Reset models
+        vi.mocked(mockMessageService.sendMessage).mockResolvedValueOnce({
+          success: true,
+          models: [
+            {
+              id: 'openrouter/free',
+              name: 'openrouter/free: Free Models Router',
+            },
+            { id: 'reset-model', name: 'Reset Model' },
+          ],
+        });
+        const resetBtn = el<HTMLButtonElement>(
+          'openrouter-reset-models-button',
+        );
+        resetBtn.click();
+
+        const overlay = el<HTMLDivElement>('confirm-overlay');
+        expect(overlay.classList.contains('hidden')).toBe(false);
+        expect(el<HTMLParagraphElement>('confirm-message').textContent).toBe(
+          'Reset configured models to the Top 5 free models?',
+        );
+
+        el<HTMLButtonElement>('confirm-ok-button').click();
+
+        await vi.waitFor(() => {
+          expect(overlay.classList.contains('hidden')).toBe(true);
+          expect(customList.textContent).toContain('Reset Model');
+        });
+      });
+
+      it('should keep custom models when Reset to Top 5 Free Models is cancelled', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            ...savedOpenRouter,
+            mode: 'custom',
+            customModels: [
+              {
+                id: 'my-custom/model:free',
+                name: 'My Custom Model',
+                contextLength: 32768,
+              },
+            ],
+          },
+        });
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+
+        const customList = el<HTMLDivElement>('openrouter-custom-models-list');
+        expect(customList.textContent).toContain('My Custom Model (32k)');
+
+        const resetBtn = el<HTMLButtonElement>(
+          'openrouter-reset-models-button',
+        );
+        resetBtn.click();
+
+        const overlay = el<HTMLDivElement>('confirm-overlay');
+        expect(overlay.classList.contains('hidden')).toBe(false);
+
+        el<HTMLButtonElement>('confirm-cancel-button').click();
+
+        await vi.waitFor(() => {
+          expect(overlay.classList.contains('hidden')).toBe(true);
+        });
+        expect(customList.textContent).toContain('My Custom Model (32k)');
+      });
+
+      it('should search for a model using cache without making API calls', async () => {
+        const mockAllModels = [
+          {
+            id: 'deepseek/deepseek-r1:free',
+            name: 'DeepSeek: DeepSeek R1 (free)',
+            contextLength: 64000,
+          },
+        ];
+        vi.mocked(mockLocalStorage.get).mockImplementation(async (key) => {
+          if (key === StorageKeys.OPENROUTER_ALL_MODELS_CACHE) {
+            return mockAllModels;
+          }
+          return undefined;
+        });
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            ...savedOpenRouter,
+            mode: 'custom',
+            customModels: [
+              {
+                id: 'openrouter/free',
+                name: 'openrouter/free: Free Models Router',
+                contextLength: 32768,
+              },
+            ],
+          },
+        });
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        vi.mocked(mockMessageService.sendMessage).mockClear();
+
+        const customList = el<HTMLDivElement>('openrouter-custom-models-list');
+        const addInput = el<HTMLInputElement>('openrouter-add-model-input');
+
+        // Selecting from datalist uses cache and does NOT call the API
+        addInput.value = 'deepseek/deepseek-r1:free';
+        addInput.dispatchEvent(new Event('input'));
+
+        expect(customList.textContent).toContain(
+          'DeepSeek: DeepSeek R1 (free) (64k)',
+        );
+        expect(mockMessageService.sendMessage).not.toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: MessageTypes.OPENROUTER_LIST_ALL_MODELS,
+          }),
+        );
+      });
+
+      it('should update the model cache from API on clicking Refresh Models in custom mode and require picking from list', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            ...savedOpenRouter,
+            mode: 'custom',
+            customModels: [
+              {
+                id: 'openrouter/free',
+                name: 'openrouter/free: Free Models Router',
+              },
+            ],
+          },
+        });
+        const freshModels = [
+          {
+            id: 'brand-new/future-model:free',
+            name: 'Future Model',
+            contextLength: 128000,
+          },
+        ];
+        vi.mocked(mockMessageService.sendMessage).mockImplementation(
+          async (msg: ExtensionMessage) => {
+            if (msg.type === MessageTypes.OPENROUTER_LIST_ALL_MODELS) {
+              return { success: true, models: freshModels };
+            }
+            return { success: true };
+          },
+        );
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+
+        const addInput = el<HTMLInputElement>('openrouter-add-model-input');
+        const refreshBtn = el<HTMLButtonElement>(
+          'openrouter-refresh-custom-models-button',
+        );
+
+        // Clicking Refresh Models calls API to update cache
+        refreshBtn.click();
+
+        await vi.waitFor(() => {
+          expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+            type: MessageTypes.OPENROUTER_LIST_ALL_MODELS,
+          });
+          const datalist = el<HTMLDataListElement>(
+            'openrouter-models-datalist',
+          );
+          expect(
+            Array.from(datalist.options).some(
+              (opt) => opt.value === 'brand-new/future-model:free',
+            ),
+          ).toBe(true);
+        });
+
+        const customList = el<HTMLDivElement>('openrouter-custom-models-list');
+        // Must NOT add the model automatically until picked from list
+        expect(customList.textContent).not.toContain('Future Model');
+
+        // Picking from the list adds it
+        addInput.value = 'brand-new/future-model:free';
+        addInput.dispatchEvent(new Event('input'));
+        expect(customList.textContent).toContain('Future Model (128k)');
+      });
+
+      it('should reject save if OpenRouter is enabled in custom mode with 0 models and show inline error', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            ...savedOpenRouter,
+            mode: 'custom',
+            customModels: [
+              {
+                id: 'openrouter/free',
+                name: 'openrouter/free: Free Models Router',
+              },
+            ],
+          },
+        });
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+
+        // Remove all models
+        const customList = el<HTMLDivElement>('openrouter-custom-models-list');
+        const removeBtn = customList.querySelector<HTMLButtonElement>(
+          '.openrouter-model-remove-btn',
+        );
+        removeBtn?.click();
+
+        expect(customList.textContent).toContain(
+          'No models configured. Please add at least one model.',
+        );
+
+        vi.mocked(mockSyncStorage.set).mockClear();
+        el<HTMLButtonElement>('save-settings-button').click();
+
+        const errorDiv = el<HTMLDivElement>('settings-error');
+        expect(errorDiv.textContent).toBe(
+          'Please add at least one model to your custom model list.',
+        );
+        expect(errorDiv.classList.contains('hidden')).toBe(false);
+
+        const inlineErrorDiv = el<HTMLDivElement>(
+          'openrouter-custom-models-error',
+        );
+        expect(inlineErrorDiv.textContent).toBe(
+          'Please add at least one model to your custom model list.',
+        );
+        expect(inlineErrorDiv.classList.contains('hidden')).toBe(false);
+
+        expect(mockSyncStorage.set).not.toHaveBeenCalled();
+      });
+
+      it('should allow save if OpenRouter is disabled even with 0 custom models', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            ...savedOpenRouter,
+            enabled: false,
+            mode: 'custom',
+            customModels: [],
+          },
+        });
+        await controller.start();
+
+        el<HTMLButtonElement>('toggle-settings-button').click();
+        vi.mocked(mockSyncStorage.set).mockClear();
+        await el<HTMLButtonElement>('save-settings-button').click();
+
+        await vi.waitFor(() => {
+          expect(mockSyncStorage.set).toHaveBeenCalledWith(
+            StorageKeys.OPENROUTER_SETTINGS,
+            expect.objectContaining({
+              enabled: false,
+              mode: 'custom',
+              customModels: [],
+            }),
+          );
+        });
+      });
+
+      it('should populate datalist with all loaded models', async () => {
+        const mockAllModels = [
+          {
+            id: 'openai/gpt-4o',
+            name: 'OpenAI: GPT-4o',
+            contextLength: 128000,
+          },
+          {
+            id: 'deepseek/deepseek-r1:free',
+            name: 'DeepSeek: DeepSeek R1 (free)',
+            contextLength: 64000,
+          },
+        ];
+        vi.mocked(mockLocalStorage.get).mockImplementation(async (key) => {
+          if (key === StorageKeys.OPENROUTER_ALL_MODELS_CACHE) {
+            return mockAllModels;
+          }
+          return undefined;
+        });
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: savedOpenRouter,
+        });
+        await controller.start();
+
+        const datalist = el<HTMLDataListElement>('openrouter-models-datalist');
+        expect(datalist.options.length).toBe(2);
+        expect(datalist.options[0].value).toBe('openai/gpt-4o');
+        expect(datalist.options[0].textContent).toContain('(128k)');
+        expect(datalist.options[1].value).toBe('deepseek/deepseek-r1:free');
+        expect(datalist.options[1].textContent).toContain('(64k)');
+      });
+
+      it('should show chat toolbar refresh button in top5 mode and hide it in custom mode', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            ...savedOpenRouter,
+            mode: 'top5',
+          },
+          [StorageKeys.SELECTED_PROVIDER]: Providers.OPENROUTER,
+        });
+        vi.mocked(mockMessageService.sendMessage).mockResolvedValue({
+          success: true,
+          models: [
+            {
+              id: 'openrouter/free',
+              name: 'openrouter/free: Free Models Router',
+            },
+          ],
+        });
+        await controller.start();
+
+        const refreshBtn = el<HTMLButtonElement>('refresh-models-button');
+        expect(refreshBtn.classList.contains('hidden')).toBe(false);
+
+        // Now with custom mode
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: {
+            ...savedOpenRouter,
+            mode: 'custom',
+          },
+          [StorageKeys.SELECTED_PROVIDER]: Providers.OPENROUTER,
+        });
+        await controller.start();
+
+        expect(refreshBtn.classList.contains('hidden')).toBe(true);
+      });
+
+      it('should fallback to openrouter/free in chat model dropdown if offline or no models found', async () => {
+        stubStorage({
+          [StorageKeys.API_KEY]: 'key',
+          [StorageKeys.OPENROUTER_SETTINGS]: savedOpenRouter,
+          [StorageKeys.SELECTED_PROVIDER]: Providers.OPENROUTER,
+        });
+        vi.mocked(mockMessageService.sendMessage).mockResolvedValue({
+          success: false,
+          models: [
+            {
+              id: 'openrouter/free',
+              name: 'openrouter/free: Free Models Router',
+            },
+          ],
+        });
+        await controller.start();
+
+        const modelSelect = el<HTMLSelectElement>('model-select');
+        expect(modelSelect.options.length).toBeGreaterThanOrEqual(1);
+        expect(modelSelect.options[0].value).toBe('openrouter/free');
       });
     });
   });

@@ -26,6 +26,8 @@ import { ChromeDNRService } from './services/dnrService';
 import { ChromeMessageService } from './services/messageService';
 import { GoogleGeminiChatProvider } from './services/googleGeminiChatProvider';
 import { OllamaChatProvider } from './services/ollamaChatProvider';
+import { OpenRouterChatProvider } from './services/openRouterChatProvider';
+import { OpenRouterService } from './services/openRouterService';
 import { ChatHistory } from './models/ChatHistory';
 import { ContextManager } from './models/ContextManager';
 import { Providers } from './constants';
@@ -34,6 +36,7 @@ const localStorageService = new ChromeLocalStorageService();
 const syncStorageService = new ChromeSyncStorageService();
 const tabService = new ChromeTabService();
 const messageService = new ChromeMessageService();
+const openRouterService = new OpenRouterService();
 
 const chatHistory = new ChatHistory(localStorageService);
 const contextManager = new ContextManager(localStorageService, tabService);
@@ -48,6 +51,11 @@ const providers = {
     new ChromeDNRService(),
     syncStorageService,
   ),
+  [Providers.OPENROUTER]: new OpenRouterChatProvider(
+    openRouterService,
+    syncStorageService,
+    localStorageService,
+  ),
 };
 
 const controller = new BackgroundController(
@@ -57,6 +65,7 @@ const controller = new BackgroundController(
   tabService,
   messageService,
   providers,
+  openRouterService,
 );
 
 controller.start();

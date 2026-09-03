@@ -23,6 +23,8 @@ import {
   SUPPORTED_MODELS,
   DEFAULT_MODEL,
   DEFAULT_OLLAMA_SETTINGS,
+  DEFAULT_OPENROUTER_SETTINGS,
+  OPENROUTER_FALLBACK_FREE_MODELS,
   Providers,
   GENERAL_TIPS,
   OLLAMA_TIPS,
@@ -39,8 +41,13 @@ import {
   SuccessResponse,
   CheckPinnedTabsResponse,
   GetHistoryResponse,
+  OpenRouterSettings,
+  OpenRouterModelConfig,
+  OpenRouterVerifyKeyResponse,
+  OpenRouterListModelsResponse,
 } from '../types';
 import { normalizeOllamaHost, toStoredOllamaSettings } from '../ollamaUtils';
+import { formatContextLength } from '../utils';
 import {
   ISyncStorageService,
   ILocalStorageService,
@@ -77,7 +84,25 @@ export class SidebarController {
   private ollamaResetButton: HTMLButtonElement;
   private ollamaNumCtxInput: HTMLInputElement;
   private ollamaKeepAliveInput: HTMLInputElement;
+  private openRouterEnabledToggle: HTMLInputElement;
+  private openRouterPanelBody: HTMLDivElement;
+  private openRouterStatus: HTMLDivElement;
+  private openRouterApiKeyInput: HTMLInputElement;
+  private openRouterVerifyButton: HTMLButtonElement;
+  private openRouterModeTop5: HTMLInputElement;
+  private openRouterModeCustom: HTMLInputElement;
+  private openRouterTop5Container: HTMLDivElement;
+  private openRouterRefreshTopModelsButton: HTMLButtonElement;
+  private openRouterTop5ModelsList: HTMLDivElement;
+  private openRouterCustomContainer: HTMLDivElement;
+  private openRouterCustomModelsList: HTMLDivElement;
+  private openRouterAddModelInput: HTMLInputElement;
+  private openRouterRefreshCustomModelsButton: HTMLButtonElement;
+  private openRouterResetModelsButton: HTMLButtonElement;
+  private openRouterCustomModelsError: HTMLDivElement;
+  private openRouterModelsDatalist: HTMLDataListElement;
   private refreshModelsButton: HTMLButtonElement;
+  private refreshTickTimeout: ReturnType<typeof setTimeout> | null = null;
   private confirmOverlay: HTMLDivElement;
   private confirmMessage: HTMLParagraphElement;
   private confirmOkButton: HTMLButtonElement;
@@ -100,6 +125,14 @@ export class SidebarController {
   private initialOllamaSettings: OllamaSettings = {
     ...DEFAULT_OLLAMA_SETTINGS,
   };
+  private initialOpenRouterSettings: OpenRouterSettings = {
+    ...DEFAULT_OPENROUTER_SETTINGS,
+  };
+  private cachedTop5Models: OpenRouterModelConfig[] = [
+    ...OPENROUTER_FALLBACK_FREE_MODELS,
+  ];
+  private currentOpenRouterModels: OpenRouterModelConfig[] = [];
+  private cachedAllModels: OpenRouterModelConfig[] = [];
 
   private ollamaModels: OllamaModelsClient;
 
@@ -190,6 +223,57 @@ export class SidebarController {
     this.ollamaKeepAliveInput = document.getElementById(
       'ollama-keep-alive-input',
     ) as HTMLInputElement;
+    this.openRouterEnabledToggle = document.getElementById(
+      'openrouter-enabled-toggle',
+    ) as HTMLInputElement;
+    this.openRouterPanelBody = document.getElementById(
+      'openrouter-panel-body',
+    ) as HTMLDivElement;
+    this.openRouterStatus = document.getElementById(
+      'openrouter-status',
+    ) as HTMLDivElement;
+    this.openRouterApiKeyInput = document.getElementById(
+      'openrouter-api-key-input',
+    ) as HTMLInputElement;
+    this.openRouterVerifyButton = document.getElementById(
+      'openrouter-verify-button',
+    ) as HTMLButtonElement;
+    this.openRouterModeTop5 = document.getElementById(
+      'openrouter-mode-top5',
+    ) as HTMLInputElement;
+    this.openRouterModeCustom = document.getElementById(
+      'openrouter-mode-custom',
+    ) as HTMLInputElement;
+    this.openRouterTop5Container = document.getElementById(
+      'openrouter-top5-container',
+    ) as HTMLDivElement;
+    this.openRouterRefreshTopModelsButton = document.getElementById(
+      'openrouter-refresh-top-models-button',
+    ) as HTMLButtonElement;
+    this.openRouterTop5ModelsList = document.getElementById(
+      'openrouter-top5-models-list',
+    ) as HTMLDivElement;
+    this.openRouterCustomContainer = document.getElementById(
+      'openrouter-custom-container',
+    ) as HTMLDivElement;
+    this.openRouterCustomModelsList = document.getElementById(
+      'openrouter-custom-models-list',
+    ) as HTMLDivElement;
+    this.openRouterAddModelInput = document.getElementById(
+      'openrouter-add-model-input',
+    ) as HTMLInputElement;
+    this.openRouterRefreshCustomModelsButton = document.getElementById(
+      'openrouter-refresh-custom-models-button',
+    ) as HTMLButtonElement;
+    this.openRouterResetModelsButton = document.getElementById(
+      'openrouter-reset-models-button',
+    ) as HTMLButtonElement;
+    this.openRouterCustomModelsError = document.getElementById(
+      'openrouter-custom-models-error',
+    ) as HTMLDivElement;
+    this.openRouterModelsDatalist = document.getElementById(
+      'openrouter-models-datalist',
+    ) as HTMLDataListElement;
     this.refreshModelsButton = document.getElementById(
       'refresh-models-button',
     ) as HTMLButtonElement;
@@ -264,10 +348,13 @@ export class SidebarController {
         this.openSettings();
         return;
       }
-      this.selectedProvider =
-        this.providerSelect.value === Providers.OLLAMA
-          ? Providers.OLLAMA
-          : Providers.GOOGLE_GEMINI;
+      if (this.providerSelect.value === Providers.OLLAMA) {
+        this.selectedProvider = Providers.OLLAMA;
+      } else if (this.providerSelect.value === Providers.OPENROUTER) {
+        this.selectedProvider = Providers.OPENROUTER;
+      } else {
+        this.selectedProvider = Providers.GOOGLE_GEMINI;
+      }
       await this.syncStorageService.set(
         StorageKeys.SELECTED_PROVIDER,
         this.selectedProvider,
@@ -276,16 +363,12 @@ export class SidebarController {
     });
 
     this.modelSelect.addEventListener('change', () => {
-      this.syncStorageService.set(
-        this.selectedProvider === Providers.OLLAMA
-          ? StorageKeys.OLLAMA_MODEL
-          : StorageKeys.GEMINI_MODEL,
-        this.modelSelect.value,
-      );
+      const key = this.getModelStorageKey(this.selectedProvider);
+      this.syncStorageService.set(key, this.modelSelect.value);
     });
 
     this.refreshModelsButton.addEventListener('click', () =>
-      this.refreshOllamaModels(),
+      this.refreshModels(),
     );
 
     this.geminiEnabledToggle.addEventListener('change', () =>
@@ -293,6 +376,69 @@ export class SidebarController {
     );
     this.ollamaEnabledToggle.addEventListener('change', () =>
       this.updateSettingsControlsState(),
+    );
+    this.openRouterEnabledToggle.addEventListener('change', () => {
+      this.updateSettingsControlsState();
+      if (this.openRouterEnabledToggle.checked) {
+        if (this.openRouterApiKeyInput.value.trim() !== '') {
+          this.checkOpenRouterKey(this.openRouterApiKeyInput.value);
+        }
+        if (this.cachedTop5Models.length <= 1) {
+          void this.fetchOpenRouterTopModels();
+        }
+        if (this.cachedAllModels.length === 0) {
+          void this.fetchOpenRouterAllModels();
+        }
+      }
+    });
+
+    this.openRouterVerifyButton.addEventListener('click', () =>
+      this.checkOpenRouterKey(this.openRouterApiKeyInput.value, true),
+    );
+
+    this.openRouterModeTop5.addEventListener('change', () =>
+      this.updateOpenRouterModeVisibility(),
+    );
+
+    this.openRouterModeCustom.addEventListener('change', () => {
+      this.updateOpenRouterModeVisibility();
+      if (this.currentOpenRouterModels.length === 0) {
+        this.currentOpenRouterModels = [...this.cachedTop5Models];
+        this.renderCustomModelsList();
+      }
+    });
+
+    this.openRouterRefreshTopModelsButton.addEventListener('click', () =>
+      this.refreshOpenRouterTopModelsAndCredits(),
+    );
+
+    this.openRouterRefreshCustomModelsButton.addEventListener('click', () =>
+      this.refreshCustomModelsCatalog(),
+    );
+
+    this.openRouterAddModelInput.addEventListener('input', () => {
+      const val = this.openRouterAddModelInput.value.trim();
+      if (!val) return;
+      const isKnownModel =
+        this.cachedAllModels.some((m) => m.id === val) ||
+        this.cachedTop5Models.some((m) => m.id === val);
+      if (isKnownModel) {
+        this.addCustomModel(val);
+      }
+    });
+
+    this.openRouterAddModelInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const val = this.openRouterAddModelInput.value.trim();
+        if (val) {
+          this.addCustomModel(val);
+        }
+      }
+    });
+
+    this.openRouterResetModelsButton.addEventListener('click', () =>
+      this.resetCustomModels(),
     );
 
     this.ollamaTestButton.addEventListener('click', () =>
@@ -371,18 +517,54 @@ export class SidebarController {
     // Existing users predate the toggle: treat "unset" as enabled.
     this.geminiEnabledToggle.checked = geminiEnabled ?? true;
     this.setOllamaFields(ollamaSettings);
+
+    const rawOpenRouter = await this.syncStorageService.get<OpenRouterSettings>(
+      StorageKeys.OPENROUTER_SETTINGS,
+    );
+    const openRouterSettings: OpenRouterSettings = rawOpenRouter
+      ? {
+          enabled: Boolean(rawOpenRouter.enabled),
+          apiKey: String(rawOpenRouter.apiKey ?? ''),
+          mode: rawOpenRouter.mode === 'custom' ? 'custom' : 'top5',
+          customModels: Array.isArray(rawOpenRouter.customModels)
+            ? rawOpenRouter.customModels
+            : [...OPENROUTER_FALLBACK_FREE_MODELS],
+        }
+      : { ...DEFAULT_OPENROUTER_SETTINGS };
+
+    const cachedTop5 = await this.localStorageService.get<
+      OpenRouterModelConfig[]
+    >(StorageKeys.OPENROUTER_TOP_MODELS_CACHE);
+    if (Array.isArray(cachedTop5) && cachedTop5.length > 0) {
+      this.cachedTop5Models = cachedTop5;
+    }
+
+    const cachedAllModels = await this.localStorageService.get<
+      OpenRouterModelConfig[]
+    >(StorageKeys.OPENROUTER_ALL_MODELS_CACHE);
+    if (Array.isArray(cachedAllModels) && cachedAllModels.length > 0) {
+      this.cachedAllModels = cachedAllModels;
+      this.populateModelsDatalist(cachedAllModels);
+    }
+
+    this.setOpenRouterFields(openRouterSettings);
+    this.renderTop5ModelsList(this.cachedTop5Models);
+    this.renderCustomModelsList();
     this.updateSettingsControlsState();
 
     await this.populateProviderSelect();
-    // Model population may hit the network (Ollama); don't block startup —
+    // Model population may hit the network (Ollama / OpenRouter); don't block startup —
     // the settings decision, context load, and history rehydrate below must
-    // render immediately even when the Ollama host is unreachable.
+    // render immediately even when the host is unreachable.
     void this.populateModelSelect().catch((error) =>
       console.error('Failed to populate models:', error),
     );
 
     const geminiConfigured = this.geminiEnabledToggle.checked && !!apiKey;
-    if (geminiConfigured || ollamaSettings.enabled) {
+    const openRouterConfigured =
+      this.openRouterEnabledToggle.checked &&
+      !!this.openRouterApiKeyInput.value;
+    if (geminiConfigured || ollamaSettings.enabled || openRouterConfigured) {
       this.toggleSettingsView(false);
     } else {
       this.openSettings();
@@ -433,6 +615,7 @@ export class SidebarController {
   private async populateProviderSelect() {
     const geminiOn = this.geminiEnabledToggle.checked;
     const ollamaOn = this.ollamaEnabledToggle.checked;
+    const openRouterOn = this.openRouterEnabledToggle.checked;
     this.providerSelect.innerHTML = '';
 
     const addOption = (value: string, label: string) => {
@@ -447,7 +630,12 @@ export class SidebarController {
     if (ollamaOn) {
       addOption(Providers.OLLAMA, 'Ollama');
     }
-    if ((geminiOn ? 1 : 0) + (ollamaOn ? 1 : 0) === 1) {
+    if (openRouterOn) {
+      addOption(Providers.OPENROUTER, 'OpenRouter');
+    }
+    const enabledCount =
+      (geminiOn ? 1 : 0) + (ollamaOn ? 1 : 0) + (openRouterOn ? 1 : 0);
+    if (enabledCount === 1) {
       addOption(SidebarController.ADD_PROVIDER_OPTION, 'Add Provider…');
     }
 
@@ -456,12 +644,16 @@ export class SidebarController {
     );
     if (stored === Providers.OLLAMA && ollamaOn) {
       this.selectedProvider = Providers.OLLAMA;
+    } else if (stored === Providers.OPENROUTER && openRouterOn) {
+      this.selectedProvider = Providers.OPENROUTER;
     } else if (stored === Providers.GOOGLE_GEMINI && geminiOn) {
       this.selectedProvider = Providers.GOOGLE_GEMINI;
     } else if (geminiOn) {
       this.selectedProvider = Providers.GOOGLE_GEMINI;
     } else if (ollamaOn) {
       this.selectedProvider = Providers.OLLAMA;
+    } else if (openRouterOn) {
+      this.selectedProvider = Providers.OPENROUTER;
     }
     this.providerSelect.value = this.selectedProvider;
     if (stored !== this.selectedProvider) {
@@ -473,8 +665,8 @@ export class SidebarController {
   }
 
   /**
-   * Rebuilds the model dropdown for the selected provider (Ollama models are
-   * fetched, falling back to the cached list) and restores the provider's
+   * Rebuilds the model dropdown for the selected provider (Ollama / OpenRouter models
+   * are fetched, falling back to the cached list) and restores the provider's
    * persisted model.
    */
   private async populateModelSelect() {
@@ -491,6 +683,24 @@ export class SidebarController {
       emptyMessage = result.fromCache
         ? 'No models found — check Ollama connection'
         : 'No models installed — pull one with `ollama pull`';
+    } else if (provider === Providers.OPENROUTER) {
+      const isCustom = this.openRouterModeCustom.checked;
+      let openRouterModels: OpenRouterModelConfig[];
+      if (isCustom) {
+        openRouterModels =
+          this.currentOpenRouterModels.length > 0
+            ? this.currentOpenRouterModels
+            : [...OPENROUTER_FALLBACK_FREE_MODELS];
+      } else {
+        if (this.cachedTop5Models.length <= 1) {
+          await this.fetchOpenRouterTopModels();
+        }
+        openRouterModels =
+          this.cachedTop5Models.length > 0
+            ? this.cachedTop5Models
+            : [...OPENROUTER_FALLBACK_FREE_MODELS];
+      }
+      models = openRouterModels.map((m) => [m.id, m.name]);
     } else {
       models = Object.entries(SUPPORTED_MODELS) as [string, string][];
     }
@@ -512,10 +722,7 @@ export class SidebarController {
       this.modelSelect.appendChild(option);
     });
 
-    const modelKey =
-      provider === Providers.OLLAMA
-        ? StorageKeys.OLLAMA_MODEL
-        : StorageKeys.GEMINI_MODEL;
+    const modelKey = this.getModelStorageKey(provider);
     const storedModel = await this.syncStorageService.get<string>(modelKey);
     const options = Array.from(this.modelSelect.options);
     // Display-only fallback: the stored preference is never overwritten here,
@@ -533,20 +740,67 @@ export class SidebarController {
     this.updateRefreshButtonVisibility();
   }
 
-  private updateRefreshButtonVisibility() {
-    this.refreshModelsButton.classList.toggle(
-      'hidden',
-      this.selectedProvider !== Providers.OLLAMA,
-    );
+  private getModelStorageKey(provider: LLMProvider): string {
+    switch (provider) {
+      case Providers.OLLAMA:
+        return StorageKeys.OLLAMA_MODEL;
+      case Providers.OPENROUTER:
+        return StorageKeys.OPENROUTER_MODEL;
+      case Providers.GOOGLE_GEMINI:
+      default:
+        return StorageKeys.GEMINI_MODEL;
+    }
   }
 
-  private async refreshOllamaModels() {
+  private resetRefreshButton() {
+    if (this.refreshTickTimeout) {
+      clearTimeout(this.refreshTickTimeout);
+      this.refreshTickTimeout = null;
+    }
+    this.refreshModelsButton.innerHTML = ICONS.REFRESH;
+    this.refreshModelsButton.classList.remove('success', 'spinning');
+  }
+
+  private updateRefreshButtonVisibility() {
+    const isOllama = this.selectedProvider === Providers.OLLAMA;
+    const isOpenRouterTop5 =
+      this.selectedProvider === Providers.OPENROUTER &&
+      this.openRouterModeTop5.checked;
+    const isVisible = isOllama || isOpenRouterTop5;
+    this.refreshModelsButton.classList.toggle('hidden', !isVisible);
+    if (!isVisible) {
+      this.resetRefreshButton();
+    }
+  }
+
+  private async refreshModels() {
+    this.resetRefreshButton();
     this.refreshModelsButton.disabled = true;
+    this.refreshModelsButton.classList.add('spinning');
     try {
+      if (this.selectedProvider === Providers.OPENROUTER) {
+        await this.fetchOpenRouterTopModels();
+      }
       await this.populateModelSelect();
+      this.showRefreshSuccess();
     } finally {
+      this.refreshModelsButton.classList.remove('spinning');
       this.refreshModelsButton.disabled = false;
     }
+  }
+
+  private showRefreshSuccess() {
+    if (this.refreshTickTimeout) {
+      clearTimeout(this.refreshTickTimeout);
+      this.refreshTickTimeout = null;
+    }
+    this.refreshModelsButton.innerHTML = ICONS.CHECK;
+    this.refreshModelsButton.classList.add('success');
+    this.refreshTickTimeout = setTimeout(() => {
+      this.refreshModelsButton.innerHTML = ICONS.REFRESH;
+      this.refreshModelsButton.classList.remove('success');
+      this.refreshTickTimeout = null;
+    }, 1500);
   }
 
   private openSettings() {
@@ -555,21 +809,34 @@ export class SidebarController {
     this.initialApiKey = this.apiKeyInput.value;
     this.initialGeminiEnabled = this.geminiEnabledToggle.checked;
     this.initialOllamaSettings = this.getOllamaFieldsFromUI();
+    this.initialOpenRouterSettings = this.getOpenRouterFieldsFromUI();
     this.isSettingsOpen = true;
     this.toggleSettingsView(true);
     this.apiKeyInput.focus();
     // Detect a local Ollama regardless of the toggle state (status line only;
     // the model cache is owned by fetchOllamaModels).
     this.pingOllama(this.ollamaHostInput.value);
+    if (this.openRouterEnabledToggle.checked) {
+      if (this.openRouterApiKeyInput.value.trim() !== '') {
+        this.checkOpenRouterKey(this.openRouterApiKeyInput.value);
+      }
+      if (this.cachedTop5Models.length <= 1) {
+        void this.fetchOpenRouterTopModels();
+      }
+      if (this.cachedAllModels.length === 0) {
+        void this.fetchOpenRouterAllModels();
+      }
+    }
   }
 
   private async saveSettings() {
     this.clearError();
     const geminiOn = this.geminiEnabledToggle.checked;
     const ollamaOn = this.ollamaEnabledToggle.checked;
+    const openRouterOn = this.openRouterEnabledToggle.checked;
 
     // The Save button is disabled in this state; this is a safety net.
-    if (!geminiOn && !ollamaOn) {
+    if (!geminiOn && !ollamaOn && !openRouterOn) {
       this.showError('Enable at least one provider to save.');
       return;
     }
@@ -579,6 +846,37 @@ export class SidebarController {
     if (geminiOn && this.apiKeyInput.value.trim() === '') {
       this.showError('Please enter your Gemini API Key.', this.apiKeyInput);
       return;
+    }
+    if (openRouterOn) {
+      if (this.openRouterApiKeyInput.value.trim() === '') {
+        this.showError(
+          'Please enter your OpenRouter API Key.',
+          this.openRouterApiKeyInput,
+        );
+        return;
+      }
+      if (
+        this.openRouterModeCustom.checked &&
+        this.currentOpenRouterModels.length === 0
+      ) {
+        const errorMsg =
+          'Please add at least one model to your custom model list.';
+        if (this.openRouterCustomModelsError) {
+          this.openRouterCustomModelsError.textContent = errorMsg;
+          this.openRouterCustomModelsError.classList.remove('hidden');
+          if (
+            typeof this.openRouterCustomModelsError.scrollIntoView ===
+            'function'
+          ) {
+            this.openRouterCustomModelsError.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
+          }
+        }
+        this.showError(errorMsg, this.openRouterAddModelInput);
+        return;
+      }
     }
     if (ollamaOn) {
       const host = this.ollamaHostInput.value.trim();
@@ -610,6 +908,10 @@ export class SidebarController {
         this.getOllamaFieldsFromUI(),
       );
       await this.syncStorageService.set(
+        StorageKeys.OPENROUTER_SETTINGS,
+        this.getOpenRouterFieldsFromUI(),
+      );
+      await this.syncStorageService.set(
         StorageKeys.THEME,
         this.themeSelect.value,
       );
@@ -630,6 +932,7 @@ export class SidebarController {
     this.apiKeyInput.value = this.initialApiKey;
     this.geminiEnabledToggle.checked = this.initialGeminiEnabled;
     this.setOllamaFields(this.initialOllamaSettings);
+    this.setOpenRouterFields(this.initialOpenRouterSettings);
     this.updateSettingsControlsState();
     this.isSettingsOpen = false;
     this.toggleSettingsView(false);
@@ -652,6 +955,282 @@ export class SidebarController {
     this.ollamaKeepAliveInput.value = settings.keepAlive;
   }
 
+  private setOpenRouterFields(settings: OpenRouterSettings) {
+    this.openRouterEnabledToggle.checked = settings.enabled;
+    this.openRouterApiKeyInput.value = settings.apiKey;
+    if (settings.mode === 'custom') {
+      this.openRouterModeCustom.checked = true;
+    } else {
+      this.openRouterModeTop5.checked = true;
+    }
+    this.currentOpenRouterModels = Array.isArray(settings.customModels)
+      ? [...settings.customModels]
+      : [...OPENROUTER_FALLBACK_FREE_MODELS];
+    this.renderCustomModelsList();
+    this.updateOpenRouterModeVisibility();
+  }
+
+  private getOpenRouterFieldsFromUI(): OpenRouterSettings {
+    return {
+      enabled: this.openRouterEnabledToggle.checked,
+      apiKey: this.openRouterApiKeyInput.value,
+      mode: this.openRouterModeCustom.checked ? 'custom' : 'top5',
+      customModels: [...this.currentOpenRouterModels],
+    };
+  }
+
+  private updateOpenRouterModeVisibility() {
+    const isCustom = this.openRouterModeCustom.checked;
+    this.openRouterTop5Container.classList.toggle('hidden', isCustom);
+    this.openRouterCustomContainer.classList.toggle('hidden', !isCustom);
+    this.updateRefreshButtonVisibility();
+  }
+
+  private renderTop5ModelsList(models: OpenRouterModelConfig[]) {
+    this.openRouterTop5ModelsList.innerHTML = '';
+    models.forEach((model) => {
+      const item = document.createElement('div');
+      item.className = 'openrouter-model-item';
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'model-name';
+      const ctx = formatContextLength(model.contextLength);
+      const label = model.name || model.id;
+      nameSpan.textContent = ctx ? `${label} (${ctx})` : label;
+      nameSpan.title = model.id;
+      item.appendChild(nameSpan);
+
+      this.openRouterTop5ModelsList.appendChild(item);
+    });
+  }
+
+  private renderCustomModelsList() {
+    this.openRouterCustomModelsList.innerHTML = '';
+    if (this.currentOpenRouterModels.length === 0) {
+      const emptyMsg = document.createElement('div');
+      emptyMsg.className = 'openrouter-empty-list-message';
+      emptyMsg.textContent =
+        'No models configured. Please add at least one model.';
+      this.openRouterCustomModelsList.appendChild(emptyMsg);
+      return;
+    }
+
+    this.currentOpenRouterModels.forEach((model, index) => {
+      const item = document.createElement('div');
+      item.className = 'openrouter-model-item';
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'model-name';
+      const contextLength =
+        model.contextLength ??
+        this.cachedTop5Models.find((m) => m.id === model.id)?.contextLength ??
+        this.cachedAllModels.find((m) => m.id === model.id)?.contextLength;
+      const ctx = formatContextLength(contextLength);
+      const label = model.name || model.id;
+      nameSpan.textContent = ctx ? `${label} (${ctx})` : label;
+      nameSpan.title = model.id;
+      item.appendChild(nameSpan);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'openrouter-model-remove-btn';
+      removeBtn.innerHTML = ICONS.CLOSE;
+      removeBtn.title = 'Remove model';
+      removeBtn.addEventListener('click', () => {
+        this.currentOpenRouterModels.splice(index, 1);
+        this.renderCustomModelsList();
+      });
+      item.appendChild(removeBtn);
+
+      this.openRouterCustomModelsList.appendChild(item);
+    });
+  }
+
+  private addCustomModel(modelId?: string) {
+    const val = (modelId ?? this.openRouterAddModelInput.value).trim();
+    if (!val) return;
+    const found =
+      this.cachedAllModels.find((m) => m.id === val) ||
+      this.cachedTop5Models.find((m) => m.id === val);
+    // Only allow adding models that exist in the known/fetched model list
+    if (!found) return;
+
+    if (!this.currentOpenRouterModels.some((m) => m.id === found.id)) {
+      this.currentOpenRouterModels.push({
+        id: found.id,
+        name: found.name || found.id,
+        isFree: found.isFree,
+        contextLength: found.contextLength,
+      });
+      this.renderCustomModelsList();
+      if (this.openRouterCustomModelsError) {
+        this.openRouterCustomModelsError.textContent = '';
+        this.openRouterCustomModelsError.classList.add('hidden');
+      }
+    }
+    this.openRouterAddModelInput.value = '';
+  }
+
+  private async refreshCustomModelsCatalog() {
+    this.openRouterRefreshCustomModelsButton.disabled = true;
+    const originalText =
+      this.openRouterRefreshCustomModelsButton.textContent?.trim() ||
+      'Refresh Models';
+    this.openRouterRefreshCustomModelsButton.textContent = 'Refreshing...';
+
+    try {
+      await this.fetchOpenRouterAllModels();
+    } finally {
+      this.openRouterRefreshCustomModelsButton.textContent = originalText;
+      this.openRouterRefreshCustomModelsButton.disabled = false;
+    }
+  }
+
+  private populateModelsDatalist(models: OpenRouterModelConfig[]) {
+    if (!this.openRouterModelsDatalist) return;
+    this.openRouterModelsDatalist.innerHTML = '';
+    models.forEach((model) => {
+      const option = document.createElement('option');
+      option.value = model.id;
+      const ctx = formatContextLength(model.contextLength);
+      const ctxStr = ctx ? ` (${ctx})` : '';
+      option.textContent =
+        model.name && model.name !== model.id
+          ? `${model.name}${ctxStr} (${model.id})`
+          : `${model.id}${ctxStr}`;
+      this.openRouterModelsDatalist.appendChild(option);
+    });
+  }
+
+  private async fetchOpenRouterAllModels(): Promise<OpenRouterModelConfig[]> {
+    try {
+      const response =
+        await this.messageService.sendMessage<OpenRouterListModelsResponse>({
+          type: MessageTypes.OPENROUTER_LIST_ALL_MODELS,
+        });
+      if (
+        response &&
+        response.success &&
+        Array.isArray(response.models) &&
+        response.models.length > 0
+      ) {
+        this.cachedAllModels = response.models;
+        await this.localStorageService.set(
+          StorageKeys.OPENROUTER_ALL_MODELS_CACHE,
+          response.models,
+        );
+        this.populateModelsDatalist(this.cachedAllModels);
+        return response.models;
+      }
+    } catch (error) {
+      console.error('Failed to fetch OpenRouter all models:', error);
+    }
+    return this.cachedAllModels;
+  }
+
+  private async resetCustomModels() {
+    if (
+      !(await this.showConfirm(
+        'Reset configured models to the Top 5 free models?',
+      ))
+    ) {
+      return;
+    }
+    await this.fetchOpenRouterTopModels();
+    this.currentOpenRouterModels = [...this.cachedTop5Models];
+    this.renderCustomModelsList();
+    if (this.openRouterCustomModelsError) {
+      this.openRouterCustomModelsError.textContent = '';
+      this.openRouterCustomModelsError.classList.add('hidden');
+    }
+  }
+
+  private async checkOpenRouterKey(apiKey: string, isManualVerify = false) {
+    const key = apiKey.trim();
+    if (!key) return;
+    if (isManualVerify) {
+      this.openRouterVerifyButton.disabled = true;
+    }
+    this.openRouterStatus.classList.remove('hidden', 'success', 'error');
+    this.openRouterStatus.textContent = 'Checking key...';
+
+    try {
+      const response =
+        await this.messageService.sendMessage<OpenRouterVerifyKeyResponse>({
+          type: MessageTypes.OPENROUTER_VERIFY_KEY,
+          apiKey: key,
+        });
+      if (response && response.success) {
+        const balanceStr =
+          typeof response.balance === 'number'
+            ? `$${response.balance.toFixed(2)}`
+            : '$0.00';
+        const tierStr = response.isFreeTier ? ' (Free tier)' : '';
+        this.openRouterStatus.textContent = `● Key valid · Balance: ${balanceStr}${tierStr}`;
+        this.openRouterStatus.classList.add('success');
+        this.openRouterStatus.classList.remove('error');
+      } else {
+        this.openRouterStatus.textContent = `● ${response?.error || 'Invalid API key'}`;
+        this.openRouterStatus.classList.add('error');
+        this.openRouterStatus.classList.remove('success');
+      }
+    } catch (error) {
+      console.error('Failed to verify OpenRouter key:', error);
+      this.openRouterStatus.textContent = '● Failed to connect to OpenRouter';
+      this.openRouterStatus.classList.add('error');
+      this.openRouterStatus.classList.remove('success');
+    } finally {
+      this.openRouterStatus.classList.remove('hidden');
+      if (isManualVerify) {
+        this.openRouterVerifyButton.disabled = false;
+      }
+    }
+  }
+
+  private async fetchOpenRouterTopModels(): Promise<OpenRouterModelConfig[]> {
+    try {
+      const response =
+        await this.messageService.sendMessage<OpenRouterListModelsResponse>({
+          type: MessageTypes.OPENROUTER_LIST_MODELS,
+        });
+      if (
+        response &&
+        response.success &&
+        Array.isArray(response.models) &&
+        response.models.length > 0
+      ) {
+        this.cachedTop5Models = response.models;
+        await this.localStorageService.set(
+          StorageKeys.OPENROUTER_TOP_MODELS_CACHE,
+          response.models,
+        );
+        this.renderTop5ModelsList(this.cachedTop5Models);
+        return response.models;
+      }
+    } catch (error) {
+      console.error('Failed to fetch OpenRouter models:', error);
+    }
+    return this.cachedTop5Models;
+  }
+
+  private async refreshOpenRouterTopModelsAndCredits() {
+    this.openRouterRefreshTopModelsButton.disabled = true;
+    const originalText =
+      this.openRouterRefreshTopModelsButton.textContent?.trim() ||
+      'Refresh Models';
+    this.openRouterRefreshTopModelsButton.textContent = 'Refreshing...';
+    try {
+      await this.fetchOpenRouterTopModels();
+      void this.fetchOpenRouterAllModels();
+      if (this.openRouterApiKeyInput.value.trim() !== '') {
+        await this.checkOpenRouterKey(this.openRouterApiKeyInput.value);
+      }
+    } finally {
+      this.openRouterRefreshTopModelsButton.textContent = originalText;
+      this.openRouterRefreshTopModelsButton.disabled = false;
+    }
+  }
+
   /**
    * Collapses/expands the provider panel bodies to match their toggles and
    * keeps the Save button disabled while no provider is enabled.
@@ -665,8 +1244,14 @@ export class SidebarController {
       'hidden',
       !this.ollamaEnabledToggle.checked,
     );
+    this.openRouterPanelBody.classList.toggle(
+      'hidden',
+      !this.openRouterEnabledToggle.checked,
+    );
     this.saveSettingsButton.disabled =
-      !this.geminiEnabledToggle.checked && !this.ollamaEnabledToggle.checked;
+      !this.geminiEnabledToggle.checked &&
+      !this.ollamaEnabledToggle.checked &&
+      !this.openRouterEnabledToggle.checked;
   }
 
   /**
@@ -750,12 +1335,19 @@ export class SidebarController {
       }
       errorElement.classList.add('input-error');
       errorElement.focus();
+      if (typeof errorElement.scrollIntoView === 'function') {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
   }
 
   private clearError() {
     this.settingsError.textContent = '';
     this.settingsError.classList.add('hidden');
+    if (this.openRouterCustomModelsError) {
+      this.openRouterCustomModelsError.textContent = '';
+      this.openRouterCustomModelsError.classList.add('hidden');
+    }
     this.settingsView.querySelectorAll('.input-error').forEach((el) => {
       el.classList.remove('input-error');
     });

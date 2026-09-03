@@ -29,12 +29,16 @@ export const MessageTypes = {
   STOP_GENERATION: 'stopGeneration',
   OLLAMA_LIST_MODELS: 'ollamaListModels',
   OLLAMA_TEST_CONNECTION: 'ollamaTestConnection',
+  OPENROUTER_VERIFY_KEY: 'openRouterVerifyKey',
+  OPENROUTER_LIST_MODELS: 'openRouterListModels',
+  OPENROUTER_LIST_ALL_MODELS: 'openRouterListAllModels',
 } as const;
 
 export const Providers = {
   // Stored value kept as 'gemini' for backward compatibility.
   GOOGLE_GEMINI: 'gemini',
   OLLAMA: 'ollama',
+  OPENROUTER: 'openrouter',
 } as const;
 
 export const Themes = {
@@ -56,6 +60,29 @@ export const StorageKeys = {
   SELECTED_PROVIDER: 'selectedProvider',
   OLLAMA_MODEL: 'ollamaModel',
   OLLAMA_MODELS_CACHE: 'ollamaModelsCache',
+  OPENROUTER_SETTINGS: 'openRouterSettings',
+  OPENROUTER_MODEL: 'openRouterModel',
+  OPENROUTER_TOP_MODELS_CACHE: 'openRouterTopModelsCache',
+  OPENROUTER_ALL_MODELS_CACHE: 'openRouterAllModelsCache',
+};
+
+export const OPENROUTER_ASSUMED_CONTEXT_LENGTH = 32768;
+export const OPENROUTER_REQUEST_TIMEOUT_MS = 8000;
+
+export const OPENROUTER_FALLBACK_FREE_MODELS = [
+  {
+    id: 'openrouter/free',
+    name: 'openrouter/free: Free Models Router',
+    isFree: true,
+    contextLength: OPENROUTER_ASSUMED_CONTEXT_LENGTH,
+  },
+];
+
+export const DEFAULT_OPENROUTER_SETTINGS = {
+  enabled: false,
+  apiKey: '',
+  mode: 'top5' as const,
+  customModels: [...OPENROUTER_FALLBACK_FREE_MODELS],
 };
 
 // Stored/UI shape: empty strings mean "use the defaults below".
