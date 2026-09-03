@@ -172,12 +172,14 @@ export const DEFAULT_MODEL: SupportedModelId = 'gemini-3.5-flash-lite';
 export const GENERAL_TIPS = [
   'Using a local Ollama model keeps your prompts and context on your device.',
   'Gemini models can watch and summarize YouTube videos.',
+  'OpenRouter has dozens of free models to choose from, or you can use the top 5 most popular free models—updated weekly.',
   'Pasting a response into a Google Doc? Use Edit > Paste from Markdown in Google Docs to keep the formatting.',
   'Click the eye icon to control whether your current tab is shared with the model.',
   `Pin up to ${MAX_PINNED_TABS} tabs to use as context for the model.`,
   'The more tabs you pin, the more tokens are used.',
   'Longer chats use more tokens. Start a new chat to start fresh.',
   `Like this extension? <a href="${process.env.STORE_URL}" target="_blank" rel="noopener">Share it</a> with a friend.`,
+  `Enjoying this extension? Help others discover it by <a href="${process.env.STORE_URL}" target="_blank" rel="noopener">leaving a review on the Chrome Web Store</a>.`,
 ];
 
 export const OLLAMA_TIPS = [
