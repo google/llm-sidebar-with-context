@@ -179,7 +179,7 @@ export const GENERAL_TIPS = [
   'The more tabs you pin, the more tokens are used.',
   'Longer chats use more tokens. Start a new chat to start fresh.',
   `Like this extension? <a href="${process.env.STORE_URL}" target="_blank" rel="noopener">Share it</a> with a friend.`,
-  `Enjoying this extension? Help others discover it by <a href="${process.env.STORE_URL}" target="_blank" rel="noopener">leaving a review on the Chrome Web Store</a>.`,
+  `Enjoying this extension? Help others discover it by <a href="${process.env.STORE_URL}/reviews" target="_blank" rel="noopener">leaving a review on the Chrome Web Store</a>.`,
 ];
 
 export const OLLAMA_TIPS = [
