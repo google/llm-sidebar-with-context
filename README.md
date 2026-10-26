@@ -28,7 +28,6 @@ This Chrome Extension allows you to interact with Gemini, a local Ollama model, 
     - Gemini 3.5 Flash Lite (Default)
     - Gemini 3.1 Flash Lite
     - Gemini 3.8 Flash
-    - Gemini 3.7 Flash
     - Gemini 3.6 Flash
     - Gemini 2.5 Pro
   - **Ollama:** Connect to a locally running [Ollama](https://ollama.com) server and chat with any model you have pulled. The extension lists the models available on your host and lets you test the connection before switching over.
