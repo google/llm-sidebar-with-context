@@ -1,3 +1,16 @@
+# v1.7.2
+
+## Changes
+
+**Model Lineup Cleanup:** Retired `gemini-3.7-flash` from the supported Gemini model list as it has been deprecated.
+
+## Maintenance
+
+**Dependency Updates:** Updated `vitest` to fix security vulnerabilities.
+**Documentation:** Added `RELEASE_NOTES.md` documenting project releases.
+
+**Full Changelog**: https://github.com/google/llm-sidebar-with-context/compare/v1.7.1...v1.7.2
+
 # v1.7.1
 
 ## Improvements
